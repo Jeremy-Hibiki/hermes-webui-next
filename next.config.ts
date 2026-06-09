@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL =
-  process.env.HERMES_BACKEND_URL || "http://localhost:8787";
+const BACKEND_URL = process.env.HERMES_BACKEND_URL || "http://localhost:8787";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.local"],
   async rewrites() {
     return [
       {
