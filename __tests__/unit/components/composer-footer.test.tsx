@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ComposerFooter } from "@/components/layout/composer-footer";
 
@@ -15,7 +15,7 @@ describe("ComposerFooter", () => {
     const textarea = screen.getByPlaceholderText(/message/i);
     fireEvent.change(textarea, { target: { value: "Hello Hermes" } });
     fireEvent.click(screen.getByLabelText(/send/i));
-    expect(onSend).toHaveBeenCalledWith("Hello Hermes", undefined);
+    expect(onSend).toHaveBeenCalledWith("Hello Hermes");
   });
 
   it("disables send when busy", () => {

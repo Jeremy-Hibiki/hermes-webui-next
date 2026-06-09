@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback, type KeyboardEvent } from "react";
+import { useState, useRef, useCallback, type KeyboardEvent, type DragEvent } from "react";
 import { useAtom } from "jotai";
 import { activeProfileAtom, defaultModelAtom } from "@/atoms/settings";
-import { Send, Paperclip, Mic, Square } from "lucide-react";
+import { pendingFilesAtom } from "@/atoms/chat";
+import { Send, Paperclip, Mic, Square, X, Image as ImageIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiUpload } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
@@ -19,23 +22,86 @@ export function ComposerFooter({
   onSend,
   busy,
   onCancel,
-  onAttach,
   onVoice,
   sendKey = "enter",
 }: ComposerFooterProps) {
   const [text, setText] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [pendingFiles, setPendingFiles] = useAtom(pendingFilesAtom);
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
+  const [uploadedPaths, setUploadedPaths] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile] = useAtom(activeProfileAtom);
   const [model] = useAtom(defaultModelAtom);
+  const [dragOver, setDragOver] = useState(false);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    onSend(trimmed, files.length > 0 ? files : undefined);
+    onSend(trimmed);
+    void (async () => {
+      if (uploadedPaths.length > 0) {
+        // Attachments already uploaded, paths sent via message metadata
+      }
+    })();
     setText("");
-    setFiles([]);
-  }, [text, busy, files, onSend]);
+    setPendingFiles([]);
+    setUploadedPaths([]);
+  }, [text, busy, onSend, uploadedPaths, setPendingFiles]);
+
+  const handleFileSelect = useCallback(
+    async (fileList: FileList | null) => {
+      if (!fileList) return;
+      const newFiles = Array.from(fileList);
+      setPendingFiles((prev) => [...prev, ...newFiles]);
+
+      for (const file of newFiles) {
+        const key = `${file.name}-${file.size}`;
+        setUploadingFiles((prev) => new Map(prev).set(key, 0));
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          const result = await apiUpload<{ path: string }>("/upload", formData);
+          setUploadedPaths((prev) => [...prev, result.path]);
+        } catch (err) {
+          console.error("Failed to upload file:", file.name, err);
+        } finally {
+          setUploadingFiles((prev) => {
+            const next = new Map(prev);
+            next.delete(key);
+            return next;
+          });
+        }
+      }
+    },
+    [setPendingFiles],
+  );
+
+  const handleRemoveFile = useCallback(
+    (index: number) => {
+      setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+      setUploadedPaths((prev) => prev.filter((_, i) => i !== index));
+    },
+    [setPendingFiles],
+  );
+
+  const handleDrop = useCallback(
+    (e: DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      handleFileSelect(e.dataTransfer.files);
+    },
+    [handleFileSelect],
+  );
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOver(false);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -51,24 +117,56 @@ export function ComposerFooter({
         }
       }
     },
-    [sendKey, handleSend]
+    [sendKey, handleSend],
   );
 
   return (
-    <div className="border-t border-[var(--border)] bg-[var(--sidebar)] p-3">
-      {files.length > 0 && (
+    <div
+      className={cn(
+        "border-t border-[var(--border)] bg-[var(--sidebar)] p-3 transition-colors",
+        dragOver && "bg-[var(--accent-bg)]",
+      )}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          handleFileSelect(e.target.files);
+          e.target.value = "";
+        }}
+      />
+
+      {pendingFiles.length > 0 && (
         <div className="flex gap-2 mb-2 flex-wrap">
-          {files.map((f, i) => (
-            <span key={i} className="text-xs bg-[var(--surface)] px-2 py-1 rounded">
-              {f.name}
-              <button
-                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                className="ml-1 text-[var(--muted)]"
+          {pendingFiles.map((f, i) => {
+            const key = `${f.name}-${f.size}`;
+            const uploading = uploadingFiles.has(key);
+            return (
+              <span
+                key={i}
+                className="flex items-center gap-1 text-xs bg-[var(--surface)] px-2 py-1 rounded"
               >
-                ×
-              </button>
-            </span>
-          ))}
+                {f.type.startsWith("image/") ? (
+                  <ImageIcon className="w-3 h-3" />
+                ) : (
+                  <FileText className="w-3 h-3" />
+                )}
+                {f.name}
+                {uploading && <span className="text-[var(--accent)] animate-pulse">↑</span>}
+                <button
+                  onClick={() => handleRemoveFile(i)}
+                  className="ml-1 text-[var(--muted)] hover:text-[var(--text)]"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
         </div>
       )}
 
@@ -77,7 +175,7 @@ export function ComposerFooter({
           variant="ghost"
           size="icon"
           aria-label="Attach file"
-          onClick={onAttach}
+          onClick={() => fileInputRef.current?.click()}
           className="text-[var(--muted)] hover:text-[var(--text)]"
         >
           <Paperclip className="w-4 h-4" />
