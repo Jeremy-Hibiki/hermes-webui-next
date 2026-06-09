@@ -5,11 +5,21 @@ import { activeSessionAtom } from "@/atoms/session";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, RefreshCw, ChevronRight, Plus, Trash2, Home, GitBranch } from "lucide-react";
+import {
+  FolderOpen,
+  RefreshCw,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Home,
+  GitBranch,
+  FileText,
+} from "lucide-react";
 import { FileTree } from "@/components/workspace/file-tree";
 import { FilePreview } from "@/components/workspace/file-preview";
 import { GitBadge } from "@/components/workspace/git-badge";
 import { GitOperations } from "@/components/workspace/git-operations";
+import { ArtifactList } from "@/components/workspace/artifact-list";
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
 import { fetcher, apiPost } from "@/lib/api-client";
@@ -24,7 +34,7 @@ export function WorkspacePanel() {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [manageMode, setManageMode] = useState(false);
   const [addPath, setAddPath] = useState("");
-  const [activeTab, setActiveTab] = useState<"files" | "git">("files");
+  const [activeTab, setActiveTab] = useState<"files" | "artifacts" | "git">("files");
 
   const sessionId = activeSession?.id ?? "";
   const workspace = activeSession?.workspace ?? ".";
@@ -135,6 +145,18 @@ export function WorkspacePanel() {
             Files
           </button>
           <button
+            onClick={() => setActiveTab("artifacts")}
+            className={cn(
+              "px-2 py-0.5 text-[10px] transition-colors",
+              activeTab === "artifacts"
+                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
+                : "text-[var(--muted)] hover:text-[var(--text)]",
+            )}
+            aria-label="Artifacts tab"
+          >
+            <FileText className="w-3 h-3" />
+          </button>
+          <button
             onClick={() => setActiveTab("git")}
             className={cn(
               "px-2 py-0.5 text-[10px] transition-colors",
@@ -214,6 +236,16 @@ export function WorkspacePanel() {
       ) : activeTab === "git" ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           <GitOperations sessionId={sessionId} />
+        </div>
+      ) : activeTab === "artifacts" ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ArtifactList
+            onOpenFile={(path) => {
+              setSelectedFile(path);
+              void fetchFile(path);
+              setActiveTab("files");
+            }}
+          />
         </div>
       ) : (
         <>

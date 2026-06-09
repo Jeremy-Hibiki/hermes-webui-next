@@ -5,7 +5,17 @@ import useSWR from "swr";
 import { fetcher, apiPost } from "@/lib/api-client";
 import type { GitStatus } from "@/types";
 import { Button } from "@/components/ui/button";
-import { GitCommit, GitPullRequest, Upload, Plus, Minus, FileQuestion } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import {
+  GitCommit,
+  GitPullRequest,
+  Upload,
+  Plus,
+  Minus,
+  FileQuestion,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 
 interface GitOperationsProps {
   sessionId?: string;
@@ -14,6 +24,8 @@ interface GitOperationsProps {
 export function GitOperations({ sessionId }: GitOperationsProps) {
   const [commitMsg, setCommitMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: statusData, mutate: mutateStatus } = useSWR<{ git: GitStatus }>(
     sessionId ? `/git-info?session_id=${sessionId}` : null,
@@ -35,17 +47,20 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
   const runGit = useCallback(
     async (endpoint: string, body?: Record<string, unknown>) => {
       setBusy(true);
+      setError(null);
       try {
         await apiPost(`/git/${endpoint}`, { session_id: sessionId, ...body });
         void mutateStatus();
         void mutateDiff();
-      } catch {
-        // Error handled silently
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Git operation failed";
+        setError(msg);
+        toast(msg, "error");
       } finally {
         setBusy(false);
       }
     },
-    [sessionId, mutateStatus, mutateDiff],
+    [sessionId, mutateStatus, mutateDiff, toast],
   );
 
   const handleStage = useCallback(
@@ -58,6 +73,14 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
   const handleUnstage = useCallback(
     (file: string) => {
       void runGit("unstage", { files: [file] });
+    },
+    [runGit],
+  );
+
+  const handleDiscard = useCallback(
+    (file: string) => {
+      if (!window.confirm(`Discard changes in "${file}"?`)) return;
+      void runGit("discard", { files: [file] });
     },
     [runGit],
   );
@@ -106,6 +129,20 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
           </Button>
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-red-500/10 border-b border-[var(--border)]">
+          <span className="text-[10px] text-[var(--error)] truncate flex-1">{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-[var(--muted)] text-[10px] shrink-0 hover:text-[var(--text)]"
+            aria-label="Dismiss error"
+          >
+            dismiss
+          </button>
+        </div>
+      )}
 
       {/* Staged files */}
       {staged.length > 0 && (
@@ -162,6 +199,15 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
               <span className="flex-1 truncate text-[var(--text)]">{f}</span>
               <button
                 onClick={() => {
+                  handleDiscard(f);
+                }}
+                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label={`Discard changes in ${f}`}
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => {
                   handleStage(f);
                 }}
                 className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -178,6 +224,15 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             >
               <FileQuestion className="w-3 h-3 text-[var(--muted)] shrink-0" />
               <span className="flex-1 truncate text-[var(--text)]">{f}</span>
+              <button
+                onClick={() => {
+                  handleDiscard(f);
+                }}
+                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label={`Delete untracked file ${f}`}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
               <button
                 onClick={() => {
                   handleStage(f);
