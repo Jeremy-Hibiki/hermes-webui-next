@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAtom } from "jotai";
 import { currentPanelAtom, workspacePanelOpenAtom } from "@/atoms/ui";
+import { cn } from "@/lib/utils";
 import { ThreePanel } from "@/components/layout/three-panel";
 import { RailNav } from "@/components/layout/rail-nav";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -142,7 +143,7 @@ export default function Home() {
   const showWorkspace = currentPanel === "chat" && workspaceOpen;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className={cn("flex h-screen w-full overflow-hidden", isMobile && "pb-14")}>
       {!isMobile && <RailNav activePanel={currentPanel} onPanelChange={setCurrentPanel} />}
       <ThreePanel
         sidebar={<Sidebar />}

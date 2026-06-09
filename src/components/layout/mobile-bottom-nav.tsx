@@ -31,7 +31,7 @@ export function MobileBottomNav() {
     >
       {MOBILE_NAV.map((item) => {
         const Icon = item.icon;
-        const isActive = item.id === "chat" ? true : panel === item.id;
+        const isActive = item.id === "chat" ? panel === "chat" || panel === "" : panel === item.id;
         return (
           <button
             key={item.id}
