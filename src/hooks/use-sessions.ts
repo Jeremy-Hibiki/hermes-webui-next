@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api-client";
-import type { Session, Project, SessionsResponse } from "@/types";
+import { bucketSessionsByDate, type DateBucket } from "@/lib/date-buckets";
+import type { Session, SessionsResponse } from "@/types";
 
 interface SessionGroup {
   projectId: string | null;
@@ -13,23 +14,14 @@ interface SessionGroup {
 }
 
 export function useSessions() {
-  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>(
-    "/sessions",
-    fetcher
-  );
+  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>("/sessions", fetcher);
 
   const sessions = data?.sessions ?? [];
   const projects = data?.projects ?? [];
 
-  const activeSessions = useMemo(
-    () => sessions.filter((s) => !s.archived),
-    [sessions]
-  );
+  const activeSessions = useMemo(() => sessions.filter((s) => !s.archived), [sessions]);
 
-  const pinnedSessions = useMemo(
-    () => sessions.filter((s) => s.pinned && !s.archived),
-    [sessions]
-  );
+  const pinnedSessions = useMemo(() => sessions.filter((s) => s.pinned && !s.archived), [sessions]);
 
   const groupedSessions = useMemo<SessionGroup[]>(() => {
     const groups: Record<string, Session[]> = {};
@@ -71,12 +63,18 @@ export function useSessions() {
     return result;
   }, [activeSessions, projects]);
 
+  const dateGroupedSessions = useMemo<DateBucket[]>(
+    () => bucketSessionsByDate(activeSessions),
+    [activeSessions],
+  );
+
   return {
     sessions,
     projects,
     activeSessions,
     pinnedSessions,
     groupedSessions,
+    dateGroupedSessions,
     isLoading,
     error,
     mutate,
