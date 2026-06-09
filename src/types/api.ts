@@ -40,9 +40,62 @@ export interface SessionsResponse {
 }
 
 export interface OnboardingStatus {
-  complete: boolean;
-  has_provider: boolean;
-  has_model: boolean;
+  completed: boolean;
+  settings: {
+    provider?: string;
+    model?: string;
+    api_key_set?: boolean;
+    base_url?: string;
+  };
+  system: {
+    agent_ok?: boolean;
+    provider_ok?: boolean;
+    password_ok?: boolean;
+  };
+  setup: OnboardingProvider[];
+  workspaces: string[];
+  models: OnboardingModel[];
+}
+
+export interface OnboardingProvider {
+  id: string;
+  name: string;
+  category: "easy" | "self-hosted" | "specialized";
+  default_model?: string;
+  default_base_url?: string;
+  oauth?: boolean;
+  oauth_provider?: string;
+}
+
+export interface OnboardingModel {
+  id: string;
+  name: string;
+  provider?: string;
+}
+
+export interface OnboardingSetupBody {
+  provider: string;
+  model?: string;
+  api_key?: string;
+  base_url?: string;
+}
+
+export interface OnboardingProbeResponse {
+  ok: boolean;
+  models?: OnboardingModel[];
+  error?: string;
+}
+
+export interface OnboardingOAuthStartResponse {
+  flow_id: string;
+  user_code?: string;
+  verification_uri?: string;
+}
+
+export interface OnboardingOAuthPollResponse {
+  status: "pending" | "complete" | "error" | "expired";
+  api_key?: string;
+  error?: string;
 }
 
 export interface UpdateCheckResponse {

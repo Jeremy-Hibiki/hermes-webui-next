@@ -27,5 +27,11 @@ export type {
   LoginRequest,
   SessionsResponse,
   OnboardingStatus,
+  OnboardingProvider,
+  OnboardingModel,
+  OnboardingSetupBody,
+  OnboardingProbeResponse,
+  OnboardingOAuthStartResponse,
+  OnboardingOAuthPollResponse,
   UpdateCheckResponse,
 } from "./api";
