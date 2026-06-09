@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { apiUpload } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
+import { SlashCommandMenu } from "@/components/chat/slash-command-menu";
 
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
@@ -35,6 +36,7 @@ export function ComposerFooter({
   const [profile] = useAtom(activeProfileAtom);
   const [_model] = useAtom(defaultModelAtom);
   const [dragOver, setDragOver] = useState(false);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -183,17 +185,33 @@ export function ComposerFooter({
           <Paperclip className="w-4 h-4" />
         </Button>
 
-        <textarea
-          aria-label="Message input"
-          ref={textareaRef}
-          placeholder="Message Hermes..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={busy}
-          rows={1}
-          className="flex-1 resize-none rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
-        />
+        <div className="flex-1 relative">
+          {showSlashMenu && (
+            <SlashCommandMenu
+              input={text}
+              onSelect={(cmd) => {
+                setText(cmd);
+                setShowSlashMenu(false);
+                textareaRef.current?.focus();
+              }}
+              onClose={() => setShowSlashMenu(false)}
+            />
+          )}
+          <textarea
+            aria-label="Message input"
+            ref={textareaRef}
+            placeholder="Message Hermes..."
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              setShowSlashMenu(e.target.value.startsWith("/"));
+            }}
+            onKeyDown={handleKeyDown}
+            disabled={busy}
+            rows={1}
+            className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+          />
+        </div>
 
         <Button
           variant="ghost"

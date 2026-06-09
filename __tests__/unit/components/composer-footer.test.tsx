@@ -25,6 +25,8 @@ describe("ComposerFooter", () => {
 
   it("renders attach button", () => {
     render(<ComposerFooter onSend={vi.fn()} busy={false} />);
-    expect(screen.getByLabelText(/attach file/i)).toBeDefined();
+    const buttons = screen.getAllByRole("button");
+    const attachBtn = buttons.find((b) => b.getAttribute("aria-label") === "Attach file");
+    expect(attachBtn).toBeTruthy();
   });
 });

@@ -15,6 +15,8 @@ import { TodoPanel } from "@/components/panels/todo-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { InsightsPanel } from "@/components/panels/insights-panel";
 import { KanbanBoard } from "@/components/panels/kanban-board";
+import { ProfilePanel } from "@/components/panels/profile-panel";
+import { LogsPanel } from "@/components/panels/logs-panel";
 import { TerminalPanel } from "@/components/terminal/terminal";
 import { LoginPage } from "@/app/login/login-page";
 import { activeSessionAtom } from "@/atoms/session";
@@ -43,6 +45,10 @@ function getPanelContent(panelId: string, sessionId: string) {
       return <SettingsPanel />;
     case "cron":
       return <CronPanel />;
+    case "profiles":
+      return <ProfilePanel />;
+    case "logs":
+      return <LogsPanel />;
     default:
       return <MainPanel />;
   }
