@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
-import { cn } from "@/lib/utils";
-import { formatRelativeTime } from "@/lib/relative-time";
-import type { Session } from "@/types";
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/relative-time';
+import type { Session } from '@/types';
 import {
   Pin,
   MessageSquare,
@@ -15,14 +15,14 @@ import {
   Trash2,
   GitBranch,
   Terminal,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 
 interface SessionItemProps {
   session: Session;
@@ -46,7 +46,7 @@ export function SessionItem({
   projectColor,
 }: SessionItemProps) {
   const [renaming, setRenaming] = useState(false);
-  const [draft, setDraft] = useState(session.title || "");
+  const [draft, setDraft] = useState(session.title || '');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -62,11 +62,11 @@ export function SessionItem({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       submitRename();
-    } else if (e.key === "Escape") {
-      setDraft(session.title || "");
+    } else if (e.key === 'Escape') {
+      setDraft(session.title || '');
       setRenaming(false);
     }
   };
@@ -78,7 +78,7 @@ export function SessionItem({
   const handleArchive = () => onArchive?.(session.id);
 
   const handleDelete = () => {
-    if (window.confirm(`Delete "${session.title || "New Chat"}"?`)) {
+    if (window.confirm(`Delete "${session.title || 'New Chat'}"?`)) {
       onDelete?.(session.id);
     }
   };
@@ -94,28 +94,20 @@ export function SessionItem({
       className="w-full bg-transparent border-none outline-none text-sm text-[var(--text)] px-0 py-0"
     />
   ) : (
-    <span className="truncate flex-1">{session.title || "New Chat"}</span>
+    <span className="truncate flex-1">{session.title || 'New Chat'}</span>
   );
 
-  const relativeTime = formatRelativeTime(
-    session.last_message_at || session.updated_at || session.created_at,
-  );
+  const relativeTime = formatRelativeTime(session.last_message_at || session.updated_at || session.created_at);
 
   const indicators = (
     <>
-      {projectColor && (
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />
-      )}
+      {projectColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />}
       {session.parent_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
       {session.worktree_path && <GitBranch className="w-3 h-3 shrink-0 text-orange-500" />}
-      {session.source === "cli" && <Terminal className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
+      {session.source === 'cli' && <Terminal className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
       {session.pinned && <Pin className="w-3 h-3 shrink-0 text-[var(--accent)]" />}
-      {session.message_count > 0 && (
-        <span className="text-xs text-[var(--muted)]">{session.message_count}</span>
-      )}
-      {relativeTime && (
-        <span className="text-xs text-[var(--muted)] ml-auto shrink-0">{relativeTime}</span>
-      )}
+      {session.message_count > 0 && <span className="text-xs text-[var(--muted)]">{session.message_count}</span>}
+      {relativeTime && <span className="text-xs text-[var(--muted)] ml-auto shrink-0">{relativeTime}</span>}
     </>
   );
 
@@ -127,10 +119,10 @@ export function SessionItem({
       <button
         onClick={() => onSelect(session.id)}
         className={cn(
-          "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
+          'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
           isActive
-            ? "active bg-[var(--accent-bg-strong)] text-[var(--text)]"
-            : "text-[var(--text)] hover:bg-[var(--hover-bg)]",
+            ? 'active bg-[var(--accent-bg-strong)] text-[var(--text)]'
+            : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
         )}
       >
         <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
@@ -146,10 +138,10 @@ export function SessionItem({
         <div
           onClick={() => !renaming && onSelect(session.id)}
           className={cn(
-            "group w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
+            'group w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
             isActive
-              ? "active bg-[var(--accent-bg-strong)] text-[var(--text)]"
-              : "text-[var(--text)] hover:bg-[var(--hover-bg)]",
+              ? 'active bg-[var(--accent-bg-strong)] text-[var(--text)]'
+              : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
           )}
         >
           <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
@@ -161,8 +153,8 @@ export function SessionItem({
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
             className={cn(
-              "shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--hover-bg)]",
-              isActive && "opacity-100",
+              'shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--hover-bg)]',
+              isActive && 'opacity-100',
             )}
             aria-label="Session actions"
           >

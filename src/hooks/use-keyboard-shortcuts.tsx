@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback } from 'react';
 
 interface ShortcutMap {
   [key: string]: () => void;
@@ -8,11 +8,11 @@ interface ShortcutMap {
 
 function formatShortcut(e: KeyboardEvent): string {
   const parts: string[] = [];
-  if (e.metaKey || e.ctrlKey) parts.push("mod");
-  if (e.shiftKey) parts.push("shift");
-  if (e.altKey) parts.push("alt");
+  if (e.metaKey || e.ctrlKey) parts.push('mod');
+  if (e.shiftKey) parts.push('shift');
+  if (e.altKey) parts.push('alt');
   parts.push(e.key.toLowerCase());
-  return parts.join("+");
+  return parts.join('+');
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutMap) {
@@ -20,15 +20,14 @@ export function useKeyboardShortcuts(handlers: ShortcutMap) {
     (e: KeyboardEvent) => {
       // Ignore when typing in inputs/textareas (except escape)
       const target = e.target as HTMLElement;
-      const isInput =
-        target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       const combo = formatShortcut(e);
 
       // Escape always works
-      if (e.key === "Escape") {
-        if (handlers["escape"]) {
-          handlers["escape"]();
+      if (e.key === 'Escape') {
+        if (handlers['escape']) {
+          handlers['escape']();
           e.preventDefault();
         }
         return;
@@ -54,19 +53,19 @@ export function useKeyboardShortcuts(handlers: ShortcutMap) {
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 }
 
 export function KeyboardHelpPanel({ onClose }: { onClose: () => void }) {
   const shortcuts = [
-    { keys: "Cmd/Ctrl + K", action: "New session" },
-    { keys: "Cmd/Ctrl + Shift + P", action: "Command palette" },
-    { keys: "Escape", action: "Close modal / dropdown" },
-    { keys: "↑ / ↓", action: "Navigate session list" },
-    { keys: "/", action: "Slash commands" },
-    { keys: "?", action: "Show keyboard shortcuts" },
+    { keys: 'Cmd/Ctrl + K', action: 'New session' },
+    { keys: 'Cmd/Ctrl + Shift + P', action: 'Command palette' },
+    { keys: 'Escape', action: 'Close modal / dropdown' },
+    { keys: '↑ / ↓', action: 'Navigate session list' },
+    { keys: '/', action: 'Slash commands' },
+    { keys: '?', action: 'Show keyboard shortcuts' },
   ];
 
   return (
@@ -75,7 +74,7 @@ export function KeyboardHelpPanel({ onClose }: { onClose: () => void }) {
       role="dialog"
       onClick={onClose}
       onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
+        if (e.key === 'Escape') onClose();
       }}
     >
       <div

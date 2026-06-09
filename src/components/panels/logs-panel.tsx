@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
-import { FileText, RefreshCw, Copy, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
+import { FileText, RefreshCw, Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface LogsResponse {
   files: string[];
@@ -14,13 +14,13 @@ interface LogsResponse {
 }
 
 export function LogsPanel() {
-  const [selectedFile, setSelectedFile] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<string>('');
   const [tailLines, setTailLines] = useState(100);
-  const [level, setLevel] = useState<string>("all");
+  const [level, setLevel] = useState<string>('all');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { data: fileList } = useSWR<LogsResponse>("/logs", fetcher, { revalidateOnFocus: false });
+  const { data: fileList } = useSWR<LogsResponse>('/logs', fetcher, { revalidateOnFocus: false });
 
   const { data: logContent } = useSWR<{ content: string }>(
     selectedFile ? `/logs?file=${encodeURIComponent(selectedFile)}&tail=${tailLines}` : null,
@@ -34,32 +34,31 @@ export function LogsPanel() {
     }
   }, [fileList, selectedFile]);
 
-  const lines = (logContent?.content ?? "").split("\n");
+  const lines = (logContent?.content ?? '').split('\n');
 
   const filteredLines =
-    level === "all"
+    level === 'all'
       ? lines
       : lines.filter((line) => {
           const upper = line.toUpperCase();
-          if (level === "ERROR") return upper.includes("ERROR") || upper.includes("CRITICAL");
-          if (level === "WARN")
-            return upper.includes("WARN") || upper.includes("ERROR") || upper.includes("CRITICAL");
+          if (level === 'ERROR') return upper.includes('ERROR') || upper.includes('CRITICAL');
+          if (level === 'WARN') return upper.includes('WARN') || upper.includes('ERROR') || upper.includes('CRITICAL');
           return true;
         });
 
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(filteredLines.join("\n"));
+    await navigator.clipboard.writeText(filteredLines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [filteredLines]);
 
   const getLineColor = (line: string) => {
     const upper = line.toUpperCase();
-    if (upper.includes("ERROR") || upper.includes("CRITICAL")) return "text-red-400";
-    if (upper.includes("WARN") || upper.includes("WARNING")) return "text-yellow-400";
-    if (upper.includes("INFO")) return "text-[var(--muted)]";
-    if (upper.includes("DEBUG")) return "text-[var(--muted)] opacity-60";
-    return "text-[var(--text)]";
+    if (upper.includes('ERROR') || upper.includes('CRITICAL')) return 'text-red-400';
+    if (upper.includes('WARN') || upper.includes('WARNING')) return 'text-yellow-400';
+    if (upper.includes('INFO')) return 'text-[var(--muted)]';
+    if (upper.includes('DEBUG')) return 'text-[var(--muted)] opacity-60';
+    return 'text-[var(--text)]';
   };
 
   return (
@@ -94,11 +93,11 @@ export function LogsPanel() {
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-6 w-6 text-[var(--muted)]", autoRefresh && "text-[var(--accent)]")}
+            className={cn('h-6 w-6 text-[var(--muted)]', autoRefresh && 'text-[var(--accent)]')}
             onClick={() => setAutoRefresh(!autoRefresh)}
-            title={autoRefresh ? "Stop auto-refresh" : "Auto-refresh (5s)"}
+            title={autoRefresh ? 'Stop auto-refresh' : 'Auto-refresh (5s)'}
           >
-            <RefreshCw className={cn("w-3 h-3", autoRefresh && "animate-spin")} />
+            <RefreshCw className={cn('w-3 h-3', autoRefresh && 'animate-spin')} />
           </Button>
           <Button
             variant="ghost"
@@ -120,13 +119,13 @@ export function LogsPanel() {
               key={f}
               onClick={() => setSelectedFile(f)}
               className={cn(
-                "w-full text-left px-2 py-1.5 text-xs rounded truncate transition-colors",
+                'w-full text-left px-2 py-1.5 text-xs rounded truncate transition-colors',
                 selectedFile === f
-                  ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                  : "text-[var(--text)] hover:bg-[var(--hover-bg)]",
+                  ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                  : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
               )}
             >
-              {f.split("/").pop()}
+              {f.split('/').pop()}
             </button>
           ))}
         </div>
@@ -134,13 +133,11 @@ export function LogsPanel() {
         {/* Log content */}
         <div className="flex-1 overflow-auto p-2 font-mono text-xs leading-5">
           {filteredLines.map((line, i) => (
-            <div key={i} className={cn("whitespace-pre-wrap break-all", getLineColor(line))}>
+            <div key={i} className={cn('whitespace-pre-wrap break-all', getLineColor(line))}>
               {line}
             </div>
           ))}
-          {filteredLines.length === 0 && (
-            <div className="text-[var(--muted)] text-center py-8">No log entries</div>
-          )}
+          {filteredLines.length === 0 && <div className="text-[var(--muted)] text-center py-8">No log entries</div>}
         </div>
       </div>
     </div>

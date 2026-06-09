@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import type { ClarifyRequest } from "@/types";
-import { HelpCircle, Send } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef } from 'react';
+import type { ClarifyRequest } from '@/types';
+import { HelpCircle, Send } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ClarifyCardProps {
   request: ClarifyRequest;
@@ -11,7 +11,7 @@ interface ClarifyCardProps {
 }
 
 export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +54,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -70,12 +70,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
           <span className="font-medium text-sm text-[var(--text)]">Clarification needed</span>
         </div>
         {remaining !== null && (
-          <span
-            className={cn(
-              "text-xs font-mono",
-              remaining <= 10 ? "text-[var(--error)]" : "text-[var(--muted)]",
-            )}
-          >
+          <span className={cn('text-xs font-mono', remaining <= 10 ? 'text-[var(--error)]' : 'text-[var(--muted)]')}>
             {remaining}s
           </span>
         )}

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Brain, ChevronRight } from "lucide-react";
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Brain, ChevronRight } from 'lucide-react';
 
 interface ThinkingCardProps {
   content: string;
@@ -19,13 +19,9 @@ export function ThinkingCard({ content }: ThinkingCardProps) {
       >
         <Brain className="w-3.5 h-3.5" />
         <span className="text-xs">Thinking</span>
-        <ChevronRight className={cn("w-3 h-3 ml-auto transition-transform", expanded && "rotate-90")} />
+        <ChevronRight className={cn('w-3 h-3 ml-auto transition-transform', expanded && 'rotate-90')} />
       </button>
-      {expanded && (
-        <div className="px-3 pb-2 text-xs text-[var(--muted)] italic whitespace-pre-wrap">
-          {content}
-        </div>
-      )}
+      {expanded && <div className="px-3 pb-2 text-xs text-[var(--muted)] italic whitespace-pre-wrap">{content}</div>}
     </div>
   );
 }

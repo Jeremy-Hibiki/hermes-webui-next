@@ -1,43 +1,34 @@
-"use client";
+'use client';
 
-import { useAtom } from "jotai";
-import { activeSessionAtom } from "@/atoms/session";
-import { useWorkspace } from "@/hooks/use-workspace";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import {
-  FolderOpen,
-  RefreshCw,
-  ChevronRight,
-  Plus,
-  Trash2,
-  Home,
-  GitBranch,
-  FileText,
-} from "lucide-react";
-import { FileTree } from "@/components/workspace/file-tree";
-import { FilePreview } from "@/components/workspace/file-preview";
-import { GitBadge } from "@/components/workspace/git-badge";
-import { GitOperations } from "@/components/workspace/git-operations";
-import { ArtifactList } from "@/components/workspace/artifact-list";
-import { useEffect, useState, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import type { WorkspaceInfo, GitStatus } from "@/types";
-import { cn } from "@/lib/utils";
+import { useAtom } from 'jotai';
+import { activeSessionAtom } from '@/atoms/session';
+import { useWorkspace } from '@/hooks/use-workspace';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { FolderOpen, RefreshCw, ChevronRight, Plus, Trash2, Home, GitBranch, FileText } from 'lucide-react';
+import { FileTree } from '@/components/workspace/file-tree';
+import { FilePreview } from '@/components/workspace/file-preview';
+import { GitBadge } from '@/components/workspace/git-badge';
+import { GitOperations } from '@/components/workspace/git-operations';
+import { ArtifactList } from '@/components/workspace/artifact-list';
+import { useEffect, useState, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import type { WorkspaceInfo, GitStatus } from '@/types';
+import { cn } from '@/lib/utils';
 
 export function WorkspacePanel() {
   const [activeSession] = useAtom(activeSessionAtom);
   const { fileTree, fileContent, loading, fetchTree, fetchFile } = useWorkspace();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [currentPath, setCurrentPath] = useState<string>("");
+  const [currentPath, setCurrentPath] = useState<string>('');
   const [manageMode, setManageMode] = useState(false);
-  const [addPath, setAddPath] = useState("");
-  const [activeTab, setActiveTab] = useState<"files" | "artifacts" | "git">("files");
+  const [addPath, setAddPath] = useState('');
+  const [activeTab, setActiveTab] = useState<'files' | 'artifacts' | 'git'>('files');
 
-  const sessionId = activeSession?.id ?? "";
-  const workspace = activeSession?.workspace ?? ".";
+  const sessionId = activeSession?.id ?? '';
+  const workspace = activeSession?.workspace ?? '.';
 
   const { data: gitData } = useSWR<{ git: GitStatus }>(
     sessionId ? `/git-info?session_id=${sessionId}` : null,
@@ -46,7 +37,7 @@ export function WorkspacePanel() {
   );
   const { data: workspacesData, mutate: mutateWorkspaces } = useSWR<{
     workspaces: WorkspaceInfo[];
-  }>("/workspaces", fetcher, { revalidateOnFocus: false });
+  }>('/workspaces', fetcher, { revalidateOnFocus: false });
   const workspaces = workspacesData?.workspaces ?? [];
 
   // Fetch tree on mount or workspace change
@@ -96,11 +87,11 @@ export function WorkspacePanel() {
   const handleAddWorkspace = useCallback(async () => {
     if (!addPath.trim()) return;
     try {
-      await apiPost("/workspaces/add", { path: addPath.trim() });
-      setAddPath("");
+      await apiPost('/workspaces/add', { path: addPath.trim() });
+      setAddPath('');
       void mutateWorkspaces();
     } catch (err) {
-      console.error("Failed to add workspace:", err);
+      console.error('Failed to add workspace:', err);
     }
   }, [addPath, mutateWorkspaces]);
 
@@ -108,20 +99,20 @@ export function WorkspacePanel() {
     async (path: string) => {
       if (!window.confirm(`Remove workspace "${path}"?`)) return;
       try {
-        await apiPost("/workspaces/remove", { path });
+        await apiPost('/workspaces/remove', { path });
         void mutateWorkspaces();
       } catch (err) {
-        console.error("Failed to remove workspace:", err);
+        console.error('Failed to remove workspace:', err);
       }
     },
     [mutateWorkspaces],
   );
 
   // Breadcrumb segments
-  const segments = currentPath.split("/").filter(Boolean);
+  const segments = currentPath.split('/').filter(Boolean);
   const breadcrumbParts = segments.map((seg, i) => ({
     label: seg,
-    path: "/" + segments.slice(0, i + 1).join("/"),
+    path: '/' + segments.slice(0, i + 1).join('/'),
   }));
 
   return (
@@ -133,36 +124,36 @@ export function WorkspacePanel() {
         <span className="flex-1" />
         <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
           <button
-            onClick={() => setActiveTab("files")}
+            onClick={() => setActiveTab('files')}
             className={cn(
-              "px-2 py-0.5 text-[10px] transition-colors",
-              activeTab === "files"
-                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                : "text-[var(--muted)] hover:text-[var(--text)]",
+              'px-2 py-0.5 text-[10px] transition-colors',
+              activeTab === 'files'
+                ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                : 'text-[var(--muted)] hover:text-[var(--text)]',
             )}
             aria-label="Files tab"
           >
             Files
           </button>
           <button
-            onClick={() => setActiveTab("artifacts")}
+            onClick={() => setActiveTab('artifacts')}
             className={cn(
-              "px-2 py-0.5 text-[10px] transition-colors",
-              activeTab === "artifacts"
-                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                : "text-[var(--muted)] hover:text-[var(--text)]",
+              'px-2 py-0.5 text-[10px] transition-colors',
+              activeTab === 'artifacts'
+                ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                : 'text-[var(--muted)] hover:text-[var(--text)]',
             )}
             aria-label="Artifacts tab"
           >
             <FileText className="w-3 h-3" />
           </button>
           <button
-            onClick={() => setActiveTab("git")}
+            onClick={() => setActiveTab('git')}
             className={cn(
-              "px-2 py-0.5 text-[10px] transition-colors",
-              activeTab === "git"
-                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                : "text-[var(--muted)] hover:text-[var(--text)]",
+              'px-2 py-0.5 text-[10px] transition-colors',
+              activeTab === 'git'
+                ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                : 'text-[var(--muted)] hover:text-[var(--text)]',
             )}
             aria-label="Git tab"
           >
@@ -172,7 +163,7 @@ export function WorkspacePanel() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn("text-[var(--muted)]", manageMode && "text-[var(--accent)]")}
+          className={cn('text-[var(--muted)]', manageMode && 'text-[var(--accent)]')}
           onClick={() => setManageMode(!manageMode)}
           aria-label="Manage workspaces"
         >
@@ -225,7 +216,7 @@ export function WorkspacePanel() {
               placeholder="/path/to/workspace"
               className="flex-1 px-2 py-1 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
               onKeyDown={(e) => {
-                if (e.key === "Enter") void handleAddWorkspace();
+                if (e.key === 'Enter') void handleAddWorkspace();
               }}
             />
             <Button size="sm" onClick={() => void handleAddWorkspace()} disabled={!addPath.trim()}>
@@ -233,17 +224,17 @@ export function WorkspacePanel() {
             </Button>
           </div>
         </div>
-      ) : activeTab === "git" ? (
+      ) : activeTab === 'git' ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           <GitOperations sessionId={sessionId} />
         </div>
-      ) : activeTab === "artifacts" ? (
+      ) : activeTab === 'artifacts' ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           <ArtifactList
             onOpenFile={(path) => {
               setSelectedFile(path);
               void fetchFile(path);
-              setActiveTab("files");
+              setActiveTab('files');
             }}
           />
         </div>
@@ -251,10 +242,7 @@ export function WorkspacePanel() {
         <>
           {/* Breadcrumbs */}
           <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[var(--border)] text-xs text-[var(--muted)] overflow-x-auto">
-            <button
-              onClick={() => handleBreadcrumb(workspace)}
-              className="hover:text-[var(--text)] shrink-0"
-            >
+            <button onClick={() => handleBreadcrumb(workspace)} className="hover:text-[var(--text)] shrink-0">
               <Home className="w-3 h-3" />
             </button>
             {breadcrumbParts.map((part, i) => (
@@ -263,10 +251,7 @@ export function WorkspacePanel() {
                 {i === breadcrumbParts.length - 1 ? (
                   <span className="text-[var(--text)]">{part.label}</span>
                 ) : (
-                  <button
-                    onClick={() => handleBreadcrumb(part.path)}
-                    className="hover:text-[var(--text)]"
-                  >
+                  <button onClick={() => handleBreadcrumb(part.path)} className="hover:text-[var(--text)]">
                     {part.label}
                   </button>
                 )}
@@ -276,11 +261,7 @@ export function WorkspacePanel() {
 
           {selectedFile ? (
             <div className="flex-1 flex flex-col overflow-hidden">
-              <FilePreview
-                path={selectedFile}
-                content={fileContent ?? ""}
-                onClose={handleClosePreview}
-              />
+              <FilePreview path={selectedFile} content={fileContent ?? ''} onClose={handleClosePreview} />
             </div>
           ) : (
             <ScrollArea className="flex-1">

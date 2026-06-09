@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { GitBranch } from "lucide-react";
-import type { GitStatus } from "@/types";
+import { GitBranch } from 'lucide-react';
+import type { GitStatus } from '@/types';
 
 interface GitBadgeProps {
   status: GitStatus | null;
@@ -21,12 +21,8 @@ export function GitBadge({ status }: GitBadgeProps) {
           {status.staged.length}
         </span>
       )}
-      {status.ahead > 0 && (
-        <span className="text-[var(--success)]">↑{status.ahead}</span>
-      )}
-      {status.behind > 0 && (
-        <span className="text-[var(--warning)]">↓{status.behind}</span>
-      )}
+      {status.ahead > 0 && <span className="text-[var(--success)]">↑{status.ahead}</span>}
+      {status.behind > 0 && <span className="text-[var(--warning)]">↓{status.behind}</span>}
     </div>
   );
 }

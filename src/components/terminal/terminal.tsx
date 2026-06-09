@@ -1,64 +1,56 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import {
-  Terminal as TerminalIcon,
-  X,
-  Copy,
-  RotateCw,
-  ChevronUp,
-  Minus,
-  Eraser,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { API_BASE } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Terminal as TerminalIcon, X, Copy, RotateCw, ChevronUp, Minus, Eraser } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { API_BASE } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 interface TerminalPanelProps {
   sessionId: string;
 }
 
-type TerminalStatus = "connecting" | "connected" | "disconnected" | "error";
+type TerminalStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 export function TerminalPanel({ sessionId }: TerminalPanelProps) {
   const termRef = useRef<HTMLDivElement>(null);
-  const xtermRef = useRef<InstanceType<typeof import("@xterm/xterm").Terminal> | null>(null);
-  const fitAddonRef = useRef<InstanceType<typeof import("@xterm/addon-fit").FitAddon> | null>(null);
+  const xtermRef = useRef<InstanceType<typeof import('@xterm/xterm').Terminal> | null>(null);
+  const fitAddonRef = useRef<InstanceType<typeof import('@xterm/addon-fit').FitAddon> | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const [status, setStatus] = useState<TerminalStatus>("disconnected");
+  const [status, setStatus] = useState<TerminalStatus>('disconnected');
   const [collapsed, setCollapsed] = useState(false);
   const [height, setHeight] = useState(300);
   const [copied, setCopied] = useState(false);
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
   const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const commandBufferRef = useRef("");
+  const commandBufferRef = useRef('');
   const themeObserverRef = useRef<MutationObserver | null>(null);
 
   const getTheme = useCallback(() => {
     const style = getComputedStyle(document.documentElement);
     const get = (v: string) => style.getPropertyValue(v).trim() || undefined;
     return {
-      background: get("--code-bg") || get("--bg") || "#1e1e2e",
-      foreground: get("--pre-text") || get("--text") || "#cdd6f4",
-      cursor: get("--accent") || "#89b4fa",
-      cursorAccent: get("--bg") || "#1e1e2e",
-      selectionBackground: get("--accent") || "#89b4fa55",
-      black: "#45475a",
-      red: "#f38ba8",
-      green: "#a6e3a1",
-      yellow: "#f9e2af",
-      blue: "#89b4fa",
-      magenta: "#f5c2e7",
-      cyan: "#94e2d5",
-      white: "#bac2de",
-      brightBlack: "#585b70",
-      brightRed: "#f38ba8",
-      brightGreen: "#a6e3a1",
-      brightYellow: "#f9e2af",
-      brightBlue: "#89b4fa",
-      brightMagenta: "#f5c2e7",
-      brightCyan: "#94e2d5",
-      brightWhite: "#a6adc8",
+      background: get('--code-bg') || get('--bg') || '#1e1e2e',
+      foreground: get('--pre-text') || get('--text') || '#cdd6f4',
+      cursor: get('--accent') || '#89b4fa',
+      cursorAccent: get('--bg') || '#1e1e2e',
+      selectionBackground: get('--accent') || '#89b4fa55',
+      black: '#45475a',
+      red: '#f38ba8',
+      green: '#a6e3a1',
+      yellow: '#f9e2af',
+      blue: '#89b4fa',
+      magenta: '#f5c2e7',
+      cyan: '#94e2d5',
+      white: '#bac2de',
+      brightBlack: '#585b70',
+      brightRed: '#f38ba8',
+      brightGreen: '#a6e3a1',
+      brightYellow: '#f9e2af',
+      brightBlue: '#89b4fa',
+      brightMagenta: '#f5c2e7',
+      brightCyan: '#94e2d5',
+      brightWhite: '#a6adc8',
     };
   }, []);
 
@@ -67,9 +59,9 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
       if (!sessionId) return;
       try {
         await fetch(`${API_BASE}/terminal/input`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ session_id: sessionId, data }),
         });
       } catch {
@@ -83,14 +75,14 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
     async (restart = false) => {
       if (!termRef.current) return;
 
-      setStatus("connecting");
+      setStatus('connecting');
 
       try {
-        const { Terminal } = await import("@xterm/xterm");
-        const { FitAddon } = await import("@xterm/addon-fit");
-        const { WebLinksAddon } = await import("@xterm/addon-web-links");
+        const { Terminal } = await import('@xterm/xterm');
+        const { FitAddon } = await import('@xterm/addon-fit');
+        const { WebLinksAddon } = await import('@xterm/addon-web-links');
 
-        await import("@xterm/xterm/css/xterm.css");
+        await import('@xterm/xterm/css/xterm.css');
 
         const term = new Terminal({
           theme: getTheme(),
@@ -117,26 +109,26 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
         const rows = term.rows;
 
         const res = await fetch(`${API_BASE}/terminal/start`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ session_id: sessionId, rows, cols, restart }),
         });
 
         if (!res.ok) throw new Error(`Terminal start failed: ${res.status}`);
 
-        setStatus("connected");
-        commandBufferRef.current = "";
+        setStatus('connected');
+        commandBufferRef.current = '';
 
         term.onData((data) => {
           // Track command buffer for exit detection
-          if (data === "\r") {
+          if (data === '\r') {
             const cmd = commandBufferRef.current.trim().toLowerCase();
-            if (cmd === "exit" || cmd === "quit" || cmd === "logout") {
+            if (cmd === 'exit' || cmd === 'quit' || cmd === 'logout') {
               // Will close after server processes it
             }
-            commandBufferRef.current = "";
-          } else if (data === "\x7f") {
+            commandBufferRef.current = '';
+          } else if (data === '\x7f') {
             commandBufferRef.current = commandBufferRef.current.slice(0, -1);
           } else if (data.length === 1 && data.charCodeAt(0) >= 32) {
             commandBufferRef.current += data;
@@ -150,18 +142,17 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
         });
         observer.observe(document.documentElement, {
           attributes: true,
-          attributeFilter: ["class", "data-skin"],
+          attributeFilter: ['class', 'data-skin'],
         });
         themeObserverRef.current = observer;
 
         // SSE output stream
-        const es = new EventSource(
-          `${API_BASE}/terminal/output?session_id=${encodeURIComponent(sessionId)}`,
-          { withCredentials: true },
-        );
+        const es = new EventSource(`${API_BASE}/terminal/output?session_id=${encodeURIComponent(sessionId)}`, {
+          withCredentials: true,
+        });
         eventSourceRef.current = es;
 
-        es.addEventListener("output", (e) => {
+        es.addEventListener('output', (e) => {
           if (e.data) {
             // Parse JSON to extract .text — backend sends {"text":"..."}
             try {
@@ -177,14 +168,16 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
           }
         });
 
-        es.addEventListener("terminal_closed", () => {
-          term.write("\r\n\x1b[90m[terminal closed]\x1b[0m\r\n");
-          setStatus("disconnected");
+        es.addEventListener('terminal_closed', () => {
+          term.write('\r\n\x1b[90m[terminal closed]\x1b[0m\r\n');
+          setStatus('disconnected');
           es.close();
+          // Auto-collapse after brief delay so user sees the message
+          setTimeout(() => setCollapsed(true), 1500);
         });
 
-        es.addEventListener("terminal_error", (e) => {
-          let errMsg = "Unknown error";
+        es.addEventListener('terminal_error', (e) => {
+          let errMsg = 'Unknown error';
           if (e.data) {
             try {
               const parsed = JSON.parse(e.data);
@@ -194,12 +187,12 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
             }
           }
           term.write(`\r\n\x1b[31m${errMsg}\x1b[0m\r\n`);
-          setStatus("error");
+          setStatus('error');
           es.close();
         });
 
         es.onerror = () => {
-          setStatus("error");
+          setStatus('error');
         };
 
         // Handle resize with debounce (120ms)
@@ -210,18 +203,18 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
             const r = term.rows;
             const c = term.cols;
             fetch(`${API_BASE}/terminal/resize`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({ session_id: sessionId, rows: r, cols: c }),
             }).catch(() => {});
           }, 120);
         });
         resizeObserver.observe(termRef.current);
       } catch (err) {
-        setStatus("error");
+        setStatus('error');
         if (termRef.current) {
-          termRef.current.textContent = `Failed to start terminal: ${err instanceof Error ? err.message : "Unknown error"}`;
+          termRef.current.textContent = `Failed to start terminal: ${err instanceof Error ? err.message : 'Unknown error'}`;
         }
       }
     },
@@ -236,13 +229,13 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
     xtermRef.current?.dispose();
     xtermRef.current = null;
     fitAddonRef.current = null;
-    setStatus("disconnected");
+    setStatus('disconnected');
 
     try {
       await fetch(`${API_BASE}/terminal/close`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ session_id: sessionId }),
       });
     } catch {
@@ -274,9 +267,9 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
       const buffer = term.buffer.active;
       const lines: string[] = [];
       for (let i = 0; i < buffer.length; i++) {
-        lines.push(buffer.getLine(i)?.translateToString(true) ?? "");
+        lines.push(buffer.getLine(i)?.translateToString(true) ?? '');
       }
-      await navigator.clipboard.writeText(lines.join("\n"));
+      await navigator.clipboard.writeText(lines.join('\n'));
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -294,15 +287,15 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
   // Beacon on page unload
   useEffect(() => {
     const handleUnload = () => {
-      if (typeof navigator !== "undefined" && navigator.sendBeacon && sessionId) {
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon && sessionId) {
         navigator.sendBeacon(
           `${API_BASE}/terminal/close`,
-          new Blob([JSON.stringify({ session_id: sessionId })], { type: "application/json" }),
+          new Blob([JSON.stringify({ session_id: sessionId })], { type: 'application/json' }),
         );
       }
     };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
   }, [sessionId]);
 
   // Drag resize handler
@@ -318,12 +311,12 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
       };
       const handleUp = () => {
         dragRef.current = null;
-        document.removeEventListener("pointermove", handleMove);
-        document.removeEventListener("pointerup", handleUp);
+        document.removeEventListener('pointermove', handleMove);
+        document.removeEventListener('pointerup', handleUp);
         fitAddonRef.current?.fit();
       };
-      document.addEventListener("pointermove", handleMove);
-      document.addEventListener("pointerup", handleUp);
+      document.addEventListener('pointermove', handleMove);
+      document.addEventListener('pointerup', handleUp);
     },
     [height],
   );
@@ -362,11 +355,11 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
           Terminal
           <span
             className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              status === "connected" && "bg-green-500",
-              status === "connecting" && "bg-yellow-500 animate-pulse",
-              status === "error" && "bg-red-500",
-              status === "disconnected" && "bg-[var(--border)]",
+              'w-1.5 h-1.5 rounded-full',
+              status === 'connected' && 'bg-green-500',
+              status === 'connecting' && 'bg-yellow-500 animate-pulse',
+              status === 'error' && 'bg-red-500',
+              status === 'disconnected' && 'bg-[var(--border)]',
             )}
           />
         </span>
@@ -389,11 +382,7 @@ export function TerminalPanel({ sessionId }: TerminalPanelProps) {
             title="Copy"
             aria-label="Copy terminal content"
           >
-            {copied ? (
-              <span className="text-[var(--accent)] text-[10px]">&#10003;</span>
-            ) : (
-              <Copy className="w-3 h-3" />
-            )}
+            {copied ? <span className="text-[var(--accent)] text-[10px]">&#10003;</span> : <Copy className="w-3 h-3" />}
           </Button>
           <Button
             variant="ghost"

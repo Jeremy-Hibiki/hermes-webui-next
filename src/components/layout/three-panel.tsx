@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useAtom } from "jotai";
-import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentMobileViewAtom } from "@/atoms/ui";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { useAtom } from 'jotai';
+import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentMobileViewAtom } from '@/atoms/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface ThreePanelProps {
   sidebar: React.ReactNode;
@@ -28,11 +28,11 @@ export function ThreePanel({ sidebar, main, workspace, workspaceOpen }: ThreePan
         </main>
 
         {/* Mobile sidebar overlay */}
-        {mobileView === "sidebar" && (
+        {mobileView === 'sidebar' && (
           <>
             <div
               className="fixed inset-0 bg-black/50 z-[199]"
-              onClick={() => setMobileView("chat")}
+              onClick={() => setMobileView('chat')}
               aria-hidden="true"
             />
             <aside
@@ -45,11 +45,11 @@ export function ThreePanel({ sidebar, main, workspace, workspaceOpen }: ThreePan
         )}
 
         {/* Mobile workspace overlay */}
-        {mobileView === "workspace" && showWorkspace && (
+        {mobileView === 'workspace' && showWorkspace && (
           <>
             <div
               className="fixed inset-0 bg-black/50 z-[199]"
-              onClick={() => setMobileView("chat")}
+              onClick={() => setMobileView('chat')}
               aria-hidden="true"
             />
             <aside
@@ -68,8 +68,8 @@ export function ThreePanel({ sidebar, main, workspace, workspaceOpen }: ThreePan
     <div className="flex h-full w-full overflow-hidden bg-[var(--bg)]">
       <aside
         className={cn(
-          "shrink-0 border-r border-[var(--border)] bg-[var(--sidebar)] transition-all duration-200 overflow-hidden",
-          collapsed ? "w-0" : "w-64",
+          'shrink-0 border-r border-[var(--border)] bg-[var(--sidebar)] transition-all duration-200 overflow-hidden',
+          collapsed ? 'w-0' : 'w-64',
         )}
         data-testid="panel-sidebar"
       >

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useCallback } from "react";
-import { SSEClient } from "@/lib/sse-client";
+import { useEffect, useRef, useCallback } from 'react';
+import { SSEClient } from '@/lib/sse-client';
 
 interface UseSSEOptions {
   enabled?: boolean;
@@ -10,7 +10,7 @@ interface UseSSEOptions {
 export function useSSE(
   url: string | null,
   handlers: Record<string, (data: unknown) => void>,
-  options: UseSSEOptions = {}
+  options: UseSSEOptions = {},
 ) {
   const { enabled = true } = options;
   const clientRef = useRef<SSEClient | null>(null);

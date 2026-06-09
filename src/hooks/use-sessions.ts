@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo, useEffect, useRef } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
-import { bucketSessionsByDate, type DateBucket } from "@/lib/date-buckets";
-import { API_BASE } from "@/lib/constants";
-import type { Session, SessionsResponse } from "@/types";
+import { useMemo, useEffect, useRef } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
+import { bucketSessionsByDate, type DateBucket } from '@/lib/date-buckets';
+import { API_BASE } from '@/lib/constants';
+import type { Session, SessionsResponse } from '@/types';
 
 interface SessionGroup {
   projectId: string | null;
@@ -15,16 +15,13 @@ interface SessionGroup {
 }
 
 export function useSessions() {
-  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>("/sessions", fetcher, {
+  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>('/sessions', fetcher, {
     revalidateOnFocus: false,
   });
 
   const activeSessions = useMemo(() => (data?.sessions ?? []).filter((s) => !s.archived), [data]);
 
-  const pinnedSessions = useMemo(
-    () => (data?.sessions ?? []).filter((s) => s.pinned && !s.archived),
-    [data],
-  );
+  const pinnedSessions = useMemo(() => (data?.sessions ?? []).filter((s) => s.pinned && !s.archived), [data]);
 
   const groupedSessions = useMemo<SessionGroup[]>(() => {
     const projects = data?.projects ?? [];
@@ -58,8 +55,8 @@ export function useSessions() {
     if (ungrouped.length > 0) {
       result.push({
         projectId: null,
-        projectName: "",
-        projectColor: "",
+        projectName: '',
+        projectColor: '',
         sessions: ungrouped,
       });
     }
@@ -67,10 +64,7 @@ export function useSessions() {
     return result;
   }, [activeSessions, data]);
 
-  const dateGroupedSessions = useMemo<DateBucket[]>(
-    () => bucketSessionsByDate(activeSessions),
-    [activeSessions],
-  );
+  const dateGroupedSessions = useMemo<DateBucket[]>(() => bucketSessionsByDate(activeSessions), [activeSessions]);
 
   // SSE for real-time session updates
   const esRef = useRef<EventSource | null>(null);
@@ -80,10 +74,10 @@ export function useSessions() {
         withCredentials: true,
       });
       esRef.current = es;
-      es.addEventListener("session_update", () => {
+      es.addEventListener('session_update', () => {
         void mutate();
       });
-      es.addEventListener("session_new", () => {
+      es.addEventListener('session_new', () => {
         void mutate();
       });
       es.onerror = () => {

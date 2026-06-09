@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useRef, useEffect } from "react";
-import type { Message } from "@/types";
-import { MessageBubble } from "./message-bubble";
+import { useRef, useEffect } from 'react';
+import type { Message } from '@/types';
+import { MessageBubble } from './message-bubble';
 
 interface MessageListProps {
   messages: Message[];
@@ -14,11 +14,11 @@ export function MessageList({ messages, onEdit, onRegenerate }: MessageListProps
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const lastAssistantIdx = [...messages]
-    .map((m, i) => (m.role === "assistant" ? i : -1))
+    .map((m, i) => (m.role === 'assistant' ? i : -1))
     .filter((i) => i >= 0)
     .pop();
 

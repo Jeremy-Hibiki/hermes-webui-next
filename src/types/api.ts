@@ -19,7 +19,7 @@ export interface ChatStartResponse {
 }
 
 export interface HealthResponse {
-  status: "ok" | "degraded";
+  status: 'ok' | 'degraded';
   version: string;
   uptime: number;
 }
@@ -35,8 +35,8 @@ export interface LoginRequest {
 }
 
 export interface SessionsResponse {
-  sessions: import("./session").Session[];
-  projects: import("./session").Project[];
+  sessions: import('./session').Session[];
+  projects: import('./session').Project[];
 }
 
 export interface OnboardingStatus {
@@ -60,7 +60,7 @@ export interface OnboardingStatus {
 export interface OnboardingProvider {
   id: string;
   name: string;
-  category: "easy" | "self-hosted" | "specialized";
+  category: 'easy' | 'self-hosted' | 'specialized';
   default_model?: string;
   default_base_url?: string;
   oauth?: boolean;
@@ -94,7 +94,7 @@ export interface OnboardingOAuthStartResponse {
 }
 
 export interface OnboardingOAuthPollResponse {
-  status: "pending" | "complete" | "error" | "expired";
+  status: 'pending' | 'complete' | 'error' | 'expired';
   api_key?: string;
   error?: string;
 }

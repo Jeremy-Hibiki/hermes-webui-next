@@ -1,5 +1,5 @@
-export type ThemeMode = "system" | "dark" | "light";
-export type FontSize = "small" | "default" | "large" | "xlarge";
+export type ThemeMode = 'system' | 'dark' | 'light';
+export type FontSize = 'small' | 'default' | 'large' | 'xlarge';
 
 export interface AppSettings {
   theme: ThemeMode;
@@ -8,7 +8,7 @@ export interface AppSettings {
   default_model: string | null;
   default_provider: string | null;
   default_workspace: string | null;
-  send_key: "enter" | "cmd-enter";
+  send_key: 'enter' | 'cmd-enter';
   password_enabled: boolean;
   active_profile: string;
 }

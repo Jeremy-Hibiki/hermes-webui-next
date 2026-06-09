@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useCron } from "@/hooks/use-cron";
-import { fetcher } from "@/lib/api-client";
-import { Clock, Plus, Trash2, Play, Pause, X, History, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import useSWR from "swr";
-import type { CronRun } from "@/types";
+import { useState, useEffect, useCallback } from 'react';
+import { useCron } from '@/hooks/use-cron';
+import { fetcher } from '@/lib/api-client';
+import { Clock, Plus, Trash2, Play, Pause, X, History, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import useSWR from 'swr';
+import type { CronRun } from '@/types';
 
 export function CronPanel() {
   const { jobs, loading, fetchJobs, createJob, deleteJob, toggleJob, runJob } = useCron();
@@ -16,15 +16,15 @@ export function CronPanel() {
   const [editJob, setEditJob] = useState<string | null>(null);
   const [historyJob, setHistoryJob] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "",
-    schedule: "",
-    prompt: "",
-    session_id: "",
-    profile: "",
+    name: '',
+    schedule: '',
+    prompt: '',
+    session_id: '',
+    profile: '',
     telegram: false,
     discord: false,
     slack: false,
-    email: "",
+    email: '',
   });
 
   useEffect(() => {
@@ -33,15 +33,15 @@ export function CronPanel() {
 
   const resetForm = useCallback(() => {
     setForm({
-      name: "",
-      schedule: "",
-      prompt: "",
-      session_id: "",
-      profile: "",
+      name: '',
+      schedule: '',
+      prompt: '',
+      session_id: '',
+      profile: '',
       telegram: false,
       discord: false,
       slack: false,
-      email: "",
+      email: '',
     });
     setCreateMode(false);
     setEditJob(null);
@@ -50,7 +50,7 @@ export function CronPanel() {
   const handleSubmit = useCallback(async () => {
     try {
       const emailList = form.email
-        .split(",")
+        .split(',')
         .map((e) => e.trim())
         .filter(Boolean);
       await createJob({
@@ -69,18 +69,18 @@ export function CronPanel() {
       resetForm();
       void fetchJobs();
     } catch (err) {
-      console.error("Failed to create cron job:", err);
+      console.error('Failed to create cron job:', err);
     }
   }, [form, createJob, resetForm, fetchJobs]);
 
   const handleDelete = useCallback(
     async (id: string) => {
-      if (!window.confirm("Delete this cron job?")) return;
+      if (!window.confirm('Delete this cron job?')) return;
       try {
         await deleteJob(id);
         void fetchJobs();
       } catch (err) {
-        console.error("Failed to delete job:", err);
+        console.error('Failed to delete job:', err);
       }
     },
     [deleteJob, fetchJobs],
@@ -97,11 +97,11 @@ export function CronPanel() {
         schedule: job.schedule,
         prompt: job.prompt,
         session_id: job.session_id,
-        profile: job.profile || "",
+        profile: job.profile || '',
         telegram: job.delivery_options?.telegram || false,
         discord: job.delivery_options?.discord || false,
         slack: job.delivery_options?.slack || false,
-        email: job.delivery_options?.email?.join(", ") || "",
+        email: job.delivery_options?.email?.join(', ') || '',
       });
     },
     [jobs],
@@ -150,18 +150,12 @@ export function CronPanel() {
         {createMode && (
           <div className="rounded-lg border border-[var(--accent)] bg-[var(--surface)] p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--text)]">
-                {editJob ? "Edit Job" : "Create Job"}
-              </span>
+              <span className="text-sm font-medium text-[var(--text)]">{editJob ? 'Edit Job' : 'Create Job'}</span>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetForm}>
                 <X className="w-3 h-3" />
               </Button>
             </div>
-            <Field
-              label="Name"
-              value={form.name}
-              onChange={(v) => setForm((f) => ({ ...f, name: v }))}
-            />
+            <Field label="Name" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} />
             <Field
               label="Schedule (cron)"
               value={form.schedule}
@@ -213,12 +207,8 @@ export function CronPanel() {
                 />
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => void handleSubmit()}
-              disabled={!form.name.trim() || !form.schedule.trim()}
-            >
-              {editJob ? "Update" : "Create"}
+            <Button size="sm" onClick={() => void handleSubmit()} disabled={!form.name.trim() || !form.schedule.trim()}>
+              {editJob ? 'Update' : 'Create'}
             </Button>
           </div>
         )}
@@ -258,9 +248,7 @@ function CronJobCard({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-[var(--text)] truncate">{job.name}</span>
             {!job.enabled && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--muted)]/20 text-[var(--muted)]">
-                paused
-              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--muted)]/20 text-[var(--muted)]">paused</span>
             )}
           </div>
           <div className="text-xs text-[var(--muted)]">{job.schedule}</div>
@@ -271,13 +259,7 @@ function CronJobCard({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-[var(--muted)]"
-            onClick={onRun}
-            title="Run now"
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--muted)]" onClick={onRun} title="Run now">
             <Play className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -285,17 +267,11 @@ function CronJobCard({
             size="icon"
             className="h-7 w-7 text-[var(--muted)]"
             onClick={onToggle}
-            title={job.enabled ? "Pause" : "Resume"}
+            title={job.enabled ? 'Pause' : 'Resume'}
           >
             <Pause className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-[var(--muted)]"
-            onClick={onEdit}
-            title="Edit"
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--muted)]" onClick={onEdit} title="Edit">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -307,13 +283,7 @@ function CronJobCard({
           >
             <History className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-[var(--error)]"
-            onClick={onDelete}
-            title="Delete"
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--error)]" onClick={onDelete} title="Delete">
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
@@ -339,22 +309,18 @@ function CronRunHistory({ jobId }: { jobId: string }) {
           <div key={run.id} className="flex items-center gap-2 text-xs">
             <span
               className={cn(
-                "w-1.5 h-1.5 rounded-full shrink-0",
-                run.status === "completed" && "bg-green-500",
-                run.status === "running" && "bg-blue-400 animate-pulse",
-                run.status === "failed" && "bg-[var(--error)]",
-                run.status === "pending" && "bg-[var(--muted)]",
+                'w-1.5 h-1.5 rounded-full shrink-0',
+                run.status === 'completed' && 'bg-green-500',
+                run.status === 'running' && 'bg-blue-400 animate-pulse',
+                run.status === 'failed' && 'bg-[var(--error)]',
+                run.status === 'pending' && 'bg-[var(--muted)]',
               )}
             />
             <span className="text-[var(--text)]">{new Date(run.started_at).toLocaleString()}</span>
             <span className="text-[var(--muted)] capitalize">{run.status}</span>
             {run.completed_at && (
               <span className="text-[var(--muted)]">
-                (
-                {Math.round(
-                  (new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) /
-                    1000,
-                )}
+                ({Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)}
                 s)
               </span>
             )}
@@ -400,12 +366,9 @@ function ToggleOption({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
-  const id = `toggle-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  const id = `toggle-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
-    <label
-      htmlFor={id}
-      className="flex items-center gap-2 text-xs text-[var(--text)] cursor-pointer"
-    >
+    <label htmlFor={id} className="flex items-center gap-2 text-xs text-[var(--text)] cursor-pointer">
       <input
         id={id}
         type="checkbox"

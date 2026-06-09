@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import { User, Plus, Trash2, Check, Wifi, WifiOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useAtom } from "jotai";
-import { activeProfileAtom, defaultModelAtom } from "@/atoms/settings";
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import { User, Plus, Trash2, Check, Wifi, WifiOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useAtom } from 'jotai';
+import { activeProfileAtom, defaultModelAtom } from '@/atoms/settings';
 
 interface ProfileEntry {
   name: string;
@@ -39,10 +39,10 @@ interface ModelsResponse {
 }
 
 export function ProfilePanel() {
-  const { data, mutate: mutateProfiles } = useSWR<ProfilesResponse>("/profiles", fetcher, {
+  const { data, mutate: mutateProfiles } = useSWR<ProfilesResponse>('/profiles', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: modelsData } = useSWR<ModelsResponse>("/models", fetcher, {
+  const { data: modelsData } = useSWR<ModelsResponse>('/models', fetcher, {
     revalidateOnFocus: false,
   });
   const [, setActiveProfile] = useAtom(activeProfileAtom);
@@ -51,16 +51,16 @@ export function ProfilePanel() {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState(false);
   const [createDraft, setCreateDraft] = useState({
-    name: "",
+    name: '',
     clone: false,
-    model: "",
-    provider: "",
-    base_url: "",
-    api_key: "",
+    model: '',
+    provider: '',
+    base_url: '',
+    api_key: '',
   });
 
   const profiles = data?.profiles ?? [];
-  const active = data?.active ?? "default";
+  const active = data?.active ?? 'default';
   const selected = profiles.find((p) => p.name === selectedProfile);
 
   const handleSwitch = useCallback(
@@ -71,12 +71,12 @@ export function ProfilePanel() {
           default_model?: string;
           default_model_provider?: string;
           default_workspace?: string;
-        }>("/profile/switch", { name });
+        }>('/profile/switch', { name });
         setActiveProfile(res.active);
         if (res.default_model) setDefaultModel(res.default_model);
         void mutateProfiles();
       } catch (err) {
-        console.error("Failed to switch profile:", err);
+        console.error('Failed to switch profile:', err);
       }
     },
     [mutateProfiles, setActiveProfile, setDefaultModel],
@@ -84,7 +84,7 @@ export function ProfilePanel() {
 
   const handleCreate = useCallback(async () => {
     try {
-      await apiPost("/profile/create", {
+      await apiPost('/profile/create', {
         name: createDraft.name,
         clone_config: createDraft.clone ? active : undefined,
         default_model: createDraft.model || undefined,
@@ -94,16 +94,16 @@ export function ProfilePanel() {
       });
       setCreateMode(false);
       setCreateDraft({
-        name: "",
+        name: '',
         clone: false,
-        model: "",
-        provider: "",
-        base_url: "",
-        api_key: "",
+        model: '',
+        provider: '',
+        base_url: '',
+        api_key: '',
       });
       void mutateProfiles();
     } catch (err) {
-      console.error("Failed to create profile:", err);
+      console.error('Failed to create profile:', err);
     }
   }, [createDraft, active, mutateProfiles]);
 
@@ -111,11 +111,11 @@ export function ProfilePanel() {
     async (name: string) => {
       if (!window.confirm(`Delete profile "${name}"?`)) return;
       try {
-        await apiPost("/profile/delete", { name });
+        await apiPost('/profile/delete', { name });
         if (selectedProfile === name) setSelectedProfile(null);
         void mutateProfiles();
       } catch (err) {
-        console.error("Failed to delete profile:", err);
+        console.error('Failed to delete profile:', err);
       }
     },
     [mutateProfiles, selectedProfile],
@@ -149,9 +149,7 @@ export function ProfilePanel() {
           {/* Info card */}
           <div className="px-3 py-2 mb-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--muted)]">
             <strong className="text-[var(--text)]">Profiles vs workspaces</strong>
-            <p className="mt-1">
-              Profiles configure AI model/provider. Workspaces configure file access.
-            </p>
+            <p className="mt-1">Profiles configure AI model/provider. Workspaces configure file access.</p>
           </div>
 
           {profiles.map((p) => (
@@ -162,10 +160,10 @@ export function ProfilePanel() {
                 setCreateMode(false);
               }}
               className={cn(
-                "w-full text-left px-3 py-2 rounded-lg border border-[var(--border)] transition-colors",
+                'w-full text-left px-3 py-2 rounded-lg border border-[var(--border)] transition-colors',
                 selectedProfile === p.name
-                  ? "bg-[var(--accent-bg)] border-[var(--accent)]"
-                  : "bg-[var(--surface)] hover:bg-[var(--hover-bg)]",
+                  ? 'bg-[var(--accent-bg)] border-[var(--accent)]'
+                  : 'bg-[var(--surface)] hover:bg-[var(--hover-bg)]',
               )}
             >
               <div className="flex items-center gap-2">
@@ -174,13 +172,9 @@ export function ProfilePanel() {
                 ) : (
                   <WifiOff className="w-3 h-3 text-[var(--muted)] shrink-0" />
                 )}
-                <span className="text-sm font-medium text-[var(--text)] truncate flex-1">
-                  {p.name}
-                </span>
+                <span className="text-sm font-medium text-[var(--text)] truncate flex-1">{p.name}</span>
                 {p.name === active && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
-                    active
-                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">active</span>
                 )}
                 {p.is_default && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent)]">
@@ -189,9 +183,8 @@ export function ProfilePanel() {
                 )}
               </div>
               <div className="text-xs text-[var(--muted)] mt-1 truncate">
-                {p.model || "No model"} &middot; {p.provider || "No provider"}
-                {p.total_skills !== undefined &&
-                  ` &middot; ${p.enabled_skills}/${p.total_skills} skills`}
+                {p.model || 'No model'} &middot; {p.provider || 'No provider'}
+                {p.total_skills !== undefined && ` &middot; ${p.enabled_skills}/${p.total_skills} skills`}
               </div>
             </button>
           ))}
@@ -213,7 +206,7 @@ export function ProfilePanel() {
                   onChange={(e) =>
                     setCreateDraft((d) => ({
                       ...d,
-                      name: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                      name: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
                     }))
                   }
                   className="w-full mt-1 px-2 py-1 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
@@ -221,10 +214,7 @@ export function ProfilePanel() {
                   aria-label="Profile name"
                 />
               </div>
-              <label
-                htmlFor="clone-profile"
-                className="flex items-center gap-2 text-sm text-[var(--text)]"
-              >
+              <label htmlFor="clone-profile" className="flex items-center gap-2 text-sm text-[var(--text)]">
                 <input
                   type="checkbox"
                   aria-label="Clone from active profile"
@@ -237,10 +227,7 @@ export function ProfilePanel() {
               {!createDraft.clone && (
                 <>
                   <div>
-                    <label
-                      htmlFor="profile-model"
-                      className="text-xs font-medium text-[var(--muted)]"
-                    >
+                    <label htmlFor="profile-model" className="text-xs font-medium text-[var(--muted)]">
                       Model
                     </label>
                     <select
@@ -259,10 +246,7 @@ export function ProfilePanel() {
                     </select>
                   </div>
                   <div>
-                    <label
-                      htmlFor="profile-provider"
-                      className="text-xs font-medium text-[var(--muted)]"
-                    >
+                    <label htmlFor="profile-provider" className="text-xs font-medium text-[var(--muted)]">
                       Provider
                     </label>
                     <input
@@ -276,10 +260,7 @@ export function ProfilePanel() {
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="profile-base-url"
-                      className="text-xs font-medium text-[var(--muted)]"
-                    >
+                    <label htmlFor="profile-base-url" className="text-xs font-medium text-[var(--muted)]">
                       Base URL (optional)
                     </label>
                     <input
@@ -293,10 +274,7 @@ export function ProfilePanel() {
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="profile-api-key"
-                      className="text-xs font-medium text-[var(--muted)]"
-                    >
+                    <label htmlFor="profile-api-key" className="text-xs font-medium text-[var(--muted)]">
                       API Key (optional)
                     </label>
                     <input
@@ -311,11 +289,7 @@ export function ProfilePanel() {
                 </>
               )}
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => void handleCreate()}
-                  disabled={!createDraft.name.trim()}
-                >
+                <Button size="sm" onClick={() => void handleCreate()} disabled={!createDraft.name.trim()}>
                   Create
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setCreateMode(false)}>
@@ -366,9 +340,9 @@ export function ProfilePanel() {
                     </span>
                   )}
                 </Row>
-                <Row label="Model">{selected.model || "—"}</Row>
-                <Row label="Provider">{selected.provider || "—"}</Row>
-                <Row label="Base URL">{selected.base_url || "—"}</Row>
+                <Row label="Model">{selected.model || '—'}</Row>
+                <Row label="Provider">{selected.provider || '—'}</Row>
+                <Row label="Base URL">{selected.base_url || '—'}</Row>
                 <Row label="API Key">
                   {selected.has_env ? (
                     <span className="text-green-400">Configured</span>
@@ -377,11 +351,9 @@ export function ProfilePanel() {
                   )}
                 </Row>
                 <Row label="Skills">
-                  {selected.total_skills !== undefined
-                    ? `${selected.enabled_skills}/${selected.total_skills}`
-                    : "—"}
+                  {selected.total_skills !== undefined ? `${selected.enabled_skills}/${selected.total_skills}` : '—'}
                 </Row>
-                <Row label="Default Workspace">{selected.default_workspace || "—"}</Row>
+                <Row label="Default Workspace">{selected.default_workspace || '—'}</Row>
                 {selected.is_default && (
                   <Row label="Default">
                     <span className="text-[var(--accent)]">Yes</span>

@@ -1,16 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  Settings,
-  Clock,
-  Zap,
-  Brain,
-  ListTodo,
-  BarChart3,
-  LayoutGrid,
-  FileText,
-} from "lucide-react";
+import { useState } from 'react';
+import { Settings, Clock, Zap, Brain, ListTodo, BarChart3, LayoutGrid, FileText } from 'lucide-react';
 
 interface PanelItem {
   key: string;
@@ -19,14 +10,14 @@ interface PanelItem {
 }
 
 const PANELS: PanelItem[] = [
-  { key: "cron", label: "Cron", icon: <Clock className="w-4 h-4" /> },
-  { key: "skills", label: "Skills", icon: <Zap className="w-4 h-4" /> },
-  { key: "memory", label: "Memory", icon: <Brain className="w-4 h-4" /> },
-  { key: "todo", label: "Todo", icon: <ListTodo className="w-4 h-4" /> },
-  { key: "insights", label: "Insights", icon: <BarChart3 className="w-4 h-4" /> },
-  { key: "kanban", label: "Kanban", icon: <LayoutGrid className="w-4 h-4" /> },
-  { key: "logs", label: "Logs", icon: <FileText className="w-4 h-4" /> },
-  { key: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
+  { key: 'cron', label: 'Cron', icon: <Clock className="w-4 h-4" /> },
+  { key: 'skills', label: 'Skills', icon: <Zap className="w-4 h-4" /> },
+  { key: 'memory', label: 'Memory', icon: <Brain className="w-4 h-4" /> },
+  { key: 'todo', label: 'Todo', icon: <ListTodo className="w-4 h-4" /> },
+  { key: 'insights', label: 'Insights', icon: <BarChart3 className="w-4 h-4" /> },
+  { key: 'kanban', label: 'Kanban', icon: <LayoutGrid className="w-4 h-4" /> },
+  { key: 'logs', label: 'Logs', icon: <FileText className="w-4 h-4" /> },
+  { key: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
 ];
 
 export function ControlCenter() {

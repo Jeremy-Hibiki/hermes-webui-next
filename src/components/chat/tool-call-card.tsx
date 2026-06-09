@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { ChevronRight, CheckCircle, XCircle, Loader2, AlertCircle } from "lucide-react";
-import type { ToolCall } from "@/types";
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronRight, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import type { ToolCall } from '@/types';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   completed: <CheckCircle className="w-3.5 h-3.5 text-[var(--success)]" />,
@@ -27,7 +27,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
         aria-label="Expand tool call"
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--hover-bg)] transition-colors"
       >
-        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", expanded && "rotate-90")} />
+        <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', expanded && 'rotate-90')} />
         <span className="font-medium text-[var(--text)]">{toolCall.name}</span>
         <span className="ml-auto text-xs text-[var(--muted)]">{toolCall.status}</span>
         {STATUS_ICONS[toolCall.status]}
@@ -39,7 +39,11 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
             <span className="text-[var(--muted)]">Arguments:</span>
             <pre className="mt-1 p-2 rounded bg-[var(--code-bg)] overflow-x-auto text-[var(--code-text)]">
               {(() => {
-                try { return JSON.stringify(JSON.parse(toolCall.arguments), null, 2); } catch { return toolCall.arguments; }
+                try {
+                  return JSON.stringify(JSON.parse(toolCall.arguments), null, 2);
+                } catch {
+                  return toolCall.arguments;
+                }
               })()}
             </pre>
           </div>

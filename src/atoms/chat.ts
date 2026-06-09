@@ -1,5 +1,5 @@
-import { atom } from "jotai";
-import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from "@/types";
+import { atom } from 'jotai';
+import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 
 export const messagesAtom = atom<Message[]>([]);
 export const busyAtom = atom<boolean>(false);

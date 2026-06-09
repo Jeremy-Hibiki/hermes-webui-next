@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
+import { renderHook, act } from '@testing-library/react';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -24,41 +24,43 @@ class MockES {
   }
 
   removeEventListener = vi.fn();
-  close = vi.fn(() => { this.readyState = 2; });
+  close = vi.fn(() => {
+    this.readyState = 2;
+  });
 }
 
-describe("useChatStream", () => {
+describe('useChatStream', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     MockES.last = null;
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ stream_id: "st1", session_id: "s1" }),
+      json: () => Promise.resolve({ stream_id: 'st1', session_id: 's1' }),
     });
   });
 
-  it("send() calls POST /api/chat/start", async () => {
+  it('send() calls POST /api/chat/start', async () => {
     const OrigES = globalThis.EventSource;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).EventSource = MockES;
 
-    const { useChatStream } = await import("@/hooks/use-chat-stream");
-    const { result } = renderHook(() => useChatStream("s1"));
+    const { useChatStream } = await import('@/hooks/use-chat-stream');
+    const { result } = renderHook(() => useChatStream('s1'));
 
     await act(async () => {
-      await result.current.send("Hello");
+      await result.current.send('Hello');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/chat/start",
+      '/api/chat/start',
       expect.objectContaining({
-        method: "POST",
-        body: expect.stringContaining("Hello"),
-      })
+        method: 'POST',
+        body: expect.stringContaining('Hello'),
+      }),
     );
 
     expect(MockES.last).toBeTruthy();
-    expect(MockES.last!.url).toContain("/api/chat/stream");
+    expect(MockES.last!.url).toContain('/api/chat/stream');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).EventSource = OrigES;

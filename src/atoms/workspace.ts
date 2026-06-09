@@ -1,5 +1,5 @@
-import { atom } from "jotai";
-import type { FileEntry } from "@/types";
+import { atom } from 'jotai';
+import type { FileEntry } from '@/types';
 
 export const fileTreeAtom = atom<FileEntry[]>([]);
 export const expandedDirsAtom = atom<Set<string>>(new Set<string>());

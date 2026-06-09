@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import type { Session } from "@/types";
-import { Pencil, Pin, PinOff, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+} from '@/components/ui/context-menu';
+import type { Session } from '@/types';
+import { Pencil, Pin, PinOff, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 
 interface SessionContextMenuProps {
   session: Session;
@@ -29,7 +29,7 @@ export function SessionContextMenu({
   children,
 }: SessionContextMenuProps) {
   const handleDelete = () => {
-    if (window.confirm(`Delete "${session.title || "New Chat"}"?`)) {
+    if (window.confirm(`Delete "${session.title || 'New Chat'}"?`)) {
       onDelete(session.id);
     }
   };

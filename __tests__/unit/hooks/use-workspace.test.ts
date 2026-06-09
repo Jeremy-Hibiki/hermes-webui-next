@@ -1,19 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { useWorkspace } from "@/hooks/use-workspace";
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { useWorkspace } from '@/hooks/use-workspace';
 
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
-describe("useWorkspace", () => {
+describe('useWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("fetches file tree for a directory", async () => {
+  it('fetches file tree for a directory', async () => {
     const files = [
-      { name: "src", type: "dir", path: "src" },
-      { name: "index.ts", type: "file", path: "src/index.ts", size: 120 },
+      { name: 'src', type: 'dir', path: 'src' },
+      { name: 'index.ts', type: 'file', path: 'src/index.ts', size: 120 },
     ];
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -23,22 +23,22 @@ describe("useWorkspace", () => {
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
-      await result.current.fetchTree("src");
+      await result.current.fetchTree('src');
     });
 
     await waitFor(() => {
       expect(result.current.fileTree).toHaveLength(2);
-      expect(result.current.fileTree[0].name).toBe("src");
+      expect(result.current.fileTree[0].name).toBe('src');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/list?path=src",
-      expect.objectContaining({ headers: expect.any(Object) })
+      '/api/list?path=src',
+      expect.objectContaining({ headers: expect.any(Object) }),
     );
   });
 
-  it("fetches file content", async () => {
-    const content = { path: "src/index.ts", content: "console.log('hi')" };
+  it('fetches file content', async () => {
+    const content = { path: 'src/index.ts', content: "console.log('hi')" };
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(content),
@@ -47,7 +47,7 @@ describe("useWorkspace", () => {
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
-      await result.current.fetchFile("src/index.ts");
+      await result.current.fetchFile('src/index.ts');
     });
 
     await waitFor(() => {
@@ -55,7 +55,7 @@ describe("useWorkspace", () => {
     });
   });
 
-  it("saves a file via POST", async () => {
+  it('saves a file via POST', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ ok: true }),
@@ -64,19 +64,19 @@ describe("useWorkspace", () => {
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
-      await result.current.saveFile("src/index.ts", "new content");
+      await result.current.saveFile('src/index.ts', 'new content');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/file/save",
+      '/api/file/save',
       expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ path: "src/index.ts", content: "new content" }),
-      })
+        method: 'POST',
+        body: JSON.stringify({ path: 'src/index.ts', content: 'new content' }),
+      }),
     );
   });
 
-  it("creates a new file", async () => {
+  it('creates a new file', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ ok: true }),
@@ -85,19 +85,19 @@ describe("useWorkspace", () => {
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
-      await result.current.createFile("src/new.ts", "file");
+      await result.current.createFile('src/new.ts', 'file');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/file/create",
+      '/api/file/create',
       expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ path: "src/new.ts", type: "file" }),
-      })
+        method: 'POST',
+        body: JSON.stringify({ path: 'src/new.ts', type: 'file' }),
+      }),
     );
   });
 
-  it("deletes a file", async () => {
+  it('deletes a file', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ ok: true }),
@@ -106,30 +106,30 @@ describe("useWorkspace", () => {
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
-      await result.current.deleteFile("src/old.ts");
+      await result.current.deleteFile('src/old.ts');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/file/delete",
+      '/api/file/delete',
       expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ path: "src/old.ts" }),
-      })
+        method: 'POST',
+        body: JSON.stringify({ path: 'src/old.ts' }),
+      }),
     );
   });
 
-  it("handles fetch errors gracefully", async () => {
+  it('handles fetch errors gracefully', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
-      statusText: "Internal Server Error",
+      statusText: 'Internal Server Error',
     });
 
     const { result } = renderHook(() => useWorkspace());
 
     await act(async () => {
       try {
-        await result.current.fetchTree("/bad");
+        await result.current.fetchTree('/bad');
       } catch {
         // expected
       }

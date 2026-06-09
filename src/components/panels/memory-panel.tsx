@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
-import { Brain, Pencil, Save, X, StickyNote, User, Sparkles, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import { MarkdownRenderer } from '@/components/chat/markdown-renderer';
+import { Brain, Pencil, Save, X, StickyNote, User, Sparkles, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface MemoryData {
   memory?: string;
@@ -19,30 +19,26 @@ interface MemoryData {
 }
 
 const SECTIONS = [
-  { key: "memory", label: "My Notes", icon: StickyNote },
-  { key: "user", label: "User Profile", icon: User },
-  { key: "soul", label: "Agent Soul", icon: Sparkles },
-  { key: "external_notes", label: "External Notes", icon: BookOpen },
+  { key: 'memory', label: 'My Notes', icon: StickyNote },
+  { key: 'user', label: 'User Profile', icon: User },
+  { key: 'soul', label: 'Agent Soul', icon: Sparkles },
+  { key: 'external_notes', label: 'External Notes', icon: BookOpen },
 ] as const;
 
-type SectionKey = (typeof SECTIONS)[number]["key"];
+type SectionKey = (typeof SECTIONS)[number]['key'];
 
 export function MemoryPanel() {
   const [activeSection, setActiveSection] = useState<SectionKey | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [editDraft, setEditDraft] = useState("");
+  const [editDraft, setEditDraft] = useState('');
 
-  const { data, mutate } = useSWR<MemoryData>("/memory", fetcher, { revalidateOnFocus: false });
+  const { data, mutate } = useSWR<MemoryData>('/memory', fetcher, { revalidateOnFocus: false });
 
   const sectionContent =
-    activeSection && data
-      ? ((data as Record<string, string | undefined>)[activeSection] ?? "")
-      : "";
+    activeSection && data ? ((data as Record<string, string | undefined>)[activeSection] ?? '') : '';
 
   const sectionMtime =
-    activeSection && data
-      ? (data as Record<string, string | undefined>)[`${activeSection}_mtime`]
-      : undefined;
+    activeSection && data ? (data as Record<string, string | undefined>)[`${activeSection}_mtime`] : undefined;
 
   const handleSelect = useCallback((key: SectionKey) => {
     setActiveSection(key);
@@ -57,11 +53,11 @@ export function MemoryPanel() {
   const handleSave = useCallback(async () => {
     if (!activeSection) return;
     try {
-      await apiPost("/memory/write", { section: activeSection, content: editDraft });
+      await apiPost('/memory/write', { section: activeSection, content: editDraft });
       setEditMode(false);
       void mutate();
     } catch (err) {
-      console.error("Failed to save memory:", err);
+      console.error('Failed to save memory:', err);
     }
   }, [activeSection, editDraft, mutate]);
 
@@ -87,17 +83,17 @@ export function MemoryPanel() {
         {/* Section list */}
         <div className="w-48 border-r border-[var(--border)] p-2 space-y-1">
           {SECTIONS.map((s) => {
-            if (s.key === "external_notes" && !data?.external_notes_enabled) return null;
+            if (s.key === 'external_notes' && !data?.external_notes_enabled) return null;
             const Icon = s.icon;
             return (
               <button
                 key={s.key}
                 onClick={() => handleSelect(s.key)}
                 className={cn(
-                  "w-full text-left flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors",
+                  'w-full text-left flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors',
                   activeSection === s.key
-                    ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                    : "text-[var(--text)] hover:bg-[var(--hover-bg)]",
+                    ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                    : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
                 )}
               >
                 <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
@@ -117,12 +113,10 @@ export function MemoryPanel() {
                     {SECTIONS.find((s) => s.key === activeSection)?.label}
                   </span>
                   {sectionMtime && (
-                    <span className="text-xs text-[var(--muted)] ml-2">
-                      Modified {formatMtime(sectionMtime)}
-                    </span>
+                    <span className="text-xs text-[var(--muted)] ml-2">Modified {formatMtime(sectionMtime)}</span>
                   )}
                 </div>
-                {activeSection !== "external_notes" && (
+                {activeSection !== 'external_notes' && (
                   <div className="flex items-center gap-1">
                     {editMode ? (
                       <>
@@ -144,12 +138,7 @@ export function MemoryPanel() {
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-[var(--muted)]"
-                        onClick={startEdit}
-                      >
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--muted)]" onClick={startEdit}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                     )}
@@ -166,7 +155,7 @@ export function MemoryPanel() {
                     aria-label="Edit memory"
                   />
                 ) : (
-                  <MarkdownRenderer content={sectionContent || "*(empty)*"} />
+                  <MarkdownRenderer content={sectionContent || '*(empty)*'} />
                 )}
               </div>
             </>

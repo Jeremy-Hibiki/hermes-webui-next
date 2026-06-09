@@ -1,15 +1,15 @@
-import type { Session } from "@/types";
+import type { Session } from '@/types';
 
 export interface DateBucket {
   label: string;
   sessions: Session[];
 }
 
-const BUCKET_ORDER = ["Today", "Yesterday", "This week", "Last week", "Older"] as const;
+const BUCKET_ORDER = ['Today', 'Yesterday', 'This week', 'Last week', 'Older'] as const;
 type BucketLabel = (typeof BUCKET_ORDER)[number];
 
 function sessionTimestampMs(session: Session): number {
-  const raw = session.last_message_at || session.updated_at || session.created_at || "";
+  const raw = session.last_message_at || session.updated_at || session.created_at || '';
   const ms = new Date(raw).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }
@@ -26,20 +26,16 @@ export function getDateBucketBoundaries(nowMs: number = Date.now()) {
 }
 
 export function getDateBucketLabel(timestampMs: number, nowMs: number = Date.now()): BucketLabel {
-  const { startOfToday, startOfYesterday, startOfWeek, startOfLastWeek } =
-    getDateBucketBoundaries(nowMs);
+  const { startOfToday, startOfYesterday, startOfWeek, startOfLastWeek } = getDateBucketBoundaries(nowMs);
 
-  if (timestampMs >= startOfToday.getTime()) return "Today";
-  if (timestampMs >= startOfYesterday.getTime()) return "Yesterday";
-  if (timestampMs >= startOfWeek.getTime()) return "This week";
-  if (timestampMs >= startOfLastWeek.getTime()) return "Last week";
-  return "Older";
+  if (timestampMs >= startOfToday.getTime()) return 'Today';
+  if (timestampMs >= startOfYesterday.getTime()) return 'Yesterday';
+  if (timestampMs >= startOfWeek.getTime()) return 'This week';
+  if (timestampMs >= startOfLastWeek.getTime()) return 'Last week';
+  return 'Older';
 }
 
-export function bucketSessionsByDate(
-  sessions: Session[],
-  nowMs: number = Date.now(),
-): DateBucket[] {
+export function bucketSessionsByDate(sessions: Session[], nowMs: number = Date.now()): DateBucket[] {
   const eligible = sessions.filter((s) => !s.pinned && !s.archived);
 
   const buckets = new Map<BucketLabel, Session[]>();

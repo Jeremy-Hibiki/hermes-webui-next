@@ -1,14 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useAtom } from "jotai";
-import { themeAtom, skinAtom, fontSizeAtom } from "@/atoms/settings";
-import type { FontSize, ThemeMode } from "@/types";
-import {
-  applyThemeToDocument,
-  loadThemeFromStorage,
-  saveThemeToStorage,
-} from "@/lib/theme";
+import { useEffect } from 'react';
+import { useAtom } from 'jotai';
+import { themeAtom, skinAtom, fontSizeAtom } from '@/atoms/settings';
+import type { FontSize, ThemeMode } from '@/types';
+import { applyThemeToDocument, loadThemeFromStorage, saveThemeToStorage } from '@/lib/theme';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useAtom(themeAtom);

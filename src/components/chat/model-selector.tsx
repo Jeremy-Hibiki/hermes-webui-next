@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
-import { useAtom } from "jotai";
-import { defaultModelAtom } from "@/atoms/settings";
-import { ChevronDown, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useMemo } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
+import { useAtom } from 'jotai';
+import { defaultModelAtom } from '@/atoms/settings';
+import { ChevronDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ModelEntry {
   id: string;
@@ -21,8 +21,8 @@ interface ModelsResponse {
 export function ModelSelector() {
   const [model, setModel] = useAtom(defaultModelAtom);
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const { data } = useSWR<ModelsResponse>("/models", fetcher, {
+  const [search, setSearch] = useState('');
+  const { data } = useSWR<ModelsResponse>('/models', fetcher, {
     revalidateOnFocus: false,
   });
 
@@ -31,7 +31,7 @@ export function ModelSelector() {
   const grouped = useMemo(() => {
     const map: Record<string, ModelEntry[]> = {};
     for (const m of models) {
-      const provider = m.provider || "Other";
+      const provider = m.provider || 'Other';
       if (!map[provider]) map[provider] = [];
       map[provider].push(m);
     }
@@ -46,16 +46,14 @@ export function ModelSelector() {
         provider,
         entries.filter(
           (e) =>
-            e.name.toLowerCase().includes(q) ||
-            e.id.toLowerCase().includes(q) ||
-            provider.toLowerCase().includes(q),
+            e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q) || provider.toLowerCase().includes(q),
         ),
       ])
       .filter(([, entries]) => (entries as ModelEntry[]).length > 0) as [string, ModelEntry[]][];
   }, [grouped, search]);
 
   const selectedName = useMemo(() => {
-    if (!model) return "Model";
+    if (!model) return 'Model';
     const found = models.find((m) => m.id === model);
     return found?.name || model;
   }, [model, models]);
@@ -67,7 +65,7 @@ export function ModelSelector() {
         className="flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
       >
         <span className="truncate max-w-24">{selectedName}</span>
-        <ChevronDown className={cn("w-3 h-3 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
@@ -85,23 +83,21 @@ export function ModelSelector() {
           <div className="overflow-y-auto flex-1 p-1">
             {filtered.map(([provider, entries]) => (
               <div key={provider}>
-                <div className="px-2 py-1 text-[10px] font-medium text-[var(--muted)] uppercase">
-                  {provider}
-                </div>
+                <div className="px-2 py-1 text-[10px] font-medium text-[var(--muted)] uppercase">{provider}</div>
                 {entries.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => {
                       setModel(m.id);
                       setOpen(false);
-                      setSearch("");
+                      setSearch('');
                       try {
-                        localStorage.setItem("hermes-default-model", m.id);
+                        localStorage.setItem('hermes-default-model', m.id);
                       } catch {}
                     }}
                     className={cn(
-                      "w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors",
-                      model === m.id && "text-[var(--accent)]",
+                      'w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors',
+                      model === m.id && 'text-[var(--accent)]',
                     )}
                   >
                     <span className="truncate flex-1">{m.name}</span>
@@ -111,9 +107,7 @@ export function ModelSelector() {
               </div>
             ))}
             {filtered.length === 0 && (
-              <div className="px-2 py-3 text-xs text-[var(--muted)] text-center">
-                No models found
-              </div>
+              <div className="px-2 py-3 text-xs text-[var(--muted)] text-center">No models found</div>
             )}
           </div>
         </div>

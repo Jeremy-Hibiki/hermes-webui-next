@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useAtomValue } from "jotai";
-import { messagesAtom } from "@/atoms/chat";
-import { FileText } from "lucide-react";
-import type { ToolCall } from "@/types/message";
+import { useMemo } from 'react';
+import { useAtomValue } from 'jotai';
+import { messagesAtom } from '@/atoms/chat';
+import { FileText } from 'lucide-react';
+import type { ToolCall } from '@/types/message';
 
 const ARTIFACT_TOOLS = new Set([
-  "write_file",
-  "patch",
-  "edit_file",
-  "create_file",
-  "mcp__filesystem__write_file",
-  "mcp__filesystem__edit_file",
+  'write_file',
+  'patch',
+  'edit_file',
+  'create_file',
+  'mcp__filesystem__write_file',
+  'mcp__filesystem__edit_file',
 ]);
 
-const SKIP_DIRS = new Set([".git", "node_modules", "dist", "__pycache__", ".venv", "build"]);
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', '__pycache__', '.venv', 'build']);
 
 function normalizePath(p: string): string | null {
-  let path = p.trim().replace(/^[`"']+|[`"']+$/g, "");
-  if (path.startsWith("~/")) path = path.slice(2);
-  if (path.startsWith("./")) path = path.slice(2);
+  let path = p.trim().replace(/^[`"']+|[`"']+$/g, '');
+  if (path.startsWith('~/')) path = path.slice(2);
+  if (path.startsWith('./')) path = path.slice(2);
   if (path.length > 240) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return null;
-  const firstSeg = path.split("/")[0];
+  if (path.startsWith('http://') || path.startsWith('https://')) return null;
+  const firstSeg = path.split('/')[0];
   if (SKIP_DIRS.has(firstSeg)) return null;
-  if (!path.includes(".") && !path.includes("/")) return null;
+  if (!path.includes('.') && !path.includes('/')) return null;
   return path || null;
 }
 
@@ -33,17 +33,17 @@ function extractPathFromArgs(name: string, argsStr: string): string[] {
   const paths: string[] = [];
   try {
     const args = JSON.parse(argsStr);
-    for (const key of ["path", "file_path", "source", "destination"]) {
-      if (typeof args[key] === "string") paths.push(args[key]);
+    for (const key of ['path', 'file_path', 'source', 'destination']) {
+      if (typeof args[key] === 'string') paths.push(args[key]);
     }
     if (Array.isArray(args.paths)) {
       for (const p of args.paths) {
-        if (typeof p === "string") paths.push(p);
+        if (typeof p === 'string') paths.push(p);
       }
     }
     if (Array.isArray(args.edits)) {
       for (const edit of args.edits) {
-        if (typeof edit.path === "string") paths.push(edit.path);
+        if (typeof edit.path === 'string') paths.push(edit.path);
       }
     }
   } catch {
@@ -57,7 +57,7 @@ function extractDiffPaths(content: string): string[] {
   const diffRegex = /^\+\+\+\s+b?\//gm;
   let match: RegExpExecArray | null;
   while ((match = diffRegex.exec(content)) !== null) {
-    const raw = match[0].replace(/^\++\s+b?/, "").trim();
+    const raw = match[0].replace(/^\++\s+b?/, '').trim();
     if (raw) paths.push(raw);
   }
   return paths;
@@ -93,7 +93,7 @@ export function useArtifacts() {
           const p = normalizePath(raw);
           if (p && !seen.has(p)) {
             seen.add(p);
-            artifacts.push({ path: p, source: "diff" });
+            artifacts.push({ path: p, source: 'diff' });
           }
         }
       }
@@ -111,11 +111,7 @@ export function ArtifactList({ onOpenFile }: ArtifactListProps) {
   const artifacts = useArtifacts();
 
   if (artifacts.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-xs text-[var(--muted)]">
-        No artifacts yet
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center text-xs text-[var(--muted)]">No artifacts yet</div>;
   }
 
   return (

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Save } from "lucide-react";
+import { useState } from 'react';
+import { Save } from 'lucide-react';
 
 interface FileEditorProps {
   path: string;

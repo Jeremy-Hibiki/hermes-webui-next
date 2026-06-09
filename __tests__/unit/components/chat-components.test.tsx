@@ -1,61 +1,49 @@
-import { describe, it, expect, vi } from "vite-plus/test";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MessageBubble } from "@/components/chat/message-bubble";
-import { ToolCallCard } from "@/components/chat/tool-call-card";
-import { ThinkingCard } from "@/components/chat/thinking-card";
-import { ApprovalCard } from "@/components/chat/approval-card";
-import type { Message, ToolCall, ApprovalRequest } from "@/types";
+import { describe, it, expect, vi } from 'vite-plus/test';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MessageBubble } from '@/components/chat/message-bubble';
+import { ToolCallCard } from '@/components/chat/tool-call-card';
+import { ThinkingCard } from '@/components/chat/thinking-card';
+import { ApprovalCard } from '@/components/chat/approval-card';
+import type { Message, ToolCall, ApprovalRequest } from '@/types';
 
-describe("MessageBubble", () => {
-  it("renders user message", () => {
-    render(
-      <MessageBubble
-        message={{ id: "m1", role: "user", content: "Hello", timestamp: "" } as Message}
-      />,
-    );
-    expect(screen.getByText("Hello")).toBeDefined();
-    expect(screen.getByText("user")).toBeDefined();
+describe('MessageBubble', () => {
+  it('renders user message', () => {
+    render(<MessageBubble message={{ id: 'm1', role: 'user', content: 'Hello', timestamp: '' } as Message} />);
+    expect(screen.getByText('Hello')).toBeDefined();
+    expect(screen.getByText('user')).toBeDefined();
   });
 
-  it("renders assistant message", () => {
-    render(
-      <MessageBubble
-        message={{ id: "m2", role: "assistant", content: "Hi there", timestamp: "" } as Message}
-      />,
-    );
-    expect(screen.getByText("Hi there")).toBeDefined();
+  it('renders assistant message', () => {
+    render(<MessageBubble message={{ id: 'm2', role: 'assistant', content: 'Hi there', timestamp: '' } as Message} />);
+    expect(screen.getByText('Hi there')).toBeDefined();
   });
 
-  it("shows copy button for assistant messages", () => {
-    render(
-      <MessageBubble
-        message={{ id: "m3", role: "assistant", content: "Copy me", timestamp: "" } as Message}
-      />,
-    );
+  it('shows copy button for assistant messages', () => {
+    render(<MessageBubble message={{ id: 'm3', role: 'assistant', content: 'Copy me', timestamp: '' } as Message} />);
     expect(screen.getByLabelText(/copy/i)).toBeDefined();
   });
 });
 
-describe("ToolCallCard", () => {
-  it("renders tool name and status", () => {
+describe('ToolCallCard', () => {
+  it('renders tool name and status', () => {
     const tc: ToolCall = {
-      id: "tc1",
-      name: "read_file",
+      id: 'tc1',
+      name: 'read_file',
       arguments: '{"path":"/tmp/test"}',
-      status: "completed",
-      result: "file contents",
+      status: 'completed',
+      result: 'file contents',
     };
     render(<ToolCallCard toolCall={tc} />);
-    expect(screen.getByText("read_file")).toBeDefined();
-    expect(screen.getByText("completed")).toBeDefined();
+    expect(screen.getByText('read_file')).toBeDefined();
+    expect(screen.getByText('completed')).toBeDefined();
   });
 
-  it("can expand to show arguments", () => {
+  it('can expand to show arguments', () => {
     const tc: ToolCall = {
-      id: "tc2",
-      name: "write_file",
+      id: 'tc2',
+      name: 'write_file',
       arguments: '{"path":"/tmp/out"}',
-      status: "running",
+      status: 'running',
     };
     render(<ToolCallCard toolCall={tc} />);
     const btn = screen.getByLabelText(/expand/i);
@@ -64,63 +52,63 @@ describe("ToolCallCard", () => {
   });
 });
 
-describe("ThinkingCard", () => {
-  it("renders thinking content when expanded", () => {
+describe('ThinkingCard', () => {
+  it('renders thinking content when expanded', () => {
     render(<ThinkingCard content="Let me think about this..." />);
     // Click to expand
-    fireEvent.click(screen.getByText("Thinking"));
+    fireEvent.click(screen.getByText('Thinking'));
     expect(screen.getByText(/think about this/)).toBeDefined();
   });
 
-  it("starts collapsed", () => {
+  it('starts collapsed', () => {
     render(<ThinkingCard content="Hidden thought" />);
     expect(screen.getByText(/thinking/i)).toBeDefined();
   });
 });
 
-describe("ApprovalCard", () => {
-  it("renders approval request with tool args", () => {
+describe('ApprovalCard', () => {
+  it('renders approval request with tool args', () => {
     const req: ApprovalRequest = {
-      id: "a1",
-      session_id: "s1",
-      tool_name: "bash",
-      tool_args: { command: "rm -rf /" },
-      stream_id: "st1",
-      created_at: "",
+      id: 'a1',
+      session_id: 's1',
+      tool_name: 'bash',
+      tool_args: { command: 'rm -rf /' },
+      stream_id: 'st1',
+      created_at: '',
     };
     const onRespond = vi.fn();
     render(<ApprovalCard request={req} onRespond={onRespond} />);
-    expect(screen.getByText("Approval required")).toBeDefined();
+    expect(screen.getByText('Approval required')).toBeDefined();
     expect(screen.getByText(/allow once/i)).toBeDefined();
   });
 
-  it("calls onRespond with once when Allow once clicked", () => {
+  it('calls onRespond with once when Allow once clicked', () => {
     const req: ApprovalRequest = {
-      id: "a2",
-      session_id: "s1",
-      tool_name: "edit",
+      id: 'a2',
+      session_id: 's1',
+      tool_name: 'edit',
       tool_args: {},
-      stream_id: "st2",
-      created_at: "",
+      stream_id: 'st2',
+      created_at: '',
     };
     const onRespond = vi.fn();
     render(<ApprovalCard request={req} onRespond={onRespond} />);
     fireEvent.click(screen.getByText(/allow once/i));
-    expect(onRespond).toHaveBeenCalledWith("a2", "once");
+    expect(onRespond).toHaveBeenCalledWith('a2', 'once');
   });
 
-  it("calls onRespond with deny when Deny clicked", () => {
+  it('calls onRespond with deny when Deny clicked', () => {
     const req: ApprovalRequest = {
-      id: "a3",
-      session_id: "s1",
-      tool_name: "edit",
+      id: 'a3',
+      session_id: 's1',
+      tool_name: 'edit',
       tool_args: {},
-      stream_id: "st3",
-      created_at: "",
+      stream_id: 'st3',
+      created_at: '',
     };
     const onRespond = vi.fn();
     render(<ApprovalCard request={req} onRespond={onRespond} />);
     fireEvent.click(screen.getByText(/deny/i));
-    expect(onRespond).toHaveBeenCalledWith("a3", "deny");
+    expect(onRespond).toHaveBeenCalledWith('a3', 'deny');
   });
 });

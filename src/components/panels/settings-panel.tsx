@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useAtom } from "jotai";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import { themeAtom, skinAtom, fontSizeAtom, defaultModelAtom, sendKeyAtom } from "@/atoms/settings";
-import { ThemeSwitcher } from "./theme-switcher";
-import { SkinPicker } from "./skin-picker";
+import { useState, useCallback } from 'react';
+import { useAtom } from 'jotai';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import { themeAtom, skinAtom, fontSizeAtom, defaultModelAtom, sendKeyAtom } from '@/atoms/settings';
+import { ThemeSwitcher } from './theme-switcher';
+import { SkinPicker } from './skin-picker';
 import {
   Settings,
   MessageSquare,
@@ -22,89 +22,89 @@ import {
   Key,
   Power,
   Activity,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-type Section = "conversation" | "appearance" | "preferences" | "providers" | "plugins" | "system";
+type Section = 'conversation' | 'appearance' | 'preferences' | 'providers' | 'plugins' | 'system';
 
 const SECTIONS: { key: Section; label: string; icon: typeof Settings }[] = [
-  { key: "conversation", label: "Conversation", icon: MessageSquare },
-  { key: "appearance", label: "Appearance", icon: Palette },
-  { key: "preferences", label: "Preferences", icon: Sliders },
-  { key: "providers", label: "Providers", icon: Server },
-  { key: "plugins", label: "Plugins", icon: Puzzle },
-  { key: "system", label: "System", icon: Monitor },
+  { key: 'conversation', label: 'Conversation', icon: MessageSquare },
+  { key: 'appearance', label: 'Appearance', icon: Palette },
+  { key: 'preferences', label: 'Preferences', icon: Sliders },
+  { key: 'providers', label: 'Providers', icon: Server },
+  { key: 'plugins', label: 'Plugins', icon: Puzzle },
+  { key: 'system', label: 'System', icon: Monitor },
 ];
 
 export function SettingsPanel() {
-  const [section, setSection] = useState<Section>("appearance");
+  const [section, setSection] = useState<Section>('appearance');
   const [theme, setTheme] = useAtom(themeAtom);
   const [skin, setSkin] = useAtom(skinAtom);
   const [fontSize, setFontSize] = useAtom(fontSizeAtom);
   const [model, setModel] = useAtom(defaultModelAtom);
   const [sendKey, setSendKey] = useAtom(sendKeyAtom);
 
-  const { data: _appSettings } = useSWR<Record<string, unknown>>("/settings", fetcher, {
+  const { data: _appSettings } = useSWR<Record<string, unknown>>('/settings', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: providers } = useSWR<{ providers: ProviderInfo[] }>("/providers", fetcher, {
+  const { data: providers } = useSWR<{ providers: ProviderInfo[] }>('/providers', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: plugins } = useSWR<{ plugins: PluginEntry[] }>("/plugins", fetcher, {
+  const { data: plugins } = useSWR<{ plugins: PluginEntry[] }>('/plugins', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: gatewayStatus } = useSWR<Record<string, unknown>>("/gateway/status", fetcher, {
+  const { data: gatewayStatus } = useSWR<Record<string, unknown>>('/gateway/status', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: mcpServers } = useSWR<{ servers: MCPServer[] }>("/mcp/servers", fetcher, {
+  const { data: mcpServers } = useSWR<{ servers: MCPServer[] }>('/mcp/servers', fetcher, {
     revalidateOnFocus: false,
   });
   const { data: modelsData } = useSWR<{ models: { id: string; name: string; provider: string }[] }>(
-    "/models",
+    '/models',
     fetcher,
     { revalidateOnFocus: false },
   );
 
   const handleExport = useCallback(async () => {
     try {
-      const res = await fetch("/api/session/export", { credentials: "include" });
+      const res = await fetch('/api/session/export', { credentials: 'include' });
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "hermes-session-export.json";
+      a.download = 'hermes-session-export.json';
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Export failed:", err);
+      console.error('Export failed:', err);
     }
   }, []);
 
   const handleImport = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        await apiPost("/session/import", data);
+        await apiPost('/session/import', data);
       } catch (err) {
-        console.error("Import failed:", err);
+        console.error('Import failed:', err);
       }
     };
     input.click();
   }, []);
 
   const handleClear = useCallback(async () => {
-    if (!window.confirm("Clear all messages in this session?")) return;
+    if (!window.confirm('Clear all messages in this session?')) return;
     try {
-      await apiPost("/session/clear", {});
+      await apiPost('/session/clear', {});
     } catch (err) {
-      console.error("Clear failed:", err);
+      console.error('Clear failed:', err);
     }
   }, []);
 
@@ -127,10 +127,10 @@ export function SettingsPanel() {
                 key={s.key}
                 onClick={() => setSection(s.key)}
                 className={cn(
-                  "w-full text-left flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors",
+                  'w-full text-left flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors',
                   section === s.key
-                    ? "bg-[var(--accent-bg)] text-[var(--accent)]"
-                    : "text-[var(--text)] hover:bg-[var(--hover-bg)]",
+                    ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                    : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -142,15 +142,11 @@ export function SettingsPanel() {
 
         {/* Section content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {section === "conversation" && (
-            <ConversationSection
-              onExport={handleExport}
-              onImport={handleImport}
-              onClear={handleClear}
-            />
+          {section === 'conversation' && (
+            <ConversationSection onExport={handleExport} onImport={handleImport} onClear={handleClear} />
           )}
 
-          {section === "appearance" && (
+          {section === 'appearance' && (
             <>
               <div>
                 <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Theme</h3>
@@ -163,15 +159,15 @@ export function SettingsPanel() {
               <div>
                 <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Font Size</h3>
                 <div className="flex gap-2">
-                  {(["small", "default", "large", "xlarge"] as const).map((size) => (
+                  {(['small', 'default', 'large', 'xlarge'] as const).map((size) => (
                     <button
                       key={size}
                       onClick={() => setFontSize(size)}
                       className={cn(
-                        "px-3 py-1.5 rounded text-xs border transition-colors capitalize",
+                        'px-3 py-1.5 rounded text-xs border transition-colors capitalize',
                         fontSize === size
-                          ? "bg-[var(--accent-bg)] border-[var(--accent)] text-[var(--accent)]"
-                          : "border-[var(--border)] hover:bg-[var(--hover-bg)]",
+                          ? 'bg-[var(--accent-bg)] border-[var(--accent)] text-[var(--accent)]'
+                          : 'border-[var(--border)] hover:bg-[var(--hover-bg)]',
                       )}
                     >
                       {size}
@@ -182,7 +178,7 @@ export function SettingsPanel() {
             </>
           )}
 
-          {section === "preferences" && (
+          {section === 'preferences' && (
             <PreferencesSection
               model={model}
               setModel={setModel}
@@ -192,11 +188,11 @@ export function SettingsPanel() {
             />
           )}
 
-          {section === "providers" && <ProvidersSection providers={providers?.providers ?? []} />}
+          {section === 'providers' && <ProvidersSection providers={providers?.providers ?? []} />}
 
-          {section === "plugins" && <PluginsSection plugins={plugins?.plugins ?? []} />}
+          {section === 'plugins' && <PluginsSection plugins={plugins?.plugins ?? []} />}
 
-          {section === "system" && (
+          {section === 'system' && (
             <SystemSection gatewayStatus={gatewayStatus} mcpServers={mcpServers?.servers ?? []} />
           )}
         </div>
@@ -229,12 +225,7 @@ function ConversationSection({
       </div>
       <div>
         <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Danger Zone</h3>
-        <Button
-          size="sm"
-          variant="outline"
-          className="text-[var(--error)] border-[var(--error)]/30"
-          onClick={onClear}
-        >
+        <Button size="sm" variant="outline" className="text-[var(--error)] border-[var(--error)]/30" onClick={onClear}>
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Clear Session
         </Button>
       </div>
@@ -252,7 +243,7 @@ function PreferencesSection({
   model: string | null;
   setModel: (m: string | null) => void;
   sendKey: string;
-  setSendKey: (k: "enter" | "cmd-enter") => void;
+  setSendKey: (k: 'enter' | 'cmd-enter') => void;
   models: { id: string; name: string; provider: string }[];
 }) {
   return (
@@ -260,7 +251,7 @@ function PreferencesSection({
       <div>
         <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Default Model</h3>
         <select
-          value={model || ""}
+          value={model || ''}
           onChange={(e) => setModel(e.target.value || null)}
           className="w-full px-2 py-1.5 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none"
           aria-label="Default model"
@@ -276,18 +267,18 @@ function PreferencesSection({
       <div>
         <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Send Key</h3>
         <div className="flex gap-2">
-          {(["enter", "cmd-enter"] as const).map((k) => (
+          {(['enter', 'cmd-enter'] as const).map((k) => (
             <button
               key={k}
               onClick={() => setSendKey(k)}
               className={cn(
-                "px-3 py-1.5 rounded text-xs border transition-colors",
+                'px-3 py-1.5 rounded text-xs border transition-colors',
                 sendKey === k
-                  ? "bg-[var(--accent-bg)] border-[var(--accent)] text-[var(--accent)]"
-                  : "border-[var(--border)] hover:bg-[var(--hover-bg)]",
+                  ? 'bg-[var(--accent-bg)] border-[var(--accent)] text-[var(--accent)]'
+                  : 'border-[var(--border)] hover:bg-[var(--hover-bg)]',
               )}
             >
-              {k === "enter" ? "Enter" : "Cmd+Enter"}
+              {k === 'enter' ? 'Enter' : 'Cmd+Enter'}
             </button>
           ))}
         </div>
@@ -345,25 +336,21 @@ function PluginsSection({ plugins }: { plugins: PluginEntry[] }) {
             >
               <div>
                 <div className="text-sm font-medium text-[var(--text)]">{p.name}</div>
-                {p.description && (
-                  <div className="text-xs text-[var(--muted)]">{p.description}</div>
-                )}
+                {p.description && <div className="text-xs text-[var(--muted)]">{p.description}</div>}
               </div>
               {p.enabled !== undefined && (
                 <button
-                  aria-label={p.enabled ? "Disable plugin" : "Enable plugin"}
-                  onClick={() =>
-                    void apiPost("/plugins/toggle", { name: p.name, enabled: !p.enabled })
-                  }
+                  aria-label={p.enabled ? 'Disable plugin' : 'Enable plugin'}
+                  onClick={() => void apiPost('/plugins/toggle', { name: p.name, enabled: !p.enabled })}
                   className={cn(
-                    "w-8 h-4 rounded-full transition-colors relative",
-                    p.enabled ? "bg-green-500" : "bg-[var(--border)]",
+                    'w-8 h-4 rounded-full transition-colors relative',
+                    p.enabled ? 'bg-green-500' : 'bg-[var(--border)]',
                   )}
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
-                      p.enabled ? "left-4" : "left-0.5",
+                      'absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform',
+                      p.enabled ? 'left-4' : 'left-0.5',
                     )}
                   />
                 </button>
@@ -389,10 +376,7 @@ function SystemSection({
   const handleCheckUpdate = useCallback(async () => {
     setChecking(true);
     try {
-      const res = await apiPost<{ available: boolean; latest_version: string }>(
-        "/updates/check",
-        {},
-      );
+      const res = await apiPost<{ available: boolean; latest_version: string }>('/updates/check', {});
       setUpdateInfo({ available: res.available, latest: res.latest_version });
     } catch {
       setUpdateInfo(null);
@@ -407,15 +391,8 @@ function SystemSection({
         <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Gateway Status</h3>
         <div className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
           <div className="flex items-center gap-2 text-sm">
-            <Activity
-              className={cn(
-                "w-3.5 h-3.5",
-                gatewayStatus ? "text-green-500" : "text-[var(--muted)]",
-              )}
-            />
-            <span className="text-[var(--text)]">
-              {gatewayStatus ? "Connected" : "Disconnected"}
-            </span>
+            <Activity className={cn('w-3.5 h-3.5', gatewayStatus ? 'text-green-500' : 'text-[var(--muted)]')} />
+            <span className="text-[var(--text)]">{gatewayStatus ? 'Connected' : 'Disconnected'}</span>
           </div>
         </div>
       </div>
@@ -432,9 +409,7 @@ function SystemSection({
                 className="flex items-center justify-between px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs"
               >
                 <span className="text-[var(--text)]">{s.name}</span>
-                <span
-                  className={cn(s.status === "running" ? "text-green-400" : "text-[var(--muted)]")}
-                >
+                <span className={cn(s.status === 'running' ? 'text-green-400' : 'text-[var(--muted)]')}>
                   {s.status}
                 </span>
               </div>
@@ -446,18 +421,13 @@ function SystemSection({
       <div>
         <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Updates</h3>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void handleCheckUpdate()}
-            disabled={checking}
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5 mr-1", checking && "animate-spin")} />
+          <Button size="sm" variant="outline" onClick={() => void handleCheckUpdate()} disabled={checking}>
+            <RefreshCw className={cn('w-3.5 h-3.5 mr-1', checking && 'animate-spin')} />
             Check for updates
           </Button>
           {updateInfo && (
             <span className="text-xs text-[var(--muted)]">
-              {updateInfo.available ? `Update available: ${updateInfo.latest}` : "Up to date"}
+              {updateInfo.available ? `Update available: ${updateInfo.latest}` : 'Up to date'}
             </span>
           )}
         </div>
@@ -470,7 +440,7 @@ function SystemSection({
           variant="outline"
           className="text-[var(--error)] border-[var(--error)]/30"
           onClick={() => {
-            if (window.confirm("Shut down Hermes server?")) void apiPost("/shutdown", {});
+            if (window.confirm('Shut down Hermes server?')) void apiPost('/shutdown', {});
           }}
         >
           <Power className="w-3.5 h-3.5 mr-1" /> Shutdown Server

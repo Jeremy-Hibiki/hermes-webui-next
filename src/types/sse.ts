@@ -1,25 +1,25 @@
 export interface SSEMessageEvent {
-  event: "message";
+  event: 'message';
   data: { content: string };
 }
 
 export interface SSEReasoningEvent {
-  event: "reasoning";
+  event: 'reasoning';
   data: { content: string };
 }
 
 export interface SSEToolCallEvent {
-  event: "tool_call";
+  event: 'tool_call';
   data: { id: string; name: string; arguments: string; status: string };
 }
 
 export interface SSEToolResultEvent {
-  event: "tool_result";
+  event: 'tool_result';
   data: { id: string; result: string; status: string };
 }
 
 export interface SSEApprovalEvent {
-  event: "approval";
+  event: 'approval';
   data: {
     approval_id: string;
     session_id: string;
@@ -32,7 +32,7 @@ export interface SSEApprovalEvent {
 }
 
 export interface SSEClarifyEvent {
-  event: "clarify";
+  event: 'clarify';
   data: {
     clarify_id: string;
     session_id: string;
@@ -46,27 +46,27 @@ export interface SSEClarifyEvent {
 }
 
 export interface SSEDoneEvent {
-  event: "done";
+  event: 'done';
   data: Record<string, unknown>;
 }
 
 export interface SSECancelledEvent {
-  event: "cancelled";
+  event: 'cancelled';
   data: Record<string, unknown>;
 }
 
 export interface SSEErrorEvent {
-  event: "error" | "apperror";
+  event: 'error' | 'apperror';
   data: { message: string; code?: string };
 }
 
 export interface SSETodoStateEvent {
-  event: "todo_state";
+  event: 'todo_state';
   data: { todos: unknown[]; meta: Record<string, unknown> };
 }
 
 export interface SSEHeartbeatEvent {
-  event: "heartbeat";
+  event: 'heartbeat';
   data: Record<string, unknown>;
 }
 

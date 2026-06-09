@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -41,9 +41,9 @@
   --radius-card: 8px;
   --radius-lg: 12px;
   --radius-pill: 999px;
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+  --font-serif: Georgia, 'Times New Roman', serif;
 }
 
 /* ── Dark mode ── */
@@ -81,203 +81,203 @@
 }
 
 /* ── Skins ── */
-:root[data-skin="ares"] {
+:root[data-skin='ares'] {
   --accent: #c0392b;
   --accent-hover: #a93226;
   --accent-bg: rgba(192, 57, 43, 0.08);
   --accent-bg-strong: rgba(192, 57, 43, 0.15);
   --accent-text: #922b21;
 }
-:root.dark[data-skin="ares"] {
+:root.dark[data-skin='ares'] {
   --accent: #ff4444;
   --accent-hover: #cc3333;
   --accent-bg: rgba(255, 68, 68, 0.08);
   --accent-bg-strong: rgba(255, 68, 68, 0.15);
   --accent-text: #ff4444;
 }
-:root[data-skin="mono"] {
+:root[data-skin='mono'] {
   --accent: #666;
   --accent-hover: #555;
   --accent-bg: rgba(102, 102, 102, 0.08);
   --accent-bg-strong: rgba(102, 102, 102, 0.15);
   --accent-text: #555;
 }
-:root.dark[data-skin="mono"] {
+:root.dark[data-skin='mono'] {
   --accent: #ccc;
   --accent-hover: #999;
   --accent-bg: rgba(204, 204, 204, 0.08);
   --accent-bg-strong: rgba(204, 204, 204, 0.15);
   --accent-text: #ccc;
 }
-:root[data-skin="slate"] {
+:root[data-skin='slate'] {
   --accent: #64748b;
   --accent-hover: #475569;
   --accent-bg: rgba(100, 116, 139, 0.08);
   --accent-bg-strong: rgba(100, 116, 139, 0.15);
   --accent-text: #64748b;
 }
-:root.dark[data-skin="slate"] {
+:root.dark[data-skin='slate'] {
   --accent: #94a3b8;
   --accent-hover: #cbd5e1;
   --accent-bg: rgba(148, 163, 184, 0.08);
   --accent-bg-strong: rgba(148, 163, 184, 0.15);
   --accent-text: #94a3b8;
 }
-:root[data-skin="poseidon"] {
+:root[data-skin='poseidon'] {
   --accent: #0077b6;
   --accent-hover: #005f8a;
   --accent-bg: rgba(0, 119, 182, 0.08);
   --accent-bg-strong: rgba(0, 119, 182, 0.15);
   --accent-text: #0077b6;
 }
-:root.dark[data-skin="poseidon"] {
+:root.dark[data-skin='poseidon'] {
   --accent: #00b4d8;
   --accent-hover: #48cae4;
   --accent-bg: rgba(0, 180, 216, 0.08);
   --accent-bg-strong: rgba(0, 180, 216, 0.15);
   --accent-text: #00b4d8;
 }
-:root[data-skin="sisyphus"] {
+:root[data-skin='sisyphus'] {
   --accent: #7b2d8e;
   --accent-hover: #6a1b7d;
   --accent-bg: rgba(123, 45, 142, 0.08);
   --accent-bg-strong: rgba(123, 45, 142, 0.15);
   --accent-text: #7b2d8e;
 }
-:root.dark[data-skin="sisyphus"] {
+:root.dark[data-skin='sisyphus'] {
   --accent: #ba68c8;
   --accent-hover: #ce93d8;
   --accent-bg: rgba(186, 104, 200, 0.08);
   --accent-bg-strong: rgba(186, 104, 200, 0.15);
   --accent-text: #ba68c8;
 }
-:root[data-skin="charizard"] {
+:root[data-skin='charizard'] {
   --accent: #e65100;
   --accent-hover: #bf360c;
   --accent-bg: rgba(230, 81, 0, 0.08);
   --accent-bg-strong: rgba(230, 81, 0, 0.15);
   --accent-text: #e65100;
 }
-:root.dark[data-skin="charizard"] {
+:root.dark[data-skin='charizard'] {
   --accent: #ff6d00;
   --accent-hover: #ff9100;
   --accent-bg: rgba(255, 109, 0, 0.08);
   --accent-bg-strong: rgba(255, 109, 0, 0.15);
   --accent-text: #ff6d00;
 }
-:root[data-skin="sienna"] {
+:root[data-skin='sienna'] {
   --accent: #a0522d;
   --accent-hover: #8b4513;
   --accent-bg: rgba(160, 82, 45, 0.08);
   --accent-bg-strong: rgba(160, 82, 45, 0.15);
   --accent-text: #a0522d;
 }
-:root.dark[data-skin="sienna"] {
+:root.dark[data-skin='sienna'] {
   --accent: #d2691e;
   --accent-hover: #deb887;
   --accent-bg: rgba(210, 105, 30, 0.08);
   --accent-bg-strong: rgba(210, 105, 30, 0.15);
   --accent-text: #d2691e;
 }
-:root[data-skin="catppuccin"] {
+:root[data-skin='catppuccin'] {
   --accent: #8839ef;
   --accent-hover: #7287fd;
   --accent-bg: rgba(136, 57, 239, 0.08);
   --accent-bg-strong: rgba(136, 57, 239, 0.15);
   --accent-text: #8839ef;
 }
-:root.dark[data-skin="catppuccin"] {
+:root.dark[data-skin='catppuccin'] {
   --accent: #cba6f7;
   --accent-hover: #f5c2e7;
   --accent-bg: rgba(203, 166, 247, 0.08);
   --accent-bg-strong: rgba(203, 166, 247, 0.15);
   --accent-text: #cba6f7;
 }
-:root[data-skin="hepburn"] {
+:root[data-skin='hepburn'] {
   --accent: #c2185b;
   --accent-hover: #ad1457;
   --accent-bg: rgba(194, 24, 91, 0.08);
   --accent-bg-strong: rgba(194, 24, 91, 0.15);
   --accent-text: #c2185b;
 }
-:root.dark[data-skin="hepburn"] {
+:root.dark[data-skin='hepburn'] {
   --accent: #f06292;
   --accent-hover: #f48fb1;
   --accent-bg: rgba(240, 98, 146, 0.08);
   --accent-bg-strong: rgba(240, 98, 146, 0.15);
   --accent-text: #f06292;
 }
-:root[data-skin="nous"] {
+:root[data-skin='nous'] {
   --accent: #1565c0;
   --accent-hover: #0d47a1;
   --accent-bg: rgba(21, 101, 192, 0.08);
   --accent-bg-strong: rgba(21, 101, 192, 0.15);
   --accent-text: #1565c0;
 }
-:root.dark[data-skin="nous"] {
+:root.dark[data-skin='nous'] {
   --accent: #42a5f5;
   --accent-hover: #64b5f6;
   --accent-bg: rgba(66, 165, 245, 0.08);
   --accent-bg-strong: rgba(66, 165, 245, 0.15);
   --accent-text: #42a5f5;
 }
-:root[data-skin="neon"] {
+:root[data-skin='neon'] {
   --accent: #00e676;
   --accent-hover: #00c853;
   --accent-bg: rgba(0, 230, 118, 0.08);
   --accent-bg-strong: rgba(0, 230, 118, 0.15);
   --accent-text: #00e676;
 }
-:root.dark[data-skin="neon"] {
+:root.dark[data-skin='neon'] {
   --accent: #69f0ae;
   --accent-hover: #b9f6ca;
   --accent-bg: rgba(105, 240, 174, 0.08);
   --accent-bg-strong: rgba(105, 240, 174, 0.15);
   --accent-text: #69f0ae;
 }
-:root[data-skin="geist-contrast"] {
+:root[data-skin='geist-contrast'] {
   --accent: #0070f3;
   --accent-hover: #0050cc;
   --accent-bg: rgba(0, 112, 243, 0.08);
   --accent-bg-strong: rgba(0, 112, 243, 0.15);
   --accent-text: #0070f3;
 }
-:root.dark[data-skin="geist-contrast"] {
+:root.dark[data-skin='geist-contrast'] {
   --accent: #79b8ff;
   --accent-hover: #a5d6ff;
   --accent-bg: rgba(121, 184, 255, 0.08);
   --accent-bg-strong: rgba(121, 184, 255, 0.15);
   --accent-text: #79b8ff;
 }
-:root[data-skin="zeus"] {
+:root[data-skin='zeus'] {
   --accent: #f5c542;
   --accent-hover: #d4961c;
   --accent-bg: rgba(245, 197, 66, 0.08);
   --accent-bg-strong: rgba(245, 197, 66, 0.15);
   --accent-text: #f5c542;
 }
-:root.dark[data-skin="zeus"] {
+:root.dark[data-skin='zeus'] {
   --accent: #ffd700;
   --accent-hover: #ffea00;
   --accent-bg: rgba(255, 215, 0, 0.08);
   --accent-bg-strong: rgba(255, 215, 0, 0.15);
   --accent-text: #ffd700;
 }
-:root[data-skin="verdigris"] {
+:root[data-skin='verdigris'] {
   --accent: #00897b;
   --accent-hover: #00695c;
   --accent-bg: rgba(0, 137, 123, 0.08);
   --accent-bg-strong: rgba(0, 137, 123, 0.15);
   --accent-text: #00897b;
 }
-:root.dark[data-skin="verdigris"] {
+:root.dark[data-skin='verdigris'] {
   --accent: #4db6ac;
   --accent-hover: #80cbc4;
   --accent-bg: rgba(77, 182, 172, 0.08);
   --accent-bg-strong: rgba(77, 182, 172, 0.15);
   --accent-text: #4db6ac;
 }
-:root[data-skin="graphite"] {
+:root[data-skin='graphite'] {
   color-scheme: light;
   --bg: #fff;
   --sidebar: #f3f3f3;
@@ -292,7 +292,7 @@
   --code-bg: #f1f1f1;
   --input-bg: #fff;
 }
-:root.dark[data-skin="graphite"] {
+:root.dark[data-skin='graphite'] {
   color-scheme: dark;
   --bg: #151614;
   --sidebar: #242624;
@@ -309,13 +309,13 @@
 }
 
 /* ── Font size modifiers ── */
-:root[data-font-size="small"] {
+:root[data-font-size='small'] {
   font-size: 12px;
 }
-:root[data-font-size="large"] {
+:root[data-font-size='large'] {
   font-size: 16px;
 }
-:root[data-font-size="xlarge"] {
+:root[data-font-size='xlarge'] {
   font-size: 18px;
 }
 

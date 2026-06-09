@@ -1,31 +1,31 @@
 export const COMMANDS = [
-  "help",
-  "model",
-  "provider",
-  "profile",
-  "rename",
-  "delete",
-  "clear",
-  "pin",
-  "archive",
-  "branch",
-  "export",
-  "compact",
-  "theme",
-  "skin",
-  "font",
-  "workspace",
-  "skills",
-  "cron",
-  "memory",
-  "terminal",
-  "voice",
-  "settings",
-  "yo",
-  "stop",
-  "cost",
-  "image",
-  "code",
+  'help',
+  'model',
+  'provider',
+  'profile',
+  'rename',
+  'delete',
+  'clear',
+  'pin',
+  'archive',
+  'branch',
+  'export',
+  'compact',
+  'theme',
+  'skin',
+  'font',
+  'workspace',
+  'skills',
+  'cron',
+  'memory',
+  'terminal',
+  'voice',
+  'settings',
+  'yo',
+  'stop',
+  'cost',
+  'image',
+  'code',
 ] as const;
 
 export type CommandName = (typeof COMMANDS)[number];
@@ -37,7 +37,7 @@ export interface ParsedCommand {
 
 export function parseCommand(input: string): ParsedCommand | null {
   const trimmed = input.trim();
-  if (!trimmed.startsWith("/")) return null;
+  if (!trimmed.startsWith('/')) return null;
 
   const parts = trimmed.slice(1).split(/\s+/).filter(Boolean);
   if (parts.length === 0) return null;
@@ -50,8 +50,8 @@ export function parseCommand(input: string): ParsedCommand | null {
 
 export function getCompletions(input: string): string[] {
   const trimmed = input.trim();
-  if (!trimmed.startsWith("/")) return [];
-  if (trimmed === "/") return [...COMMANDS];
+  if (!trimmed.startsWith('/')) return [];
+  if (trimmed === '/') return [...COMMANDS];
 
   const partial = trimmed.slice(1).toLowerCase();
   return COMMANDS.filter((cmd) => cmd.startsWith(partial));

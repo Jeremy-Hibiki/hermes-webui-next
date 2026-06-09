@@ -1,21 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import { Plus, X, GripVertical, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DndContext,
-  closestCorners,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useState, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
+import { Plus, X, GripVertical, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DndContext, closestCorners, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // ── Types ──
 
@@ -37,12 +30,12 @@ interface KanbanColumn {
 }
 
 const COLUMNS: KanbanColumn[] = [
-  { id: "triage", label: "Triage" },
-  { id: "todo", label: "To Do" },
-  { id: "ready", label: "Ready" },
-  { id: "running", label: "Running" },
-  { id: "blocked", label: "Blocked" },
-  { id: "done", label: "Done" },
+  { id: 'triage', label: 'Triage' },
+  { id: 'todo', label: 'To Do' },
+  { id: 'ready', label: 'Ready' },
+  { id: 'running', label: 'Running' },
+  { id: 'blocked', label: 'Blocked' },
+  { id: 'done', label: 'Done' },
 ];
 
 // ── Sortable Card ──
@@ -65,13 +58,13 @@ function TaskCard({ task, onClick }: { task: KanbanTask; onClick: () => void }) 
       role="button"
       tabIndex={0}
       className={cn(
-        "group flex items-start gap-2 p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:border-[var(--accent)] transition-colors",
-        task.priority === "high" && "border-l-2 border-l-red-500",
-        task.priority === "low" && "border-l-2 border-l-blue-400",
+        'group flex items-start gap-2 p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:border-[var(--accent)] transition-colors',
+        task.priority === 'high' && 'border-l-2 border-l-red-500',
+        task.priority === 'low' && 'border-l-2 border-l-blue-400',
       )}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === "Enter") onClick();
+        if (e.key === 'Enter') onClick();
       }}
     >
       <button
@@ -131,9 +124,7 @@ function KanbanColumnView({
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
           ))}
-          {tasks.length === 0 && (
-            <p className="text-[10px] text-[var(--muted)] text-center py-4">No tasks</p>
-          )}
+          {tasks.length === 0 && <p className="text-[10px] text-[var(--muted)] text-center py-4">No tasks</p>}
         </div>
       </SortableContext>
     </div>
@@ -151,18 +142,12 @@ function TaskModal({
   task?: KanbanTask;
   status: string;
   onClose: () => void;
-  onSave: (data: {
-    title: string;
-    body?: string;
-    status: string;
-    priority?: string;
-    assignee?: string;
-  }) => void;
+  onSave: (data: { title: string; body?: string; status: string; priority?: string; assignee?: string }) => void;
 }) {
-  const [title, setTitle] = useState(task?.title ?? "");
-  const [body, setBody] = useState(task?.body ?? "");
-  const [priority, setPriority] = useState(task?.priority ?? "normal");
-  const [assignee, setAssignee] = useState(task?.assignee ?? "");
+  const [title, setTitle] = useState(task?.title ?? '');
+  const [body, setBody] = useState(task?.body ?? '');
+  const [priority, setPriority] = useState(task?.priority ?? 'normal');
+  const [assignee, setAssignee] = useState(task?.assignee ?? '');
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -182,7 +167,7 @@ function TaskModal({
       role="dialog"
       onClick={onClose}
       onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
+        if (e.key === 'Escape') onClose();
       }}
     >
       <div
@@ -192,23 +177,14 @@ function TaskModal({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--text)]">
-            {task ? "Edit Task" : "New Task"}
-          </h3>
-          <button
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="text-[var(--muted)] hover:text-[var(--text)]"
-          >
+          <h3 className="text-sm font-semibold text-[var(--text)]">{task ? 'Edit Task' : 'New Task'}</h3>
+          <button onClick={onClose} aria-label="Close dialog" className="text-[var(--muted)] hover:text-[var(--text)]">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="space-y-3">
           <div>
-            <label
-              htmlFor="task-title"
-              className="block text-xs font-medium text-[var(--text)] mb-1"
-            >
+            <label htmlFor="task-title" className="block text-xs font-medium text-[var(--text)] mb-1">
               Title
             </label>
             <input
@@ -220,10 +196,7 @@ function TaskModal({
             />
           </div>
           <div>
-            <label
-              htmlFor="task-body"
-              className="block text-xs font-medium text-[var(--text)] mb-1"
-            >
+            <label htmlFor="task-body" className="block text-xs font-medium text-[var(--text)] mb-1">
               Description
             </label>
             <textarea
@@ -237,10 +210,7 @@ function TaskModal({
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label
-                htmlFor="task-priority"
-                className="block text-xs font-medium text-[var(--text)] mb-1"
-              >
+              <label htmlFor="task-priority" className="block text-xs font-medium text-[var(--text)] mb-1">
                 Priority
               </label>
               <select
@@ -255,10 +225,7 @@ function TaskModal({
               </select>
             </div>
             <div className="flex-1">
-              <label
-                htmlFor="task-assignee"
-                className="block text-xs font-medium text-[var(--text)] mb-1"
-              >
+              <label htmlFor="task-assignee" className="block text-xs font-medium text-[var(--text)] mb-1">
                 Assignee
               </label>
               <input
@@ -276,7 +243,7 @@ function TaskModal({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!title.trim()}>
-            {task ? "Save" : "Create"}
+            {task ? 'Save' : 'Create'}
           </Button>
         </div>
       </div>
@@ -287,12 +254,12 @@ function TaskModal({
 // ── Main Board ──
 
 export function KanbanBoard() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [modalStatus, setModalStatus] = useState("triage");
+  const [modalStatus, setModalStatus] = useState('triage');
   const [editingTask, setEditingTask] = useState<KanbanTask | undefined>();
 
-  const { data: boardData, mutate } = useSWR<{ tasks: KanbanTask[] }>("/kanban/board", fetcher, {
+  const { data: boardData, mutate } = useSWR<{ tasks: KanbanTask[] }>('/kanban/board', fetcher, {
     revalidateOnFocus: false,
     refreshInterval: 30000,
   });
@@ -303,10 +270,7 @@ export function KanbanBoard() {
     if (!search) return tasks;
     const q = search.toLowerCase();
     return tasks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q) ||
-        t.body?.toLowerCase().includes(q),
+      (t) => t.title.toLowerCase().includes(q) || t.id.toLowerCase().includes(q) || t.body?.toLowerCase().includes(q),
     );
   }, [tasks, search]);
 
@@ -314,7 +278,7 @@ export function KanbanBoard() {
     const map: Record<string, KanbanTask[]> = {};
     for (const col of COLUMNS) map[col.id] = [];
     for (const t of filtered) {
-      const status = map[t.status] ? t.status : "triage";
+      const status = map[t.status] ? t.status : 'triage';
       map[status]?.push(t);
     }
     return map;
@@ -356,11 +320,8 @@ export function KanbanBoard() {
       void mutate({ tasks: optimistic }, false);
 
       try {
-        if (targetStatus === "done") {
-          await apiPost(`/kanban/tasks/${taskId}`, { status: targetStatus } as unknown as Record<
-            string,
-            unknown
-          >);
+        if (targetStatus === 'done') {
+          await apiPost(`/kanban/tasks/${taskId}`, { status: targetStatus } as unknown as Record<string, unknown>);
         } else {
           await apiPost(`/kanban/tasks/${taskId}/patch`, {
             status: targetStatus,
@@ -387,20 +348,11 @@ export function KanbanBoard() {
   }, []);
 
   const handleSaveTask = useCallback(
-    async (data: {
-      title: string;
-      body?: string;
-      status: string;
-      priority?: string;
-      assignee?: string;
-    }) => {
+    async (data: { title: string; body?: string; status: string; priority?: string; assignee?: string }) => {
       if (editingTask) {
-        await apiPost(
-          `/kanban/tasks/${editingTask.id}/patch`,
-          data as unknown as Record<string, unknown>,
-        );
+        await apiPost(`/kanban/tasks/${editingTask.id}/patch`, data as unknown as Record<string, unknown>);
       } else {
-        await apiPost("/kanban/tasks", data as unknown as Record<string, unknown>);
+        await apiPost('/kanban/tasks', data as unknown as Record<string, unknown>);
       }
       void mutate();
     },
@@ -409,10 +361,7 @@ export function KanbanBoard() {
 
   const handleDeleteTask = useCallback(
     async (taskId: string) => {
-      await apiPost(`/kanban/tasks/${taskId}/patch`, { status: "archived" } as unknown as Record<
-        string,
-        unknown
-      >);
+      await apiPost(`/kanban/tasks/${taskId}/patch`, { status: 'archived' } as unknown as Record<string, unknown>);
       void mutate();
       setShowModal(false);
     },
@@ -431,7 +380,7 @@ export function KanbanBoard() {
             aria-label="Search tasks"
             className="text-xs rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-2 py-1 text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] w-40"
           />
-          <Button variant="outline" size="sm" onClick={() => handleCreateTask("triage")}>
+          <Button variant="outline" size="sm" onClick={() => handleCreateTask('triage')}>
             <Plus className="w-3 h-3 mr-1" />
             New
           </Button>
@@ -465,11 +414,7 @@ export function KanbanBoard() {
 
       {editingTask && showModal && (
         <div className="fixed bottom-4 right-4 z-[60]">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => void handleDeleteTask(editingTask.id)}
-          >
+          <Button variant="destructive" size="sm" onClick={() => void handleDeleteTask(editingTask.id)}>
             <Trash2 className="w-3 h-3 mr-1" />
             Archive
           </Button>

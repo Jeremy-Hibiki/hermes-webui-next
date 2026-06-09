@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
-import { cn } from "@/lib/utils";
-import { Copy, Check, Pencil, RefreshCw } from "lucide-react";
-import type { Message } from "@/types";
-import { MarkdownRenderer } from "./markdown-renderer";
-import { ToolCallCard } from "./tool-call-card";
-import { ThinkingCard } from "./thinking-card";
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { cn } from '@/lib/utils';
+import { Copy, Check, Pencil, RefreshCw } from 'lucide-react';
+import type { Message } from '@/types';
+import { MarkdownRenderer } from './markdown-renderer';
+import { ToolCallCard } from './tool-call-card';
+import { ThinkingCard } from './thinking-card';
 
 interface MessageBubbleProps {
   message: Message;
@@ -15,18 +15,13 @@ interface MessageBubbleProps {
   isLastAssistant?: boolean;
 }
 
-export function MessageBubble({
-  message,
-  onEdit,
-  onRegenerate,
-  isLastAssistant,
-}: MessageBubbleProps) {
+export function MessageBubble({ message, onEdit, onRegenerate, isLastAssistant }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
   const editRef = useRef<HTMLTextAreaElement>(null);
-  const isUser = message.role === "user";
-  const isAssistant = message.role === "assistant";
+  const isUser = message.role === 'user';
+  const isAssistant = message.role === 'assistant';
 
   useEffect(() => {
     if (editing) editRef.current?.focus();
@@ -47,27 +42,22 @@ export function MessageBubble({
   };
 
   const handleEditKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       submitEdit();
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setDraft(message.content);
       setEditing(false);
     }
   };
 
   return (
-    <div className={cn("group flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
+    <div className={cn('group flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
       <div className="text-xs font-medium text-[var(--muted)] capitalize">{message.role}</div>
 
       {message.reasoning && <ThinkingCard content={message.reasoning} />}
 
-      <div
-        className={cn(
-          "max-w-[85%] rounded-xl px-4 py-3",
-          isUser ? "bg-[var(--accent-bg)]" : "bg-[var(--surface)]",
-        )}
-      >
+      <div className={cn('max-w-[85%] rounded-xl px-4 py-3', isUser ? 'bg-[var(--accent-bg)]' : 'bg-[var(--surface)]')}>
         {editing ? (
           <div className="space-y-2">
             <textarea

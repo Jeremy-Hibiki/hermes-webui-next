@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Lock, Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { Lock, Loader2 } from 'lucide-react';
 
 interface LoginPageProps {
   onLogin?: (password: string) => Promise<void>;
@@ -9,7 +9,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLogin, error }: LoginPageProps) {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export function LoginPage({ onLogin, error }: LoginPageProps) {
     try {
       await onLogin?.(password);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : "Login failed");
+      setLocalError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -59,9 +59,7 @@ export function LoginPage({ onLogin, error }: LoginPageProps) {
         </div>
 
         {displayError && (
-          <div className="text-xs text-[var(--error)] bg-[var(--error)]/10 px-3 py-2 rounded-lg">
-            {displayError}
-          </div>
+          <div className="text-xs text-[var(--error)] bg-[var(--error)]/10 px-3 py-2 rounded-lg">{displayError}</div>
         )}
 
         <button
@@ -75,7 +73,7 @@ export function LoginPage({ onLogin, error }: LoginPageProps) {
               Logging in...
             </>
           ) : (
-            "Login"
+            'Login'
           )}
         </button>
       </form>

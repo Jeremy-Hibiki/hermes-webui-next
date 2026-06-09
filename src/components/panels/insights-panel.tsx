@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
-import { BarChart3, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
+import { BarChart3, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface InsightsData {
   total_sessions: number;
@@ -68,19 +68,15 @@ const PERIODS = [7, 30, 90, 365];
 export function InsightsPanel() {
   const [period, setPeriod] = useState(30);
 
-  const { data: insights, mutate: refreshInsights } = useSWR<InsightsData>(
-    `/insights?days=${period}`,
-    fetcher,
-    { revalidateOnFocus: false },
-  );
-
-  const { data: skillUsage } = useSWR<SkillUsage>("/skills/usage", fetcher, {
+  const { data: insights, mutate: refreshInsights } = useSWR<InsightsData>(`/insights?days=${period}`, fetcher, {
     revalidateOnFocus: false,
   });
 
-  const maxDailyTokens = Math.max(
-    ...(insights?.daily_tokens.map((d) => d.input_tokens + d.output_tokens) || [1]),
-  );
+  const { data: skillUsage } = useSWR<SkillUsage>('/skills/usage', fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const maxDailyTokens = Math.max(...(insights?.daily_tokens.map((d) => d.input_tokens + d.output_tokens) || [1]));
 
   const maxActivity = Math.max(...(insights?.activity_by_day.map((d) => d.sessions) || [1]));
   const maxHourly = Math.max(...(insights?.activity_by_hour.map((d) => d.sessions) || [1]));
@@ -134,21 +130,15 @@ export function InsightsPanel() {
               <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Token Breakdown</h3>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 text-center">
-                  <div className="text-[var(--text)] font-medium">
-                    {formatTokens(insights.total_input_tokens)}
-                  </div>
+                  <div className="text-[var(--text)] font-medium">{formatTokens(insights.total_input_tokens)}</div>
                   <div className="text-[var(--muted)]">Input</div>
                 </div>
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 text-center">
-                  <div className="text-[var(--text)] font-medium">
-                    {formatTokens(insights.total_output_tokens)}
-                  </div>
+                  <div className="text-[var(--text)] font-medium">{formatTokens(insights.total_output_tokens)}</div>
                   <div className="text-[var(--muted)]">Output</div>
                 </div>
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 text-center">
-                  <div className="text-[var(--text)] font-medium">
-                    {formatTokens(insights.total_tokens)}
-                  </div>
+                  <div className="text-[var(--text)] font-medium">{formatTokens(insights.total_tokens)}</div>
                   <div className="text-[var(--muted)]">Total</div>
                 </div>
               </div>
@@ -169,15 +159,10 @@ export function InsightsPanel() {
                         <div className="flex-1 h-4 bg-[var(--surface)] rounded overflow-hidden">
                           <div className="h-full flex" style={{ width: `${widthPct}%` }}>
                             <div className="h-full bg-blue-400" style={{ width: `${inputPct}%` }} />
-                            <div
-                              className="h-full bg-purple-400"
-                              style={{ width: `${100 - inputPct}%` }}
-                            />
+                            <div className="h-full bg-purple-400" style={{ width: `${100 - inputPct}%` }} />
                           </div>
                         </div>
-                        <span className="w-12 text-right text-[var(--muted)] shrink-0">
-                          {formatTokens(total)}
-                        </span>
+                        <span className="w-12 text-right text-[var(--muted)] shrink-0">{formatTokens(total)}</span>
                       </div>
                     );
                   })}
@@ -213,15 +198,9 @@ export function InsightsPanel() {
                         <tr key={m.model} className="border-b border-[var(--border)]">
                           <td className="py-1 text-[var(--text)] truncate max-w-24">{m.model}</td>
                           <td className="py-1 text-right text-[var(--text)]">{m.sessions}</td>
-                          <td className="py-1 text-right text-[var(--text)]">
-                            {formatTokens(m.total_tokens)}
-                          </td>
-                          <td className="py-1 text-right text-[var(--text)]">
-                            {formatCost(m.cost)}
-                          </td>
-                          <td className="py-1 text-right text-[var(--muted)]">
-                            {(m.token_share * 100).toFixed(0)}%
-                          </td>
+                          <td className="py-1 text-right text-[var(--text)]">{formatTokens(m.total_tokens)}</td>
+                          <td className="py-1 text-right text-[var(--text)]">{formatCost(m.cost)}</td>
+                          <td className="py-1 text-right text-[var(--muted)]">{(m.token_share * 100).toFixed(0)}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -241,14 +220,9 @@ export function InsightsPanel() {
                       <div key={d.day} className="flex items-center gap-2 text-xs">
                         <span className="w-10 text-[var(--muted)] shrink-0">{d.day}</span>
                         <div className="flex-1 h-3 bg-[var(--surface)] rounded overflow-hidden">
-                          <div
-                            className="h-full bg-[var(--accent)] rounded"
-                            style={{ width: `${widthPct}%` }}
-                          />
+                          <div className="h-full bg-[var(--accent)] rounded" style={{ width: `${widthPct}%` }} />
                         </div>
-                        <span className="w-8 text-right text-[var(--muted)] shrink-0">
-                          {d.sessions}
-                        </span>
+                        <span className="w-8 text-right text-[var(--muted)] shrink-0">{d.sessions}</span>
                       </div>
                     );
                   })}
@@ -271,10 +245,7 @@ export function InsightsPanel() {
                         title={`${d.hour}:00 — ${d.sessions} sessions`}
                       >
                         <div
-                          className={cn(
-                            "w-full rounded-t",
-                            isPeak ? "bg-[var(--accent)]" : "bg-[var(--muted)]/30",
-                          )}
+                          className={cn('w-full rounded-t', isPeak ? 'bg-[var(--accent)]' : 'bg-[var(--muted)]/30')}
                           style={{ height: `${heightPct}%`, minHeight: d.sessions > 0 ? 2 : 0 }}
                         />
                       </div>
@@ -295,8 +266,7 @@ export function InsightsPanel() {
             {skillUsage && skillUsage.total_invocations > 0 && (
               <div>
                 <h3 className="text-xs font-medium text-[var(--muted)] mb-2">
-                  Skill Usage ({skillUsage.total_invocations} invocations,{" "}
-                  {skillUsage.unique_skills_used} unique)
+                  Skill Usage ({skillUsage.total_invocations} invocations, {skillUsage.unique_skills_used} unique)
                 </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">

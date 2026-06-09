@@ -1,28 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import type { GitStatus } from "@/types";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
-import {
-  GitCommit,
-  GitPullRequest,
-  Upload,
-  Plus,
-  Minus,
-  FileQuestion,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import type { GitStatus } from '@/types';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
+import { GitCommit, GitPullRequest, Upload, Plus, Minus, FileQuestion, RotateCcw, Trash2 } from 'lucide-react';
 
 interface GitOperationsProps {
   sessionId?: string;
 }
 
 export function GitOperations({ sessionId }: GitOperationsProps) {
-  const [commitMsg, setCommitMsg] = useState("");
+  const [commitMsg, setCommitMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -53,9 +44,9 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
         void mutateStatus();
         void mutateDiff();
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Git operation failed";
+        const msg = err instanceof Error ? err.message : 'Git operation failed';
         setError(msg);
-        toast(msg, "error");
+        toast(msg, 'error');
       } finally {
         setBusy(false);
       }
@@ -65,14 +56,14 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
 
   const handleStage = useCallback(
     (file: string) => {
-      void runGit("stage", { files: [file] });
+      void runGit('stage', { files: [file] });
     },
     [runGit],
   );
 
   const handleUnstage = useCallback(
     (file: string) => {
-      void runGit("unstage", { files: [file] });
+      void runGit('unstage', { files: [file] });
     },
     [runGit],
   );
@@ -80,26 +71,26 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
   const handleDiscard = useCallback(
     (file: string) => {
       if (!window.confirm(`Discard changes in "${file}"?`)) return;
-      void runGit("discard", { files: [file] });
+      void runGit('discard', { files: [file] });
     },
     [runGit],
   );
 
   const handleStageAll = () => {
-    void runGit("stage", { files: [...unstaged, ...untracked] });
+    void runGit('stage', { files: [...unstaged, ...untracked] });
   };
 
   const handleCommit = useCallback(async () => {
     if (!commitMsg.trim()) return;
-    await runGit("commit", { message: commitMsg.trim() });
-    setCommitMsg("");
+    await runGit('commit', { message: commitMsg.trim() });
+    setCommitMsg('');
   }, [commitMsg, runGit]);
 
   const handlePush = useCallback(() => {
-    void runGit("push");
+    void runGit('push');
   }, [runGit]);
   const handlePull = useCallback(() => {
-    void runGit("pull");
+    void runGit('pull');
   }, [runGit]);
 
   return (
@@ -151,10 +142,7 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             Staged ({staged.length})
           </div>
           {staged.map((f) => (
-            <div
-              key={f}
-              className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group"
-            >
+            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
               <Plus className="w-3 h-3 text-green-400 shrink-0" />
               <span className="flex-1 truncate text-[var(--text)]">{f}</span>
               <button
@@ -189,13 +177,8 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             </Button>
           </div>
           {unstaged.map((f) => (
-            <div
-              key={f}
-              className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group"
-            >
-              <span className="w-3 h-3 text-[var(--warning)] shrink-0 text-center leading-3 text-[8px]">
-                M
-              </span>
+            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
+              <span className="w-3 h-3 text-[var(--warning)] shrink-0 text-center leading-3 text-[8px]">M</span>
               <span className="flex-1 truncate text-[var(--text)]">{f}</span>
               <button
                 onClick={() => {
@@ -218,10 +201,7 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             </div>
           ))}
           {untracked.map((f) => (
-            <div
-              key={f}
-              className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group"
-            >
+            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
               <FileQuestion className="w-3 h-3 text-[var(--muted)] shrink-0" />
               <span className="flex-1 truncate text-[var(--text)]">{f}</span>
               <button
@@ -257,7 +237,7 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             aria-label="Commit message"
             className="flex-1 px-2 py-1.5 text-xs border border-[var(--border)] rounded bg-[var(--input-bg)] text-[var(--text)] placeholder:text-[var(--muted)] outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === 'Enter') {
                 void handleCommit();
               }
             }}

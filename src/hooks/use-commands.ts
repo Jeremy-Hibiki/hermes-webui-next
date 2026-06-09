@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { getCompletions } from "@/lib/commands";
+import { useState, useCallback } from 'react';
+import { getCompletions } from '@/lib/commands';
 
 interface UseCommandsReturn {
   completions: string[];

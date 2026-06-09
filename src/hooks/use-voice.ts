@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from 'react';
 
 interface UseVoiceReturn {
   recording: boolean;
@@ -12,7 +12,7 @@ interface UseVoiceReturn {
 
 export function useVoice(): UseVoiceReturn {
   const [recording, setRecording] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<unknown>(null);
 
@@ -22,7 +22,7 @@ export function useVoice(): UseVoiceReturn {
       (globalThis as Record<string, unknown>).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setError("Speech recognition not supported");
+      setError('Speech recognition not supported');
       return;
     }
 
@@ -39,10 +39,10 @@ export function useVoice(): UseVoiceReturn {
     })();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = "en-US";
+    recognition.lang = 'en-US';
 
     recognition.onresult = (e: { results: { transcript: string }[][] }) => {
-      const text = e.results?.[0]?.[0]?.transcript ?? "";
+      const text = e.results?.[0]?.[0]?.transcript ?? '';
       setTranscript(text);
       setRecording(false);
     };
@@ -59,7 +59,7 @@ export function useVoice(): UseVoiceReturn {
     recognitionRef.current = recognition;
     recognition.start();
     setRecording(true);
-    setTranscript("");
+    setTranscript('');
     setError(null);
   }, []);
 

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useCallback, useRef } from "react";
-import { useAtom } from "jotai";
+import { useCallback, useRef } from 'react';
+import { useAtom } from 'jotai';
 import {
   messagesAtom,
   busyAtom,
@@ -10,11 +10,11 @@ import {
   clarifyAtom,
   todosAtom,
   todoMetaAtom,
-} from "@/atoms/chat";
-import { activeSessionAtom } from "@/atoms/session";
-import { SSEClient } from "@/lib/sse-client";
-import { apiPost } from "@/lib/api-client";
-import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from "@/types";
+} from '@/atoms/chat';
+import { activeSessionAtom } from '@/atoms/session';
+import { SSEClient } from '@/lib/sse-client';
+import { apiPost } from '@/lib/api-client';
+import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 
 interface SSEApprovalData {
   approval_id?: string;
@@ -52,7 +52,7 @@ export function useChatStream(sessionId: string) {
       // Add user message immediately
       const userMsg: Message = {
         id: `user-${Date.now()}`,
-        role: "user",
+        role: 'user',
         content: text,
         timestamp: new Date().toISOString(),
       };
@@ -61,7 +61,7 @@ export function useChatStream(sessionId: string) {
 
       try {
         // Start chat on backend
-        const res = await apiPost<{ stream_id: string; session_id: string }>("/chat/start", {
+        const res = await apiPost<{ stream_id: string; session_id: string }>('/chat/start', {
           session_id: sessionId,
           message: text,
           attachments,
@@ -73,11 +73,11 @@ export function useChatStream(sessionId: string) {
         const client = new SSEClient();
         clientRef.current = client;
 
-        let assistantContent = "";
+        let assistantContent = '';
         const assistantMsg: Message = {
           id: `asst-${Date.now()}`,
-          role: "assistant",
-          content: "",
+          role: 'assistant',
+          content: '',
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
@@ -88,9 +88,7 @@ export function useChatStream(sessionId: string) {
             if (d.content) {
               assistantContent += d.content;
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id ? { ...m, content: assistantContent } : m,
-                ),
+                prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: assistantContent } : m)),
               );
             }
           },
@@ -98,11 +96,7 @@ export function useChatStream(sessionId: string) {
             const d = data as { content?: string };
             if (d.content) {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id
-                    ? { ...m, reasoning: (m.reasoning || "") + d.content }
-                    : m,
-                ),
+                prev.map((m) => (m.id === assistantMsg.id ? { ...m, reasoning: (m.reasoning || '') + d.content } : m)),
               );
             }
           },
@@ -116,10 +110,10 @@ export function useChatStream(sessionId: string) {
                       tool_calls: [
                         ...(m.tool_calls || []),
                         {
-                          id: d.id || "",
-                          name: d.name || "",
-                          arguments: d.arguments || "{}",
-                          status: (d.status || "pending") as ToolCall["status"],
+                          id: d.id || '',
+                          name: d.name || '',
+                          arguments: d.arguments || '{}',
+                          status: (d.status || 'pending') as ToolCall['status'],
                         },
                       ],
                     }
@@ -133,7 +127,7 @@ export function useChatStream(sessionId: string) {
               id: d.approval_id || `approval-${Date.now()}`,
               approval_id: d.approval_id,
               session_id: sessionId,
-              tool_name: d.tool_name || d.description || "Unknown tool",
+              tool_name: d.tool_name || d.description || 'Unknown tool',
               tool_args: d.tool_args || {},
               stream_id: res.stream_id,
               created_at: new Date().toISOString(),
@@ -149,7 +143,7 @@ export function useChatStream(sessionId: string) {
               id: d.clarify_id || `clarify-${Date.now()}`,
               clarify_id: d.clarify_id,
               session_id: sessionId,
-              question: d.question || d.description || "",
+              question: d.question || d.description || '',
               choices: d.choices_offered,
               stream_id: res.stream_id,
               created_at: new Date().toISOString(),
@@ -168,17 +162,13 @@ export function useChatStream(sessionId: string) {
             setStreamId(null);
             client.close();
             // Update session title if new
-            setActiveSession((prev) =>
-              prev ? { ...prev, message_count: prev.message_count + 1 } : prev,
-            );
+            setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
           },
           error: (data: unknown) => {
             const d = data as { message?: string };
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === assistantMsg.id
-                  ? { ...m, content: `⚠️ Error: ${d.message || "Unknown error"}` }
-                  : m,
+                m.id === assistantMsg.id ? { ...m, content: `⚠️ Error: ${d.message || 'Unknown error'}` } : m,
               ),
             );
             setBusy(false);
@@ -192,12 +182,12 @@ export function useChatStream(sessionId: string) {
           },
         });
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : "Failed to start chat";
+        const errMsg = err instanceof Error ? err.message : 'Failed to start chat';
         setMessages((prev) => [
           ...prev,
           {
             id: `error-${Date.now()}`,
-            role: "system",
+            role: 'system',
             content: `⚠️ ${errMsg}`,
             timestamp: new Date().toISOString(),
           },
@@ -224,7 +214,7 @@ export function useChatStream(sessionId: string) {
     setBusy(false);
     setStreamId(null);
     // Also notify backend
-    fetch(`/api/chat/cancel?stream_id=${""}`, { method: "GET" }).catch(() => {});
+    fetch(`/api/chat/cancel?stream_id=${''}`, { method: 'GET' }).catch(() => {});
   }, [setBusy, setStreamId]);
 
   return { send, cancel, messages, busy };

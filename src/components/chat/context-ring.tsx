@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface ContextRingProps {
   used: number;
@@ -12,19 +12,20 @@ export function ContextRing({ used, total, size = 36 }: ContextRingProps) {
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - pct);
 
-  const color =
-    pct > 0.9 ? "var(--error)" : pct > 0.7 ? "var(--warning)" : "var(--success)";
+  const color = pct > 0.9 ? 'var(--error)' : pct > 0.7 ? 'var(--warning)' : 'var(--success)';
 
   return (
     <svg width={size} height={size} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth={3} />
       <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke="var(--border)" strokeWidth={3}
-      />
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke={color} strokeWidth={3}
-        strokeDasharray={circ} strokeDashoffset={offset}
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={3}
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />

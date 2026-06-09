@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { useAtom } from "jotai";
-import { messagesAtom, busyAtom, approvalAtom, clarifyAtom, yoloAtom } from "@/atoms/chat";
-import { activeSessionAtom } from "@/atoms/session";
-import { useChatStream } from "@/hooks/use-chat-stream";
-import { ComposerFooter } from "./composer-footer";
-import { MessageList } from "@/components/chat/message-list";
-import { StreamingCursor } from "@/components/chat/streaming-cursor";
-import { ApprovalCard } from "@/components/chat/approval-card";
-import { ClarifyCard } from "@/components/chat/clarify-card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { apiPost } from "@/lib/api-client";
+import { useCallback } from 'react';
+import { useAtom } from 'jotai';
+import { messagesAtom, busyAtom, approvalAtom, clarifyAtom, yoloAtom } from '@/atoms/chat';
+import { activeSessionAtom } from '@/atoms/session';
+import { useChatStream } from '@/hooks/use-chat-stream';
+import { ComposerFooter } from './composer-footer';
+import { MessageList } from '@/components/chat/message-list';
+import { StreamingCursor } from '@/components/chat/streaming-cursor';
+import { ApprovalCard } from '@/components/chat/approval-card';
+import { ClarifyCard } from '@/components/chat/clarify-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiPost } from '@/lib/api-client';
 
 export function MainPanel() {
   const [messages] = useAtom(messagesAtom);
@@ -21,7 +21,7 @@ export function MainPanel() {
   const [clarify, setClarify] = useAtom(clarifyAtom);
   const [, setYolo] = useAtom(yoloAtom);
 
-  const sessionId = activeSession?.id ?? "";
+  const sessionId = activeSession?.id ?? '';
   const { send, cancel } = useChatStream(sessionId);
 
   const handleSend = (message: string, _attachments?: File[]) => {
@@ -34,16 +34,16 @@ export function MainPanel() {
   };
 
   const handleApprovalRespond = useCallback(
-    async (approvalId: string, choice: "once" | "session" | "always" | "deny") => {
+    async (approvalId: string, choice: 'once' | 'session' | 'always' | 'deny') => {
       try {
-        await apiPost("/approval/respond", {
+        await apiPost('/approval/respond', {
           session_id: sessionId,
           approval_id: approvalId,
           choice,
         });
         setApproval(null);
       } catch (err) {
-        console.error("Failed to respond to approval:", err);
+        console.error('Failed to respond to approval:', err);
       }
     },
     [sessionId, setApproval],
@@ -51,25 +51,25 @@ export function MainPanel() {
 
   const handleYoloToggle = useCallback(async () => {
     try {
-      await apiPost("/session/yolo", { session_id: sessionId, enabled: true });
+      await apiPost('/session/yolo', { session_id: sessionId, enabled: true });
       setYolo(true);
       setApproval(null);
     } catch (err) {
-      console.error("Failed to toggle YOLO:", err);
+      console.error('Failed to toggle YOLO:', err);
     }
   }, [sessionId, setYolo, setApproval]);
 
   const handleClarifyRespond = useCallback(
     async (clarifyId: string, response: string) => {
       try {
-        await apiPost("/clarify/respond", {
+        await apiPost('/clarify/respond', {
           session_id: sessionId,
           clarify_id: clarifyId,
           response,
         });
         setClarify(null);
       } catch (err) {
-        console.error("Failed to respond to clarify:", err);
+        console.error('Failed to respond to clarify:', err);
       }
     },
     [sessionId, setClarify],
@@ -78,10 +78,10 @@ export function MainPanel() {
   const handleEdit = useCallback(
     async (messageId: string, newContent: string) => {
       try {
-        await apiPost("/session/truncate", { session_id: sessionId, message_id: messageId });
+        await apiPost('/session/truncate', { session_id: sessionId, message_id: messageId });
         void send(newContent);
       } catch (err) {
-        console.error("Failed to edit message:", err);
+        console.error('Failed to edit message:', err);
       }
     },
     [sessionId, send],
@@ -90,9 +90,9 @@ export function MainPanel() {
   const handleRegenerate = useCallback(
     async (messageId: string) => {
       try {
-        await apiPost("/session/retry", { session_id: sessionId, message_id: messageId });
+        await apiPost('/session/retry', { session_id: sessionId, message_id: messageId });
       } catch (err) {
-        console.error("Failed to regenerate:", err);
+        console.error('Failed to regenerate:', err);
       }
     },
     [sessionId],
@@ -116,11 +116,7 @@ export function MainPanel() {
 
       {approval && (
         <div className="px-4 pb-2">
-          <ApprovalCard
-            request={approval}
-            onRespond={handleApprovalRespond}
-            onYoloToggle={handleYoloToggle}
-          />
+          <ApprovalCard request={approval} onRespond={handleApprovalRespond} onYoloToggle={handleYoloToggle} />
         </div>
       )}
 

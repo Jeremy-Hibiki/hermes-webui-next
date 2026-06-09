@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import type { CronJob, CronCreateParams } from "@/types";
-import { API_BASE } from "@/lib/constants";
+import { useState, useCallback } from 'react';
+import type { CronJob, CronCreateParams } from '@/types';
+import { API_BASE } from '@/lib/constants';
 
 interface UseCronReturn {
   jobs: CronJob[];
@@ -25,14 +25,14 @@ export function useCron(): UseCronReturn {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/crons`, {
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`API Error: ${res.status}`);
       const data = await res.json();
-      setJobs(Array.isArray(data) ? data : data.jobs ?? []);
+      setJobs(Array.isArray(data) ? data : (data.jobs ?? []));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch cron jobs");
+      setError(err instanceof Error ? err.message : 'Failed to fetch cron jobs');
     } finally {
       setLoading(false);
     }
@@ -41,9 +41,9 @@ export function useCron(): UseCronReturn {
   const createJob = useCallback(async (params: CronCreateParams) => {
     setError(null);
     const res = await fetch(`${API_BASE}/crons/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
@@ -52,9 +52,9 @@ export function useCron(): UseCronReturn {
   const deleteJob = useCallback(async (id: string) => {
     setError(null);
     const res = await fetch(`${API_BASE}/crons/delete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ id }),
     });
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
@@ -63,9 +63,9 @@ export function useCron(): UseCronReturn {
   const toggleJob = useCallback(async (id: string, enabled: boolean) => {
     setError(null);
     const res = await fetch(`${API_BASE}/crons/toggle`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ id, enabled }),
     });
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
@@ -74,9 +74,9 @@ export function useCron(): UseCronReturn {
   const runJob = useCallback(async (id: string) => {
     setError(null);
     const res = await fetch(`${API_BASE}/crons/run`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ id }),
     });
     if (!res.ok) throw new Error(`API Error: ${res.status}`);

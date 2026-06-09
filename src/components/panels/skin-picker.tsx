@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { SKINS } from "@/lib/theme";
+import { cn } from '@/lib/utils';
+import { SKINS } from '@/lib/theme';
 
 interface SkinPickerProps {
   current: string;
@@ -23,10 +23,10 @@ export function SkinPicker({ current, onChange }: SkinPickerProps) {
           onClick={() => onChange(skin.id)}
           title={skin.name}
           className={cn(
-            "w-7 h-7 rounded-full border-2 transition-all cursor-pointer",
+            'w-7 h-7 rounded-full border-2 transition-all cursor-pointer',
             current === skin.id
-              ? "border-[var(--accent)] ring-2 ring-[var(--accent)] scale-110"
-              : "border-[var(--border)] hover:scale-105"
+              ? 'border-[var(--accent)] ring-2 ring-[var(--accent)] scale-110'
+              : 'border-[var(--border)] hover:scale-105',
           )}
           style={{ backgroundColor: skinToColor(skin.id, i) }}
         />

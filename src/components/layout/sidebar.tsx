@@ -1,36 +1,29 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useAtom } from "jotai";
-import { sessionsListAtom, activeSessionAtom } from "@/atoms/session";
-import { useSessions } from "@/hooks/use-sessions";
-import { useSessionSearch } from "@/hooks/use-session-search";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Pin, ChevronRight } from "lucide-react";
-import { apiPost } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import type { Session } from "@/types";
-import { SessionItem } from "@/components/sessions/session-item";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useAtom } from 'jotai';
+import { sessionsListAtom, activeSessionAtom } from '@/atoms/session';
+import { useSessions } from '@/hooks/use-sessions';
+import { useSessionSearch } from '@/hooks/use-session-search';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, X, Pin, ChevronRight } from 'lucide-react';
+import { apiPost } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
+import type { Session } from '@/types';
+import { SessionItem } from '@/components/sessions/session-item';
 
 export function Sidebar() {
   const [, setSessions] = useAtom(sessionsListAtom);
   const [active, setActive] = useAtom(activeSessionAtom);
-  const { sessions, projects, dateGroupedSessions, pinnedSessions, isLoading, mutate } =
-    useSessions();
-  const {
-    query,
-    setQuery,
-    results: searchResults,
-    isSearching,
-    clearSearch,
-  } = useSessionSearch(sessions);
+  const { sessions, projects, dateGroupedSessions, pinnedSessions, isLoading, mutate } = useSessions();
+  const { query, setQuery, results: searchResults, isSearching, clearSearch } = useSessionSearch(sessions);
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isSearchingActive = query.trim().length > 0;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
-      const saved = localStorage.getItem("hermes-date-groups-collapsed");
+      const saved = localStorage.getItem('hermes-date-groups-collapsed');
       return saved ? new Set(JSON.parse(saved) as string[]) : new Set();
     } catch {
       return new Set();
@@ -43,7 +36,7 @@ export function Sidebar() {
       if (next.has(label)) next.delete(label);
       else next.add(label);
       try {
-        localStorage.setItem("hermes-date-groups-collapsed", JSON.stringify([...next]));
+        localStorage.setItem('hermes-date-groups-collapsed', JSON.stringify([...next]));
       } catch {}
       return next;
     });
@@ -56,11 +49,11 @@ export function Sidebar() {
 
   const handleNewChat = async () => {
     try {
-      const session = await apiPost<Session>("/session/new", {});
+      const session = await apiPost<Session>('/session/new', {});
       setActive(session);
       await mutate();
     } catch (err) {
-      console.error("Failed to create session:", err);
+      console.error('Failed to create session:', err);
     }
   };
 
@@ -71,39 +64,39 @@ export function Sidebar() {
 
   const handleRename = async (sessionId: string, newTitle: string) => {
     try {
-      await apiPost("/session/rename", { session_id: sessionId, title: newTitle });
+      await apiPost('/session/rename', { session_id: sessionId, title: newTitle });
       await mutate();
     } catch (err) {
-      console.error("Failed to rename session:", err);
+      console.error('Failed to rename session:', err);
     }
   };
 
   const handlePin = async (sessionId: string) => {
     try {
-      await apiPost("/session/pin", { session_id: sessionId });
+      await apiPost('/session/pin', { session_id: sessionId });
       await mutate();
     } catch (err) {
-      console.error("Failed to pin session:", err);
+      console.error('Failed to pin session:', err);
     }
   };
 
   const handleArchive = async (sessionId: string) => {
     try {
-      await apiPost("/session/archive", { session_id: sessionId });
+      await apiPost('/session/archive', { session_id: sessionId });
       if (active?.id === sessionId) setActive(null);
       await mutate();
     } catch (err) {
-      console.error("Failed to archive session:", err);
+      console.error('Failed to archive session:', err);
     }
   };
 
   const handleDelete = async (sessionId: string) => {
     try {
-      await apiPost("/session/delete", { session_id: sessionId });
+      await apiPost('/session/delete', { session_id: sessionId });
       if (active?.id === sessionId) setActive(null);
       await mutate();
     } catch (err) {
-      console.error("Failed to delete session:", err);
+      console.error('Failed to delete session:', err);
     }
   };
 
@@ -119,7 +112,7 @@ export function Sidebar() {
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") handleCloseSearch();
+      if (e.key === 'Escape') handleCloseSearch();
     },
     [handleCloseSearch],
   );
@@ -237,9 +230,7 @@ export function Sidebar() {
                   onClick={() => toggleGroup(bucket.label)}
                   className="flex items-center gap-1 w-full px-3 py-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wide hover:text-[var(--text)] transition-colors"
                 >
-                  <ChevronRight
-                    className={cn("w-3 h-3 transition-transform", !collapsed && "rotate-90")}
-                  />
+                  <ChevronRight className={cn('w-3 h-3 transition-transform', !collapsed && 'rotate-90')} />
                   {bucket.label}
                 </button>
                 {!collapsed &&
@@ -254,9 +245,7 @@ export function Sidebar() {
                       onArchive={handleArchive}
                       onDelete={handleDelete}
                       projectColor={
-                        session.project_id
-                          ? projects.find((p) => p.id === session.project_id)?.color
-                          : undefined
+                        session.project_id ? projects.find((p) => p.id === session.project_id)?.color : undefined
                       }
                     />
                   ))}

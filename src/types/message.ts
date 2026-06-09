@@ -1,4 +1,4 @@
-export type MessageRole = "user" | "assistant" | "system" | "tool";
+export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
 export interface Message {
   id: string;
@@ -16,7 +16,7 @@ export interface ToolCall {
   name: string;
   arguments: string;
   result?: string;
-  status: "pending" | "running" | "completed" | "error" | "cancelled";
+  status: 'pending' | 'running' | 'completed' | 'error' | 'cancelled';
   started_at?: string;
   completed_at?: string;
 }
@@ -49,5 +49,5 @@ export interface ClarifyRequest {
 export interface TodoItem {
   id: string;
   content: string;
-  status: "pending" | "in_progress" | "completed" | "cancelled";
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
 }

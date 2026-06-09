@@ -23,7 +23,7 @@ export interface CronDeliveryOptions {
 export interface CronRun {
   id: string;
   job_id: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: 'pending' | 'running' | 'completed' | 'failed';
   started_at: string;
   completed_at?: string;
   output?: string;

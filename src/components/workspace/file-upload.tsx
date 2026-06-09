@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useRef, useCallback } from "react";
-import { Upload } from "lucide-react";
+import { useRef, useCallback } from 'react';
+import { Upload } from 'lucide-react';
 
 interface FileUploadProps {
   onUpload: (files: FileList) => void;
@@ -16,7 +16,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
         onUpload(e.target.files);
       }
     },
-    [onUpload]
+    [onUpload],
   );
 
   return (

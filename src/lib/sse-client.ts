@@ -42,19 +42,19 @@ export class SSEClient {
 
   static parseSSEChunk(raw: string): ParsedEvent[] {
     const events: ParsedEvent[] = [];
-    const chunks = raw.split("\n\n").filter(Boolean);
+    const chunks = raw.split('\n\n').filter(Boolean);
 
     for (const chunk of chunks) {
-      let event = "message";
-      let dataStr = "";
+      let event = 'message';
+      let dataStr = '';
       let id: string | undefined;
 
-      for (const line of chunk.split("\n")) {
-        if (line.startsWith("event: ")) {
+      for (const line of chunk.split('\n')) {
+        if (line.startsWith('event: ')) {
           event = line.slice(7).trim();
-        } else if (line.startsWith("data: ")) {
+        } else if (line.startsWith('data: ')) {
           dataStr = line.slice(6);
-        } else if (line.startsWith("id: ")) {
+        } else if (line.startsWith('id: ')) {
           id = line.slice(4).trim();
         }
       }

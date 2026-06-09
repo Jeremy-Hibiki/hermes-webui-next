@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useRef, useMemo } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
-import type { Session } from "@/types";
+import { useState, useCallback, useRef, useMemo } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
+import type { Session } from '@/types';
 
 interface SearchHit {
   session_id: string;
-  match_type: "title" | "content";
+  match_type: 'title' | 'content';
   match_preview?: string;
 }
 
@@ -16,14 +16,12 @@ interface SearchResponse {
 }
 
 export function useSessionSearch(allSessions: Session[]) {
-  const [query, setQueryImmediate] = useState("");
+  const [query, setQueryImmediate] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const { data: searchData, isLoading: isSearching } = useSWR<SearchResponse>(
-    debouncedQuery
-      ? `/sessions/search?q=${encodeURIComponent(debouncedQuery)}&content=1&depth=5`
-      : null,
+    debouncedQuery ? `/sessions/search?q=${encodeURIComponent(debouncedQuery)}&content=1&depth=5` : null,
     fetcher,
     { dedupingInterval: 300, revalidateOnFocus: false },
   );
@@ -32,7 +30,7 @@ export function useSessionSearch(allSessions: Session[]) {
     setQueryImmediate(value);
     if (timerRef.current) clearTimeout(timerRef.current);
     if (!value.trim()) {
-      setDebouncedQuery("");
+      setDebouncedQuery('');
       return;
     }
     timerRef.current = setTimeout(() => {
@@ -41,8 +39,8 @@ export function useSessionSearch(allSessions: Session[]) {
   }, []);
 
   const clearSearch = useCallback(() => {
-    setQueryImmediate("");
-    setDebouncedQuery("");
+    setQueryImmediate('');
+    setDebouncedQuery('');
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
@@ -59,7 +57,7 @@ export function useSessionSearch(allSessions: Session[]) {
     const sessionMap = new Map(allSessions.map((s) => [s.id, s]));
     const contentOnly: Session[] = [];
     for (const hit of searchData.sessions) {
-      if (hit.match_type !== "content" || titleMatchIds.has(hit.session_id)) continue;
+      if (hit.match_type !== 'content' || titleMatchIds.has(hit.session_id)) continue;
       const session = sessionMap.get(hit.session_id);
       if (session) contentOnly.push(session);
     }

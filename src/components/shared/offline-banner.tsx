@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { WifiOff, X, RefreshCw } from "lucide-react";
+import { WifiOff, X, RefreshCw } from 'lucide-react';
 
 interface OfflineBannerProps {
   offline: boolean;
@@ -25,11 +25,7 @@ export function OfflineBanner({ offline, onRetry, onDismiss }: OfflineBannerProp
           <RefreshCw className="w-3 h-3" />
           Retry
         </button>
-        <button
-          onClick={onDismiss}
-          aria-label="Dismiss"
-          className="p-1 rounded hover:bg-white/20"
-        >
+        <button onClick={onDismiss} aria-label="Dismiss" className="p-1 rounded hover:bg-white/20">
           <X className="w-4 h-4" />
         </button>
       </div>

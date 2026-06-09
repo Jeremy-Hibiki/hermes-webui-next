@@ -1,4 +1,4 @@
-import type { Message } from "./message";
+import type { Message } from './message';
 
 export interface Session {
   id: string;
@@ -15,7 +15,7 @@ export interface Session {
   archived: boolean;
   project_id: string | null;
   message_count: number;
-  source?: "webui" | "cli";
+  source?: 'webui' | 'cli';
   parent_id?: string | null;
   streaming?: boolean;
   yolo?: boolean;

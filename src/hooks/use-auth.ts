@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { API_BASE } from "@/lib/constants";
+import { useState, useCallback } from 'react';
+import { API_BASE } from '@/lib/constants';
 
 interface UseAuthReturn {
   enabled: boolean;
@@ -25,8 +25,8 @@ export function useAuth(): UseAuthReturn {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/status`, {
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`API Error: ${res.status}`);
       const data = await res.json();
@@ -34,7 +34,7 @@ export function useAuth(): UseAuthReturn {
       setLoggedIn(data.logged_in ?? false);
       setHasPasskeys(data.has_passkeys ?? false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to check auth");
+      setError(err instanceof Error ? err.message : 'Failed to check auth');
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,15 @@ export function useAuth(): UseAuthReturn {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ password }),
       });
-      if (!res.ok) throw new Error("Invalid password");
+      if (!res.ok) throw new Error('Invalid password');
       setLoggedIn(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : 'Login failed');
       throw err;
     } finally {
       setLoading(false);
@@ -62,8 +62,8 @@ export function useAuth(): UseAuthReturn {
 
   const logout = useCallback(async () => {
     await fetch(`${API_BASE}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
+      method: 'POST',
+      credentials: 'include',
     });
     setLoggedIn(false);
   }, []);

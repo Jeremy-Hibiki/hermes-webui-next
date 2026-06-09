@@ -1,22 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback } from "react";
-import useSWR from "swr";
-import { fetcher, apiPost } from "@/lib/api-client";
-import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
-import {
-  Zap,
-  Search,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  Pencil,
-  Trash2,
-  X,
-  FileText,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useMemo, useCallback } from 'react';
+import useSWR from 'swr';
+import { fetcher, apiPost } from '@/lib/api-client';
+import { MarkdownRenderer } from '@/components/chat/markdown-renderer';
+import { Zap, Search, Plus, ChevronDown, ChevronRight, Pencil, Trash2, X, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface Skill {
   name: string;
@@ -40,16 +30,16 @@ interface FileContent {
 }
 
 export function SkillsPanel() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [createMode, setCreateMode] = useState(false);
-  const [editDraft, setEditDraft] = useState("");
-  const [createDraft, setCreateDraft] = useState({ name: "", category: "", content: "" });
+  const [editDraft, setEditDraft] = useState('');
+  const [createDraft, setCreateDraft] = useState({ name: '', category: '', content: '' });
   const [viewingFile, setViewingFile] = useState<string | null>(null);
 
-  const { data, mutate } = useSWR<SkillsResponse>("/skills", fetcher, { revalidateOnFocus: false });
+  const { data, mutate } = useSWR<SkillsResponse>('/skills', fetcher, { revalidateOnFocus: false });
   const skills = useMemo(() => data?.skills ?? [], [data]);
 
   const { data: skillContent } = useSWR<SkillContent>(
@@ -69,7 +59,7 @@ export function SkillsPanel() {
   const grouped = useMemo(() => {
     const map: Record<string, Skill[]> = {};
     for (const s of skills) {
-      const cat = s.category || "general";
+      const cat = s.category || 'general';
       if (!map[cat]) map[cat] = [];
       map[cat].push(s);
     }
@@ -104,10 +94,10 @@ export function SkillsPanel() {
   const handleToggle = useCallback(
     async (name: string, enabled: boolean) => {
       try {
-        await apiPost("/skills/toggle", { name, enabled });
+        await apiPost('/skills/toggle', { name, enabled });
         void mutate();
       } catch (err) {
-        console.error("Failed to toggle skill:", err);
+        console.error('Failed to toggle skill:', err);
       }
     },
     [mutate],
@@ -123,14 +113,14 @@ export function SkillsPanel() {
   const handleSave = useCallback(
     async (name: string, category: string, content: string) => {
       try {
-        await apiPost("/skills/save", { name, category: category || undefined, content });
+        await apiPost('/skills/save', { name, category: category || undefined, content });
         void mutate();
         setEditMode(false);
         setCreateMode(false);
-        setCreateDraft({ name: "", category: "", content: "" });
+        setCreateDraft({ name: '', category: '', content: '' });
         if (!selectedSkill) setSelectedSkill(name);
       } catch (err) {
-        console.error("Failed to save skill:", err);
+        console.error('Failed to save skill:', err);
       }
     },
     [mutate, selectedSkill],
@@ -140,21 +130,21 @@ export function SkillsPanel() {
     async (name: string) => {
       if (!window.confirm(`Delete skill "${name}"?`)) return;
       try {
-        await apiPost("/skills/delete", { name });
+        await apiPost('/skills/delete', { name });
         if (selectedSkill === name) {
           setSelectedSkill(null);
           setEditMode(false);
         }
         void mutate();
       } catch (err) {
-        console.error("Failed to delete skill:", err);
+        console.error('Failed to delete skill:', err);
       }
     },
     [mutate, selectedSkill],
   );
 
   const startEdit = useCallback(() => {
-    setEditDraft(skillContent?.content ?? "");
+    setEditDraft(skillContent?.content ?? '');
     setEditMode(true);
   }, [skillContent]);
 
@@ -219,26 +209,26 @@ export function SkillsPanel() {
                       key={s.name}
                       onClick={() => handleSelect(s.name)}
                       className={cn(
-                        "w-full text-left px-3 py-1.5 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors",
-                        selectedSkill === s.name && "bg-[var(--accent-bg)] text-[var(--accent)]",
+                        'w-full text-left px-3 py-1.5 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors',
+                        selectedSkill === s.name && 'bg-[var(--accent-bg)] text-[var(--accent)]',
                       )}
                     >
                       <button
                         type="button"
-                        aria-label={s.disabled ? "Enable skill" : "Disable skill"}
+                        aria-label={s.disabled ? 'Enable skill' : 'Disable skill'}
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleToggle(s.name, !!s.disabled);
                         }}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === 'Enter') {
                             e.stopPropagation();
                             void handleToggle(s.name, !!s.disabled);
                           }
                         }}
                         className={cn(
-                          "shrink-0 w-2 h-2 rounded-full border-none bg-transparent p-0",
-                          s.disabled ? "bg-[var(--muted)]" : "bg-green-500",
+                          'shrink-0 w-2 h-2 rounded-full border-none bg-transparent p-0',
+                          s.disabled ? 'bg-[var(--muted)]' : 'bg-green-500',
                         )}
                       />
                       <span className="truncate">{s.name}</span>
@@ -267,7 +257,7 @@ export function SkillsPanel() {
                   onChange={(e) =>
                     setCreateDraft((d) => ({
                       ...d,
-                      name: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                      name: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
                     }))
                   }
                   className="w-full mt-1 px-2 py-1 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
@@ -306,9 +296,7 @@ export function SkillsPanel() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() =>
-                    void handleSave(createDraft.name, createDraft.category, createDraft.content)
-                  }
+                  onClick={() => void handleSave(createDraft.name, createDraft.category, createDraft.content)}
                   disabled={!createDraft.name.trim()}
                 >
                   Create
@@ -318,7 +306,7 @@ export function SkillsPanel() {
                   variant="ghost"
                   onClick={() => {
                     setCreateMode(false);
-                    setCreateDraft({ name: "", category: "", content: "" });
+                    setCreateDraft({ name: '', category: '', content: '' });
                   }}
                 >
                   Cancel
@@ -328,18 +316,11 @@ export function SkillsPanel() {
           ) : selectedSkill ? (
             <>
               <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)]">
-                <span className="text-sm font-medium text-[var(--text)] truncate">
-                  {selectedSkill}
-                </span>
+                <span className="text-sm font-medium text-[var(--text)] truncate">{selectedSkill}</span>
                 <div className="flex items-center gap-1">
                   {!editMode ? (
                     <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-[var(--muted)]"
-                        onClick={startEdit}
-                      >
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--muted)]" onClick={startEdit}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       <Button
@@ -374,10 +355,7 @@ export function SkillsPanel() {
                       aria-label="Edit skill content"
                     />
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => void handleSave(selectedSkill, "", editDraft)}
-                      >
+                      <Button size="sm" onClick={() => void handleSave(selectedSkill, '', editDraft)}>
                         Save
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditMode(false)}>
@@ -389,10 +367,7 @@ export function SkillsPanel() {
                   <>
                     {viewingFile && (
                       <div className="flex items-center gap-2 mb-3 text-xs text-[var(--muted)]">
-                        <button
-                          className="hover:text-[var(--text)]"
-                          onClick={() => setViewingFile(null)}
-                        >
+                        <button className="hover:text-[var(--text)]" onClick={() => setViewingFile(null)}>
                           {selectedSkill}
                         </button>
                         <span>/</span>
@@ -404,25 +379,21 @@ export function SkillsPanel() {
                     ) : (
                       <div className="text-[var(--muted)] text-center">Loading...</div>
                     )}
-                    {!viewingFile &&
-                      skillContent?.linked_files &&
-                      skillContent.linked_files.length > 0 && (
-                        <div className="mt-4 border-t border-[var(--border)] pt-3">
-                          <div className="text-xs font-medium text-[var(--muted)] mb-2">
-                            Linked Files
-                          </div>
-                          {skillContent.linked_files.map((f) => (
-                            <button
-                              key={f.path}
-                              onClick={() => setViewingFile(f.path)}
-                              className="flex items-center gap-2 w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] text-[var(--text)]"
-                            >
-                              <FileText className="w-3 h-3 text-[var(--muted)]" />
-                              {f.name || f.path}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {!viewingFile && skillContent?.linked_files && skillContent.linked_files.length > 0 && (
+                      <div className="mt-4 border-t border-[var(--border)] pt-3">
+                        <div className="text-xs font-medium text-[var(--muted)] mb-2">Linked Files</div>
+                        {skillContent.linked_files.map((f) => (
+                          <button
+                            key={f.path}
+                            onClick={() => setViewingFile(f.path)}
+                            className="flex items-center gap-2 w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] text-[var(--text)]"
+                          >
+                            <FileText className="w-3 h-3 text-[var(--muted)]" />
+                            {f.name || f.path}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
