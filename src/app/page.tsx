@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { useAtom } from "jotai";
 import { currentPanelAtom, workspacePanelOpenAtom } from "@/atoms/ui";
 import { ThreePanel } from "@/components/layout/three-panel";
@@ -15,7 +16,9 @@ import { SettingsPanel } from "@/components/panels/settings-panel";
 import { InsightsPanel } from "@/components/panels/insights-panel";
 import { KanbanBoard } from "@/components/panels/kanban-board";
 import { TerminalPanel } from "@/components/terminal/terminal";
+import { LoginPage } from "@/app/login/login-page";
 import { activeSessionAtom } from "@/atoms/session";
+import { API_BASE } from "@/lib/constants";
 
 /** Map panel id to its component */
 function getPanelContent(panelId: string, sessionId: string) {
@@ -45,15 +48,88 @@ function getPanelContent(panelId: string, sessionId: string) {
   }
 }
 
+type AuthState = "loading" | "unauthenticated" | "authenticated" | "no_auth";
+
 export default function Home() {
   const [currentPanel, setCurrentPanel] = useAtom(currentPanelAtom);
   const [workspaceOpen] = useAtom(workspacePanelOpenAtom);
   const [activeSession] = useAtom(activeSessionAtom);
+  const [authState, setAuthState] = useState<AuthState>("loading");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
+  // Check auth status on mount
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch(`${API_BASE}/auth/status`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (!data.auth_enabled) {
+          setAuthState("no_auth");
+        } else if (data.logged_in) {
+          setAuthState("authenticated");
+        } else {
+          setAuthState("unauthenticated");
+        }
+      } catch {
+        // If we can't reach auth status, backend might be down.
+        // Try to proceed anyway — let individual requests handle 401.
+        setAuthState("no_auth");
+      }
+    }
+    void checkAuth();
+
+    // Listen for 401 events from api-client
+    function onUnauthorized() {
+      setAuthState("unauthenticated");
+    }
+    window.addEventListener("hermes:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("hermes:unauthorized", onUnauthorized);
+  }, []);
+
+  const handleLogin = useCallback(async (password: string) => {
+    setLoginError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setLoginError(data.error || "Login failed");
+        return;
+      }
+
+      // Login successful — reload to get fresh session
+      setAuthState("authenticated");
+    } catch {
+      setLoginError("Failed to connect to server");
+    }
+  }, []);
+
+  // Loading state
+  if (authState === "loading") {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[var(--bg)]">
+        <div className="text-[var(--muted)] text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login page if auth is required and user isn't logged in
+  if (authState === "unauthenticated") {
+    return <LoginPage onLogin={handleLogin} error={loginError} />;
+  }
+
+  // Main app
   const sessionId = activeSession?.id ?? "";
   const mainContent = getPanelContent(currentPanel, sessionId);
-
-  // Workspace panel is shown when viewing chat and toggled on
   const showWorkspace = currentPanel === "chat" && workspaceOpen;
 
   return (
