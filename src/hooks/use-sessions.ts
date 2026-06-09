@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api-client";
 import { bucketSessionsByDate, type DateBucket } from "@/lib/date-buckets";
+import { API_BASE } from "@/lib/constants";
 import type { Session, SessionsResponse } from "@/types";
 
 interface SessionGroup {
@@ -14,16 +15,19 @@ interface SessionGroup {
 }
 
 export function useSessions() {
-  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>("/sessions", fetcher);
+  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>("/sessions", fetcher, {
+    revalidateOnFocus: false,
+  });
 
-  const sessions = data?.sessions ?? [];
-  const projects = data?.projects ?? [];
+  const activeSessions = useMemo(() => (data?.sessions ?? []).filter((s) => !s.archived), [data]);
 
-  const activeSessions = useMemo(() => sessions.filter((s) => !s.archived), [sessions]);
-
-  const pinnedSessions = useMemo(() => sessions.filter((s) => s.pinned && !s.archived), [sessions]);
+  const pinnedSessions = useMemo(
+    () => (data?.sessions ?? []).filter((s) => s.pinned && !s.archived),
+    [data],
+  );
 
   const groupedSessions = useMemo<SessionGroup[]>(() => {
+    const projects = data?.projects ?? [];
     const groups: Record<string, Session[]> = {};
     const ungrouped: Session[] = [];
 
@@ -61,16 +65,42 @@ export function useSessions() {
     }
 
     return result;
-  }, [activeSessions, projects]);
+  }, [activeSessions, data]);
 
   const dateGroupedSessions = useMemo<DateBucket[]>(
     () => bucketSessionsByDate(activeSessions),
     [activeSessions],
   );
 
+  // SSE for real-time session updates
+  const esRef = useRef<EventSource | null>(null);
+  useEffect(() => {
+    try {
+      const es = new EventSource(`${API_BASE}/sessions/events`, {
+        withCredentials: true,
+      });
+      esRef.current = es;
+      es.addEventListener("session_update", () => {
+        void mutate();
+      });
+      es.addEventListener("session_new", () => {
+        void mutate();
+      });
+      es.onerror = () => {
+        // SSE connection lost, SWR will handle polling
+      };
+    } catch {
+      // SSE not available
+    }
+    return () => {
+      esRef.current?.close();
+      esRef.current = null;
+    };
+  }, [mutate]);
+
   return {
-    sessions,
-    projects,
+    sessions: data?.sessions ?? [],
+    projects: data?.projects ?? [],
     activeSessions,
     pinnedSessions,
     groupedSessions,

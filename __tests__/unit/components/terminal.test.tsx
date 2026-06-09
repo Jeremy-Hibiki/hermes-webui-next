@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vite-plus/test";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { TerminalPanel } from "@/components/terminal/terminal";
 
 // Mock dynamic imports — terminal uses dynamic import() for xterm
@@ -14,6 +14,7 @@ vi.mock("@xterm/xterm", () => ({
     rows: 24,
     buffer: { active: { length: 0 } },
     write: vi.fn(),
+    options: {},
   })),
 }));
 
@@ -35,7 +36,20 @@ const mockEventSource = {
 };
 vi.stubGlobal(
   "EventSource",
-  vi.fn(() => mockEventSource),
+  vi.fn(function (this: EventSource, _url: string) {
+    return mockEventSource;
+  }),
+);
+
+// Mock fetch for terminal start/resize/close
+vi.stubGlobal(
+  "fetch",
+  vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(""),
+    status: 200,
+  }),
 );
 
 describe("TerminalPanel", () => {
@@ -64,5 +78,12 @@ describe("TerminalPanel", () => {
   it("renders with different session IDs", () => {
     render(<TerminalPanel sessionId="abc-123" />);
     expect(screen.getByTestId("terminal-container")).toBeTruthy();
+  });
+
+  it("collapses when collapse button is clicked", () => {
+    render(<TerminalPanel sessionId="s1" />);
+    const collapseBtn = screen.getByLabelText("Collapse terminal");
+    act(() => collapseBtn.click());
+    expect(screen.queryByTestId("terminal-container")).toBeNull();
   });
 });
