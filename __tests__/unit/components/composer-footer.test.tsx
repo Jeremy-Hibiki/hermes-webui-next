@@ -25,6 +25,6 @@ describe("ComposerFooter", () => {
 
   it("renders attach button", () => {
     render(<ComposerFooter onSend={vi.fn()} busy={false} />);
-    expect(screen.getByLabelText(/attach/i)).toBeDefined();
+    expect(screen.getByLabelText(/attach file/i)).toBeDefined();
   });
 });
