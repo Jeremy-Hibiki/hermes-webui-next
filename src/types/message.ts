@@ -23,17 +23,25 @@ export interface ToolCall {
 
 export interface ApprovalRequest {
   id: string;
+  approval_id?: string;
   session_id: string;
   tool_name: string;
   tool_args: Record<string, unknown>;
   stream_id: string;
   created_at: string;
+  description?: string;
+  command?: string;
+  pattern_keys?: string[];
 }
 
 export interface ClarifyRequest {
   id: string;
+  clarify_id?: string;
   session_id: string;
   question: string;
+  choices?: string[];
   stream_id: string;
   created_at: string;
+  expires_at?: string;
+  timeout_seconds?: number;
 }

@@ -21,17 +21,28 @@ export interface SSEToolResultEvent {
 export interface SSEApprovalEvent {
   event: "approval";
   data: {
-    id: string;
+    approval_id: string;
     session_id: string;
-    tool_name: string;
-    tool_args: Record<string, unknown>;
-    stream_id: string;
+    description?: string;
+    command?: string;
+    pattern_keys?: string[];
+    tool_name?: string;
+    tool_args?: Record<string, unknown>;
   };
 }
 
 export interface SSEClarifyEvent {
   event: "clarify";
-  data: { id: string; session_id: string; question: string; stream_id: string };
+  data: {
+    clarify_id: string;
+    session_id: string;
+    question: string;
+    choices_offered?: string[];
+    description?: string;
+    expires_at?: string;
+    requested_at?: string;
+    timeout_seconds?: number;
+  };
 }
 
 export interface SSEDoneEvent {
