@@ -9,7 +9,7 @@ const BUCKET_ORDER = ["Today", "Yesterday", "This week", "Last week", "Older"] a
 type BucketLabel = (typeof BUCKET_ORDER)[number];
 
 function sessionTimestampMs(session: Session): number {
-  const raw = session.updated_at || session.created_at || "";
+  const raw = session.last_message_at || session.updated_at || session.created_at || "";
   const ms = new Date(raw).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }

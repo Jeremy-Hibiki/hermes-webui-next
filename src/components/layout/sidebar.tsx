@@ -7,15 +7,17 @@ import { useSessions } from "@/hooks/use-sessions";
 import { useSessionSearch } from "@/hooks/use-session-search";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Pin } from "lucide-react";
+import { Plus, Search, X, Pin, ChevronRight } from "lucide-react";
 import { apiPost } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import type { Session } from "@/types";
 import { SessionItem } from "@/components/sessions/session-item";
 
 export function Sidebar() {
   const [, setSessions] = useAtom(sessionsListAtom);
   const [active, setActive] = useAtom(activeSessionAtom);
-  const { sessions, dateGroupedSessions, pinnedSessions, isLoading, mutate } = useSessions();
+  const { sessions, projects, dateGroupedSessions, pinnedSessions, isLoading, mutate } =
+    useSessions();
   const {
     query,
     setQuery,
@@ -26,6 +28,26 @@ export function Sidebar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isSearchingActive = query.trim().length > 0;
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("hermes-date-groups-collapsed");
+      return saved ? new Set(JSON.parse(saved) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleGroup = useCallback((label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      try {
+        localStorage.setItem("hermes-date-groups-collapsed", JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Sync SWR data into atom (in effect to avoid render-loop)
   useEffect(() => {
@@ -207,25 +229,40 @@ export function Sidebar() {
 
         {/* Date-grouped sessions */}
         {!isSearchingActive &&
-          dateGroupedSessions.map((bucket) => (
-            <div key={bucket.label} className="mb-1">
-              <div className="px-3 py-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wide">
-                {bucket.label}
+          dateGroupedSessions.map((bucket) => {
+            const collapsed = collapsedGroups.has(bucket.label);
+            return (
+              <div key={bucket.label} className="mb-1">
+                <button
+                  onClick={() => toggleGroup(bucket.label)}
+                  className="flex items-center gap-1 w-full px-3 py-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wide hover:text-[var(--text)] transition-colors"
+                >
+                  <ChevronRight
+                    className={cn("w-3 h-3 transition-transform", !collapsed && "rotate-90")}
+                  />
+                  {bucket.label}
+                </button>
+                {!collapsed &&
+                  bucket.sessions.map((session) => (
+                    <SessionItem
+                      key={session.id}
+                      session={session}
+                      isActive={active?.id === session.id}
+                      onSelect={handleSelect}
+                      onRename={handleRename}
+                      onPin={handlePin}
+                      onArchive={handleArchive}
+                      onDelete={handleDelete}
+                      projectColor={
+                        session.project_id
+                          ? projects.find((p) => p.id === session.project_id)?.color
+                          : undefined
+                      }
+                    />
+                  ))}
               </div>
-              {bucket.sessions.map((session) => (
-                <SessionItem
-                  key={session.id}
-                  session={session}
-                  isActive={active?.id === session.id}
-                  onSelect={handleSelect}
-                  onRename={handleRename}
-                  onPin={handlePin}
-                  onArchive={handleArchive}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          ))}
+            );
+          })}
       </ScrollArea>
     </div>
   );

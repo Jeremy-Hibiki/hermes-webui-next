@@ -5,6 +5,7 @@ export interface Session {
   title: string;
   created_at: string;
   updated_at: string;
+  last_message_at?: string;
   messages: Message[];
   model: string | null;
   provider: string | null;
@@ -18,6 +19,7 @@ export interface Session {
   parent_id?: string | null;
   streaming?: boolean;
   yolo?: boolean;
+  worktree_path?: string;
 }
 
 export interface Project {

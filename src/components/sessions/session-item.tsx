@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/relative-time";
 import type { Session } from "@/types";
 import {
   Pin,
@@ -12,6 +13,8 @@ import {
   Archive,
   ArchiveRestore,
   Trash2,
+  GitBranch,
+  Terminal,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -29,6 +32,7 @@ interface SessionItemProps {
   onPin?: (sessionId: string) => void;
   onArchive?: (sessionId: string) => void;
   onDelete?: (sessionId: string) => void;
+  projectColor?: string;
 }
 
 export function SessionItem({
@@ -39,6 +43,7 @@ export function SessionItem({
   onPin,
   onArchive,
   onDelete,
+  projectColor,
 }: SessionItemProps) {
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(session.title || "");
@@ -92,6 +97,28 @@ export function SessionItem({
     <span className="truncate flex-1">{session.title || "New Chat"}</span>
   );
 
+  const relativeTime = formatRelativeTime(
+    session.last_message_at || session.updated_at || session.created_at,
+  );
+
+  const indicators = (
+    <>
+      {projectColor && (
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />
+      )}
+      {session.parent_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
+      {session.worktree_path && <GitBranch className="w-3 h-3 shrink-0 text-orange-500" />}
+      {session.source === "cli" && <Terminal className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
+      {session.pinned && <Pin className="w-3 h-3 shrink-0 text-[var(--accent)]" />}
+      {session.message_count > 0 && (
+        <span className="text-xs text-[var(--muted)]">{session.message_count}</span>
+      )}
+      {relativeTime && (
+        <span className="text-xs text-[var(--muted)] ml-auto shrink-0">{relativeTime}</span>
+      )}
+    </>
+  );
+
   const hasActions = onRename || onPin || onArchive || onDelete;
 
   // Simple button when no action handlers (backward compatible)
@@ -108,10 +135,7 @@ export function SessionItem({
       >
         <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
         {titleContent}
-        {session.pinned && <Pin className="w-3 h-3 shrink-0 text-[var(--accent)]" />}
-        {session.message_count > 0 && (
-          <span className="text-xs text-[var(--muted)]">{session.message_count}</span>
-        )}
+        {indicators}
       </button>
     );
   }
@@ -130,10 +154,7 @@ export function SessionItem({
         >
           <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
           {titleContent}
-          {session.pinned && <Pin className="w-3 h-3 shrink-0 text-[var(--accent)]" />}
-          {session.message_count > 0 && (
-            <span className="text-xs text-[var(--muted)]">{session.message_count}</span>
-          )}
+          {indicators}
           <span
             role="button"
             tabIndex={0}
