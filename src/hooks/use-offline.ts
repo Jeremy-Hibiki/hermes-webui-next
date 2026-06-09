@@ -1,0 +1,26 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface UseOfflineReturn {
+  offline: boolean;
+}
+
+export function useOffline(): UseOfflineReturn {
+  const [offline, setOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOffline = () => setOffline(true);
+    const handleOnline = () => setOffline(false);
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
+  return { offline };
+}
