@@ -8,6 +8,7 @@ import { Send, Paperclip, Mic, Square, X, Image as ImageIcon, FileText } from "l
 import { Button } from "@/components/ui/button";
 import { apiUpload } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { ModelSelector } from "@/components/chat/model-selector";
 
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
@@ -32,7 +33,7 @@ export function ComposerFooter({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile] = useAtom(activeProfileAtom);
-  const [model] = useAtom(defaultModelAtom);
+  const [_model] = useAtom(defaultModelAtom);
   const [dragOver, setDragOver] = useState(false);
 
   const handleSend = useCallback(() => {
@@ -89,7 +90,7 @@ export function ComposerFooter({
     (e: DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      handleFileSelect(e.dataTransfer.files);
+      void handleFileSelect(e.dataTransfer.files);
     },
     [handleFileSelect],
   );
@@ -134,9 +135,10 @@ export function ComposerFooter({
         ref={fileInputRef}
         type="file"
         multiple
+        aria-label="Attach files"
         className="hidden"
         onChange={(e) => {
-          handleFileSelect(e.target.files);
+          void handleFileSelect(e.target.files);
           e.target.value = "";
         }}
       />
@@ -182,6 +184,7 @@ export function ComposerFooter({
         </Button>
 
         <textarea
+          aria-label="Message input"
           ref={textareaRef}
           placeholder="Message Hermes..."
           value={text}
@@ -227,7 +230,7 @@ export function ComposerFooter({
       </div>
 
       <div className="flex items-center gap-3 mt-2 text-xs text-[var(--muted)]">
-        {model && <span>{model}</span>}
+        <ModelSelector />
         {profile !== "default" && <span className="capitalize">{profile}</span>}
       </div>
     </div>

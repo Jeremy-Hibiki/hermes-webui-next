@@ -75,6 +75,29 @@ export function MainPanel() {
     [sessionId, setClarify],
   );
 
+  const handleEdit = useCallback(
+    async (messageId: string, newContent: string) => {
+      try {
+        await apiPost("/session/truncate", { session_id: sessionId, message_id: messageId });
+        void send(newContent);
+      } catch (err) {
+        console.error("Failed to edit message:", err);
+      }
+    },
+    [sessionId, send],
+  );
+
+  const handleRegenerate = useCallback(
+    async (messageId: string) => {
+      try {
+        await apiPost("/session/retry", { session_id: sessionId, message_id: messageId });
+      } catch (err) {
+        console.error("Failed to regenerate:", err);
+      }
+    },
+    [sessionId],
+  );
+
   return (
     <div className="flex flex-col h-full">
       {messages.length === 0 ? (
@@ -86,7 +109,7 @@ export function MainPanel() {
         </div>
       ) : (
         <ScrollArea className="flex-1 p-4">
-          <MessageList messages={messages} />
+          <MessageList messages={messages} onEdit={handleEdit} onRegenerate={handleRegenerate} />
           {busy && <StreamingCursor streaming={true} />}
         </ScrollArea>
       )}

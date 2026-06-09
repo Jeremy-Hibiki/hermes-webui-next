@@ -45,3 +45,9 @@ export interface ClarifyRequest {
   expires_at?: string;
   timeout_seconds?: number;
 }
+
+export interface TodoItem {
+  id: string;
+  content: string;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+}

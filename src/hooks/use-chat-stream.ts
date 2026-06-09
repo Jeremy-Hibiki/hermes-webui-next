@@ -8,11 +8,13 @@ import {
   activeStreamIdAtom,
   approvalAtom,
   clarifyAtom,
+  todosAtom,
+  todoMetaAtom,
 } from "@/atoms/chat";
 import { activeSessionAtom } from "@/atoms/session";
 import { SSEClient } from "@/lib/sse-client";
 import { apiPost } from "@/lib/api-client";
-import type { Message, ToolCall, ApprovalRequest, ClarifyRequest } from "@/types";
+import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from "@/types";
 
 interface SSEApprovalData {
   approval_id?: string;
@@ -39,6 +41,8 @@ export function useChatStream(sessionId: string) {
   const [, setActiveSession] = useAtom(activeSessionAtom);
   const [, setApproval] = useAtom(approvalAtom);
   const [, setClarify] = useAtom(clarifyAtom);
+  const [, setTodos] = useAtom(todosAtom);
+  const [, setTodoMeta] = useAtom(todoMetaAtom);
   const clientRef = useRef<SSEClient | null>(null);
 
   const send = useCallback(
@@ -154,6 +158,11 @@ export function useChatStream(sessionId: string) {
             };
             setClarify(req);
           },
+          todo_state: (data: unknown) => {
+            const d = data as { todos?: TodoItem[]; meta?: Record<string, unknown> };
+            if (d.todos) setTodos(d.todos);
+            if (d.meta) setTodoMeta(d.meta);
+          },
           done: () => {
             setBusy(false);
             setStreamId(null);
@@ -196,7 +205,18 @@ export function useChatStream(sessionId: string) {
         setBusy(false);
       }
     },
-    [sessionId, busy, setMessages, setBusy, setStreamId, setActiveSession, setApproval, setClarify],
+    [
+      sessionId,
+      busy,
+      setMessages,
+      setBusy,
+      setStreamId,
+      setActiveSession,
+      setApproval,
+      setClarify,
+      setTodos,
+      setTodoMeta,
+    ],
   );
 
   const cancel = useCallback(() => {

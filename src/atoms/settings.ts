@@ -6,10 +6,9 @@ export const themeAtom = atom<ThemeMode>("system");
 export const skinAtom = atom<string>("default");
 export const fontSizeAtom = atom<FontSize>("default");
 export const defaultModelAtom = atom<string | null>(null);
+export const sendKeyAtom = atom<"enter" | "cmd-enter">("enter");
 
-export const isActiveProfileDefaultAtom = atom(
-  (get) => get(activeProfileAtom) === "default"
-);
+export const isActiveProfileDefaultAtom = atom((get) => get(activeProfileAtom) === "default");
 
 export const assistantDisplayNameAtom = atom((get) => {
   const profile = get(activeProfileAtom);
