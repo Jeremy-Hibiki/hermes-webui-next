@@ -1,8 +1,16 @@
 "use client";
 
-import { Settings, Sun, Moon, Monitor } from "lucide-react";
+import { useAtom } from "jotai";
+import { themeAtom, skinAtom, fontSizeAtom } from "@/atoms/settings";
+import { Settings } from "lucide-react";
+import { ThemeSwitcher } from "./theme-switcher";
+import { SkinPicker } from "./skin-picker";
 
 export function SettingsPanel() {
+  const [theme, setTheme] = useAtom(themeAtom);
+  const [skin, setSkin] = useAtom(skinAtom);
+  const [fontSize, setFontSize] = useAtom(fontSizeAtom);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
@@ -15,31 +23,13 @@ export function SettingsPanel() {
         {/* Theme Section */}
         <div>
           <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Theme</h3>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded text-xs border border-[var(--border)] hover:bg-[var(--hover-bg)]">
-              <Monitor className="w-3 h-3" /> System
-            </button>
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded text-xs border border-[var(--border)] hover:bg-[var(--hover-bg)]">
-              <Sun className="w-3 h-3" /> Light
-            </button>
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded text-xs border border-[var(--border)] hover:bg-[var(--hover-bg)]">
-              <Moon className="w-3 h-3" /> Dark
-            </button>
-          </div>
+          <ThemeSwitcher current={theme} onChange={setTheme} />
         </div>
 
         {/* Skin Section */}
         <div>
           <h3 className="text-xs font-medium text-[var(--muted)] mb-2">Skin</h3>
-          <div className="grid grid-cols-8 gap-1">
-            {Array.from({ length: 16 }, (_, i) => (
-              <div
-                key={i}
-                className="w-6 h-6 rounded-full border border-[var(--border)] cursor-pointer hover:ring-2 ring-[var(--accent)]"
-                style={{ backgroundColor: `hsl(${i * 22.5}, 70%, 60%)` }}
-              />
-            ))}
-          </div>
+          <SkinPicker current={skin} onChange={setSkin} />
         </div>
 
         {/* Font Size Section */}
@@ -49,7 +39,12 @@ export function SettingsPanel() {
             {(["small", "default", "large", "xlarge"] as const).map((size) => (
               <button
                 key={size}
-                className="px-3 py-1.5 rounded text-xs border border-[var(--border)] hover:bg-[var(--hover-bg)] capitalize"
+                onClick={() => setFontSize(size)}
+                className={`px-3 py-1.5 rounded text-xs border transition-colors capitalize ${
+                  fontSize === size
+                    ? "bg-[var(--accent-bg)] border-[var(--accent)] text-[var(--accent)]"
+                    : "border-[var(--border)] hover:bg-[var(--hover-bg)]"
+                }`}
               >
                 {size}
               </button>
