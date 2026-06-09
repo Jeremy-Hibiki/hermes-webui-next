@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vite-plus/test";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 vi.mock("swr", () => ({
@@ -65,12 +65,14 @@ describe("OnboardingWizard", () => {
     expect(screen.getByText("System Check")).toBeTruthy();
   });
 
-  it("skip button calls onComplete", () => {
+  it("skip button calls onComplete", async () => {
     const onComplete = vi.fn();
     render(<OnboardingWizard onComplete={onComplete} />);
     const skipBtn = screen.getByRole("button", { name: "Skip onboarding" });
     fireEvent.click(skipBtn);
-    expect(onComplete).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
   });
 
   it("shows Open Hermes button on last step", async () => {

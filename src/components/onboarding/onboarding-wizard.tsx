@@ -50,11 +50,19 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Pre-fill from current config
   useEffect(() => {
-    if (status?.completed) {
+    if (!status) return;
+    if (status.completed) {
       onComplete();
+      return;
     }
-  }, [status?.completed, onComplete]);
+    if (status.settings?.provider && !provider) setProvider(status.settings.provider);
+    if (status.settings?.model && !model) setModel(status.settings.model);
+    if (status.settings?.base_url && !baseUrl) setBaseUrl(status.settings.base_url);
+    if (status.workspaces?.length && !workspace) setWorkspace(status.workspaces[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const selectedProvider = status?.setup?.find((p: OnboardingProvider) => p.id === provider);
 
@@ -137,7 +145,21 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         model: model || undefined,
         api_key: apiKey || undefined,
         base_url: baseUrl || undefined,
+        password: password || undefined,
       });
+      // Register workspace if not in known list
+      if (workspace && status?.workspaces && !status.workspaces.includes(workspace)) {
+        try {
+          await fetch("/api/workspaces/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ path: workspace }),
+          });
+        } catch {
+          // Non-critical
+        }
+      }
       await onboardingApi.complete();
       onComplete();
     } catch (e) {
@@ -152,7 +174,12 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     if (step > 0) setStep(step - 1);
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    try {
+      await onboardingApi.complete();
+    } catch {
+      // Already completed
+    }
     onComplete();
   };
 
@@ -185,13 +212,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           <p className="text-sm text-[var(--muted)]">{current.description}</p>
         </div>
 
-        <div
-          className="flex items-center justify-center gap-2"
-          role="navigation"
-          aria-label="Wizard progress"
-        >
+        <nav className="flex items-center justify-center gap-2" aria-label="Wizard progress">
           {STEPS.map((_, i) => (
-            <div
+            <span
               key={i}
               className={`w-2 h-2 rounded-full transition-colors ${
                 i === step
@@ -203,7 +226,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               aria-current={i === step ? "step" : undefined}
             />
           ))}
-        </div>
+        </nav>
 
         <div className="min-h-[200px]">
           {step === 0 && <StepSystemCheck status={status} />}
