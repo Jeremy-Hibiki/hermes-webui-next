@@ -5,6 +5,8 @@ import { useAtom } from "jotai";
 import { currentPanelAtom, workspacePanelOpenAtom } from "@/atoms/ui";
 import { ThreePanel } from "@/components/layout/three-panel";
 import { RailNav } from "@/components/layout/rail-nav";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MainPanel } from "@/components/layout/main-panel";
 import { WorkspacePanel } from "@/components/layout/workspace-panel";
@@ -62,6 +64,7 @@ export default function Home() {
   const [activeSession] = useAtom(activeSessionAtom);
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [loginError, setLoginError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   // Check auth status on mount
   useEffect(() => {
@@ -140,12 +143,13 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <RailNav activePanel={currentPanel} onPanelChange={setCurrentPanel} />
+      {!isMobile && <RailNav activePanel={currentPanel} onPanelChange={setCurrentPanel} />}
       <ThreePanel
         sidebar={<Sidebar />}
         main={mainContent}
         workspace={showWorkspace ? <WorkspacePanel /> : undefined}
       />
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 }
