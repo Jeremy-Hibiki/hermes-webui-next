@@ -5,13 +5,15 @@ import { activeSessionAtom } from "@/atoms/session";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, RefreshCw, ChevronRight, Plus, Trash2, Home } from "lucide-react";
+import { FolderOpen, RefreshCw, ChevronRight, Plus, Trash2, Home, GitBranch } from "lucide-react";
 import { FileTree } from "@/components/workspace/file-tree";
 import { FilePreview } from "@/components/workspace/file-preview";
+import { GitBadge } from "@/components/workspace/git-badge";
+import { GitOperations } from "@/components/workspace/git-operations";
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
 import { fetcher, apiPost } from "@/lib/api-client";
-import type { WorkspaceInfo } from "@/types";
+import type { WorkspaceInfo, GitStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
 export function WorkspacePanel() {
@@ -22,8 +24,16 @@ export function WorkspacePanel() {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [manageMode, setManageMode] = useState(false);
   const [addPath, setAddPath] = useState("");
+  const [activeTab, setActiveTab] = useState<"files" | "git">("files");
 
+  const sessionId = activeSession?.id ?? "";
   const workspace = activeSession?.workspace ?? ".";
+
+  const { data: gitData } = useSWR<{ git: GitStatus }>(
+    sessionId ? `/git-info?session_id=${sessionId}` : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
   const { data: workspacesData, mutate: mutateWorkspaces } = useSWR<{
     workspaces: WorkspaceInfo[];
   }>("/workspaces", fetcher, { revalidateOnFocus: false });
@@ -109,7 +119,34 @@ export function WorkspacePanel() {
       <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
         <FolderOpen className="w-4 h-4 text-[var(--muted)]" />
         <span className="text-sm font-medium text-[var(--text)]">Workspace</span>
+        <GitBadge status={gitData?.git ?? null} />
         <span className="flex-1" />
+        <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+          <button
+            onClick={() => setActiveTab("files")}
+            className={cn(
+              "px-2 py-0.5 text-[10px] transition-colors",
+              activeTab === "files"
+                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
+                : "text-[var(--muted)] hover:text-[var(--text)]",
+            )}
+            aria-label="Files tab"
+          >
+            Files
+          </button>
+          <button
+            onClick={() => setActiveTab("git")}
+            className={cn(
+              "px-2 py-0.5 text-[10px] transition-colors",
+              activeTab === "git"
+                ? "bg-[var(--accent-bg)] text-[var(--accent)]"
+                : "text-[var(--muted)] hover:text-[var(--text)]",
+            )}
+            aria-label="Git tab"
+          >
+            <GitBranch className="w-3 h-3" />
+          </button>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -173,6 +210,10 @@ export function WorkspacePanel() {
               Add
             </Button>
           </div>
+        </div>
+      ) : activeTab === "git" ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <GitOperations sessionId={sessionId} />
         </div>
       ) : (
         <>
