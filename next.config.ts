@@ -1,18 +1,14 @@
 import type { NextConfig } from 'next';
 
-const BACKEND_URL = process.env.HERMES_BACKEND_URL || 'http://localhost:8787';
-
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.local'],
+  // API proxying is handled by src/middleware.ts (sets Origin/Host headers
+  // for CSRF compatibility) — no rewrites needed for /api/*.
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: `${BACKEND_URL}/api/:path*`,
-      },
-      {
         source: '/health',
-        destination: `${BACKEND_URL}/health`,
+        destination: `${process.env.HERMES_BACKEND_URL || 'http://localhost:8787'}/health`,
       },
     ];
   },
