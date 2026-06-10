@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import {
   messagesAtom,
@@ -11,10 +11,12 @@ import {
   todosAtom,
   todoMetaAtom,
   composerContextAtom,
+  bgTasksAtom,
 } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { SSEClient } from '@/lib/sse-client';
-import { apiPost } from '@/lib/api-client';
+import { apiPost, fetcher } from '@/lib/api-client';
+import { parseCommand } from '@/lib/commands';
 import { useStreamingRenderer } from '@/hooks/use-streaming-renderer';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 import { type TurnUsage } from '@/types/message';
@@ -47,12 +49,97 @@ export function useChatStream(sessionId: string) {
   const [, setTodos] = useAtom(todosAtom);
   const [, setTodoMeta] = useAtom(todoMetaAtom);
   const [, setComposerContext] = useAtom(composerContextAtom);
+  const [, setBgTasks] = useAtom(bgTasksAtom);
   const clientRef = useRef<SSEClient | null>(null);
+  const bgTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const renderer = useStreamingRenderer();
+
+  // Clean up background task polling on unmount
+  useEffect(() => {
+    return () => {
+      for (const timer of Object.values(bgTimersRef.current)) {
+        clearTimeout(timer);
+      }
+      bgTimersRef.current = {};
+    };
+  }, []);
 
   const send = useCallback(
     async (text: string, attachments?: string[]) => {
       if (!text.trim() || busy) return;
+
+      // Handle /bg command
+      const cmd = parseCommand(text);
+      if (cmd && cmd.name === 'bg') {
+        const prompt = cmd.args.join(' ');
+        if (!prompt) return;
+        try {
+          const res = await apiPost<{ task_id?: string; error?: string }>('/api/background', {
+            session_id: sessionId,
+            prompt,
+          });
+          if (res.error) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `error-${Date.now()}`,
+                role: 'system',
+                content: `⚠️ ${res.error}`,
+                timestamp: new Date().toISOString(),
+              },
+            ]);
+            return;
+          }
+          if (res.task_id) {
+            setBgTasks((prev) => (prev.includes(res.task_id!) ? prev : [...prev, res.task_id!]));
+            // Start polling
+            const poll = async () => {
+              try {
+                const status = await fetcher<{ results?: { task_id: string; answer?: string }[] }>(
+                  `/api/background/status?session_id=${encodeURIComponent(sessionId)}`,
+                );
+                if (status.results) {
+                  for (const r of status.results) {
+                    if (r.task_id === res.task_id) {
+                      setBgTasks((prev) => prev.filter((t) => t !== r.task_id));
+                      if (bgTimersRef.current[r.task_id]) {
+                        clearTimeout(bgTimersRef.current[r.task_id]);
+                        delete bgTimersRef.current[r.task_id];
+                      }
+                      setMessages((prev) => [
+                        ...prev,
+                        {
+                          id: `bg-${Date.now()}`,
+                          role: 'assistant',
+                          content: `**Background** ${prompt.slice(0, 80)}\n\n${r.answer || 'No answer'}`,
+                          timestamp: new Date().toISOString(),
+                        },
+                      ]);
+                      return;
+                    }
+                  }
+                }
+              } catch {
+                /* ignore */
+              }
+              bgTimersRef.current[res.task_id!] = setTimeout(poll, 3000);
+            };
+            void poll();
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : 'Failed to start background task';
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `error-${Date.now()}`,
+              role: 'system',
+              content: `⚠️ ${errMsg}`,
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+        return;
+      }
 
       // Add user message immediately
       const userMsg: Message = {

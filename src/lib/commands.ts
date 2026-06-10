@@ -26,6 +26,7 @@ export const COMMANDS = [
   'cost',
   'image',
   'code',
+  'bg',
 ] as const;
 
 export type CommandName = (typeof COMMANDS)[number];

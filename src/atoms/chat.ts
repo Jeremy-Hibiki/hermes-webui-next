@@ -12,3 +12,4 @@ export const yoloAtom = atom<boolean>(false);
 export const todosAtom = atom<TodoItem[]>([]);
 export const todoMetaAtom = atom<Record<string, unknown>>({});
 export const composerContextAtom = atom<TurnUsage | null>(null);
+export const bgTasksAtom = atom<string[]>([]);

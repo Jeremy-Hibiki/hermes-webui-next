@@ -34,6 +34,7 @@ import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
 import { ReasoningChip } from '@/components/chat/reasoning-chip';
 import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
+import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -428,6 +429,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Context indicator ring */}
             <ContextIndicator />
+
+            {/* Background tasks badge */}
+            <BackgroundTasksBadge />
 
             {/* YOLO pill */}
             {yolo && (
