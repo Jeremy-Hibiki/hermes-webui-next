@@ -34,6 +34,8 @@ export interface Message {
   _turnTps?: number;
   _gatewayRouting?: string;
   _effectiveModel?: string;
+  _streamingHtml?: string;
+  _isStreaming?: boolean;
 }
 
 export interface Attachment {

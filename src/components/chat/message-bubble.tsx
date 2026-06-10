@@ -236,7 +236,14 @@ export function MessageBubble({
               </div>
             </div>
           ) : isAssistant ? (
-            <MarkdownRenderer content={textContent} />
+            message._isStreaming && message._streamingHtml ? (
+              <div className="stream-fade-active">
+                <span dangerouslySetInnerHTML={{ __html: message._streamingHtml }} />
+                <span className="hermes-cursor-blink" />
+              </div>
+            ) : (
+              <MarkdownRenderer content={textContent} />
+            )
           ) : (
             <div className="whitespace-pre-wrap">{textContent}</div>
           )}

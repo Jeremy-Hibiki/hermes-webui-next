@@ -14,6 +14,7 @@ import {
 import { activeSessionAtom } from '@/atoms/session';
 import { SSEClient } from '@/lib/sse-client';
 import { apiPost } from '@/lib/api-client';
+import { useStreamingRenderer } from '@/hooks/use-streaming-renderer';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 import { type TurnUsage } from '@/types/message';
 
@@ -45,6 +46,7 @@ export function useChatStream(sessionId: string) {
   const [, setTodos] = useAtom(todosAtom);
   const [, setTodoMeta] = useAtom(todoMetaAtom);
   const clientRef = useRef<SSEClient | null>(null);
+  const renderer = useStreamingRenderer();
 
   const send = useCallback(
     async (text: string, attachments?: string[]) => {
@@ -83,12 +85,16 @@ export function useChatStream(sessionId: string) {
         const client = new SSEClient();
         clientRef.current = client;
 
+        // Reset streaming renderer for new message
+        renderer.reset();
+
         let assistantContent = '';
         const assistantMsg: Message = {
           id: `asst-${Date.now()}`,
           role: 'assistant',
           content: '',
           timestamp: new Date().toISOString(),
+          _isStreaming: true,
         };
         setMessages((prev) => [...prev, assistantMsg]);
 
@@ -97,9 +103,14 @@ export function useChatStream(sessionId: string) {
             const d = data as { text?: string };
             if (d.text) {
               assistantContent += d.text;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: assistantContent } : m)),
-              );
+              // Feed token to streaming renderer with word-fade
+              renderer.appendToken(d.text, (html) => {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: assistantContent, _streamingHtml: html } : m,
+                  ),
+                );
+              });
             }
           },
           reasoning: (data: unknown) => {
@@ -192,10 +203,19 @@ export function useChatStream(sessionId: string) {
             if (d.meta) setTodoMeta(d.meta);
           },
           stream_end: () => {
+            // Drain remaining words from streaming renderer
+            renderer.drain((html) => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, content: assistantContent, _streamingHtml: html, _isStreaming: false }
+                    : m,
+                ),
+              );
+            });
             setBusy(false);
             setStreamId(null);
             client.close();
-            // Update session title if new
             setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
           },
           done: (data: unknown) => {
@@ -213,11 +233,12 @@ export function useChatStream(sessionId: string) {
               effective_model?: string;
               gateway_routing?: string;
             };
-            if (d.usage || d.duration != null || d.effective_model) {
+            // Drain remaining words
+            renderer.drain((html) => {
               setMessages((prev) =>
                 prev.map((m) => {
                   if (m.id !== assistantMsg.id) return m;
-                  const updated = { ...m };
+                  const updated = { ...m, _streamingHtml: html, _isStreaming: false };
                   if (d.usage) updated._turnUsage = d.usage as TurnUsage;
                   if (d.duration != null) updated._turnDuration = d.duration;
                   if (d.tps != null) updated._turnTps = d.tps;
@@ -226,7 +247,7 @@ export function useChatStream(sessionId: string) {
                   return updated;
                 }),
               );
-            }
+            });
             setBusy(false);
             setStreamId(null);
             client.close();
@@ -290,6 +311,7 @@ export function useChatStream(sessionId: string) {
       setClarify,
       setTodos,
       setTodoMeta,
+      renderer,
     ],
   );
 
