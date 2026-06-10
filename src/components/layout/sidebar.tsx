@@ -197,6 +197,24 @@ export function Sidebar() {
     }
   };
 
+  const handleDuplicate = async (sessionId: string) => {
+    try {
+      await apiPost('/session/duplicate', { session_id: sessionId });
+      await mutate();
+    } catch (err) {
+      console.error('Failed to duplicate session:', err);
+    }
+  };
+
+  const handleRegenerateTitle = async (sessionId: string) => {
+    try {
+      await apiPost('/session/title/regenerate', { session_id: sessionId });
+      await mutate();
+    } catch (err) {
+      console.error('Failed to regenerate title:', err);
+    }
+  };
+
   const handleOpenSearch = useCallback(() => {
     setSearchOpen(true);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -215,7 +233,7 @@ export function Sidebar() {
   );
 
   const hasProjects = projects.length > 0 || filteredSessions.some((s) => !s.project_id);
-  const renderSessionItem = (session: Session) => (
+  const renderSessionItem = (session: Session, opts?: { highlight?: string }) => (
     <SessionItem
       key={session.session_id}
       session={session}
@@ -225,6 +243,9 @@ export function Sidebar() {
       onPin={handlePin}
       onArchive={handleArchive}
       onDelete={handleDelete}
+      onDuplicate={handleDuplicate}
+      onRegenerateTitle={handleRegenerateTitle}
+      highlightQuery={opts?.highlight}
       projectColor={session.project_id ? projects.find((p) => p.project_id === session.project_id)?.color : undefined}
     />
   );
@@ -400,7 +421,7 @@ export function Sidebar() {
             {isSearching && searchResults.length === 0 && (
               <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('session.searching')}</div>
             )}
-            {searchResults.map(renderSessionItem)}
+            {searchResults.map((s) => renderSessionItem(s, { highlight: query }))}
           </div>
         )}
 
@@ -411,7 +432,7 @@ export function Sidebar() {
               <Pin className="w-3 h-3" />
               {t18n('session.pinned')}
             </div>
-            {pinnedSessions.map(renderSessionItem)}
+            {pinnedSessions.map((s) => renderSessionItem(s))}
           </div>
         )}
 
@@ -428,7 +449,7 @@ export function Sidebar() {
                   <ChevronRight className={cn('w-3 h-3 transition-transform', !collapsed && 'rotate-90')} />
                   {translateBucketLabel(bucket.label)}
                 </button>
-                {!collapsed && bucket.sessions.map(renderSessionItem)}
+                {!collapsed && bucket.sessions.map((s) => renderSessionItem(s))}
               </div>
             );
           })}
@@ -437,7 +458,7 @@ export function Sidebar() {
         {showArchived && !isSearchingActive && archivedSessions.length > 0 && (
           <div className="p-2">
             <div className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--muted)]">Archived</div>
-            {archivedSessions.map(renderSessionItem)}
+            {archivedSessions.map((s) => renderSessionItem(s))}
           </div>
         )}
       </ScrollArea>

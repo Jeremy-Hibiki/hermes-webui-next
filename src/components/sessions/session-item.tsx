@@ -16,6 +16,9 @@ import {
   Terminal as TerminalIcon,
   Globe,
   Zap,
+  Copy,
+  RefreshCw,
+  Files,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,6 +38,9 @@ interface SessionItemProps {
   onPin?: (sessionId: string) => void;
   onArchive?: (sessionId: string) => void;
   onDelete?: (sessionId: string) => void;
+  onDuplicate?: (sessionId: string) => void;
+  onRegenerateTitle?: (sessionId: string) => void;
+  highlightQuery?: string;
   projectColor?: string;
 }
 
@@ -48,6 +54,9 @@ export function SessionItem({
   onPin,
   onArchive,
   onDelete,
+  onDuplicate,
+  onRegenerateTitle,
+  highlightQuery,
   projectColor,
 }: SessionItemProps) {
   const [renaming, setRenaming] = useState(false);
@@ -84,8 +93,33 @@ export function SessionItem({
       onDelete?.(session.session_id);
     }
   };
+  const handleDuplicate = () => onDuplicate?.(session.session_id);
+  const handleRegenerateTitle = () => onRegenerateTitle?.(session.session_id);
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/chat?sid=${session.session_id}`;
+    navigator.clipboard.writeText(url).catch(() => {});
+  };
 
   const relativeTime = formatRelativeTime(session.last_message_at || session.updated_at || session.created_at);
+
+  const titleText = session.title || 'New Chat';
+
+  const highlightedTitle =
+    highlightQuery && !renaming
+      ? (() => {
+          const idx = titleText.toLowerCase().indexOf(highlightQuery.toLowerCase());
+          if (idx === -1) return titleText;
+          return (
+            <>
+              {titleText.slice(0, idx)}
+              <mark className="bg-[var(--accent-bg-strong,var(--accent-bg))] text-[var(--accent-text)] rounded-[3px] px-[1px]">
+                {titleText.slice(idx, idx + highlightQuery.length)}
+              </mark>
+              {titleText.slice(idx + highlightQuery.length)}
+            </>
+          );
+        })()
+      : titleText;
 
   const titleRow = renaming ? (
     <input
@@ -100,7 +134,7 @@ export function SessionItem({
     />
   ) : (
     <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--text)] select-none">
-      {session.title || 'New Chat'}
+      {highlightedTitle}
     </span>
   );
 
@@ -220,6 +254,19 @@ export function SessionItem({
                 Archive
               </>
             )}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleDuplicate}>
+            <Files className="size-4" />
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleRegenerateTitle}>
+            <RefreshCw className="size-4" />
+            Regenerate Title
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCopyLink}>
+            <Copy className="size-4" />
+            Copy Link
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={handleDelete}>

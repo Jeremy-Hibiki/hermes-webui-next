@@ -1,13 +1,14 @@
 'use client';
 
 import { useAtom } from 'jotai';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { approvalAtom, busyAtom, clarifyAtom, messagesAtom, yoloAtom } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { ApprovalCard } from '@/components/chat/approval-card';
 import { ClarifyCard } from '@/components/chat/clarify-card';
 import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { MessageList } from '@/components/chat/message-list';
+import { SelectionReply } from '@/components/chat/selection-reply';
 import { StreamingCursor } from '@/components/chat/streaming-cursor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatStream } from '@/hooks/use-chat-stream';
@@ -21,9 +22,26 @@ export function MainPanel() {
   const [approval, setApproval] = useAtom(approvalAtom);
   const [clarify, setClarify] = useAtom(clarifyAtom);
   const [, setYolo] = useAtom(yoloAtom);
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   const sessionId = activeSession?.session_id ?? '';
   const { send, cancel } = useChatStream(sessionId);
+
+  const handleQuote = useCallback((text: string) => {
+    const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
+    if (textarea) {
+      const quoted = `> ${text.split('\n').join('\n> ')}\n\n`;
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        'value',
+      )?.set;
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(textarea, quoted);
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      textarea.focus();
+    }
+  }, []);
 
   const handleSend = (message: string, _attachments?: File[]) => {
     if (!sessionId) return;
@@ -248,9 +266,12 @@ export function MainPanel() {
         </div>
       ) : (
         <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
-          <MessageList onEdit={handleEdit} onRegenerate={handleRegenerate} onFork={handleFork} />
+          <div ref={messagesRef}>
+            <MessageList onEdit={handleEdit} onRegenerate={handleRegenerate} onFork={handleFork} />
+          </div>
           <LiveRunStatus />
           {busy && <StreamingCursor streaming={true} />}
+          <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
         </ScrollArea>
       )}
 
