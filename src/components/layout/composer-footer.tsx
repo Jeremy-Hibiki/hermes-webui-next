@@ -26,7 +26,7 @@ import {
 } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
-import { pendingFilesAtom, yoloAtom, activeStreamIdAtom } from '@/atoms/chat';
+import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom } from '@/atoms/chat';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
 import { queueSessionMessage, getSessionQueue } from '@/atoms/streaming';
@@ -39,6 +39,7 @@ import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
 import { ToolsetsChip } from '@/components/chat/toolsets-chip';
 import { VoiceControls } from '@/components/chat/voice-controls';
+import { QueueCard, QueuePill } from '@/components/chat/queue-card';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -115,7 +116,10 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const [workspaceOpen, setWorkspaceOpen] = useAtom(workspacePanelOpenAtom);
   const [busyInputMode] = useAtom(busyInputModeAtom);
   const [activeStreamId] = useAtom(activeStreamIdAtom);
+  const [clarify] = useAtom(clarifyAtom);
   const [_queueCount, setQueueCount] = useState(0);
+  const [queueVisible, setQueueVisible] = useState(false);
+  const [sendBtnVisible, setSendBtnVisible] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -238,8 +242,17 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     return () => clearInterval(id);
   }, [sessionId]);
 
+  // Send button pop-in animation
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setSendBtnVisible(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   const action: ComposerAction = useMemo(() => {
     const hasContent = text.trim().length > 0;
+    if (clarify) return 'disabled';
     if (!busy) return hasContent ? 'send' : 'disabled';
     if (!hasContent) {
       if (activeStreamId && onCancel) return 'stop';
@@ -255,7 +268,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       return 'queue';
     }
     return 'queue';
-  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer]);
+  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -423,6 +436,12 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
         }}
       />
 
+      {/* Queue card */}
+      {sessionId && <QueueCard sessionId={sessionId} visible={queueVisible} onVisibilityChange={setQueueVisible} />}
+
+      {/* Queue pill */}
+      {sessionId && !queueVisible && <QueuePill sessionId={sessionId} onClick={() => setQueueVisible(true)} />}
+
       <div
         id="composerBox"
         className={cn(
@@ -513,8 +532,9 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
             id="msg"
             aria-label="Message input"
             ref={textareaRef}
-            placeholder={t18n('chat.placeholder')}
+            placeholder={clarify ? 'Respond to the clarification request…' : t18n('chat.placeholder')}
             value={text}
+            disabled={!!clarify}
             onChange={(e) => {
               setText(e.target.value);
               setShowSlashMenu(e.target.value.startsWith('/'));
@@ -522,7 +542,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             rows={1}
-            className="w-full bg-transparent border-none outline-none text-[var(--text)] text-base leading-[1.65] px-4 pt-3 pb-1.5 resize-none min-h-[44px] max-h-[200px] font-[inherit] placeholder:text-[var(--muted)]"
+            className="w-full bg-transparent border-none outline-none text-[var(--text)] text-base leading-[1.65] px-4 pt-3 pb-1.5 resize-none min-h-[44px] max-h-[200px] font-[inherit] placeholder:text-[var(--muted)] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -752,6 +772,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
               data-action={action}
               className={cn(
                 'send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35 disabled:cursor-not-allowed',
+                sendBtnVisible && 'send-btn-pop',
                 (action === 'send' || action === 'queue') && 'hover:scale-[1.08]',
                 (action === 'stop' || action === 'interrupt') && 'hover:scale-[1.06]',
                 action === 'steer' && 'hover:scale-[1.06]',
