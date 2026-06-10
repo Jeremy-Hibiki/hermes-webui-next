@@ -881,6 +881,10 @@ body {
 .ctx-compress-btn:hover {
   background: rgba(239, 83, 80, 0.12);
 }
+.provider-quota-chip:hover {
+  background: rgba(34, 197, 94, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
 @media (max-width: 640px) {
   .ctx-indicator-wrap {
     display: none !important;

@@ -32,6 +32,7 @@ import { ModelSelectorTrigger, ModelDropdownPopover } from '@/components/chat/mo
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
 import { ReasoningChip } from '@/components/chat/reasoning-chip';
+import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -442,6 +443,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 }}
               />
             </div>
+
+            {/* Provider quota chip */}
+            <ProviderQuotaChip />
           </div>
 
           {/* Right side: send/stop */}
