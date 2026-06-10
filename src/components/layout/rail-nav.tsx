@@ -1,64 +1,77 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import {
   MessageSquare,
   ListChecks,
-  BarChart3,
-  Wrench,
+  KanbanSquare,
+  Layers,
   Brain,
   FolderOpen,
+  User,
+  ClipboardList,
+  BarChart3,
+  FileText,
   Settings,
-  Kanban,
-  Lightbulb,
-  Terminal,
 } from 'lucide-react';
 
 interface NavItem {
   id: string;
-  label: string;
+  path: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'tasks', label: 'Tasks', icon: ListChecks },
-  { id: 'kanban', label: 'Kanban', icon: Kanban },
-  { id: 'skills', label: 'Skills', icon: Wrench },
-  { id: 'memory', label: 'Memory', icon: Brain },
-  { id: 'workspaces', label: 'Workspaces', icon: FolderOpen },
-  { id: 'terminal', label: 'Terminal', icon: Terminal },
-  { id: 'insights', label: 'Insights', icon: Lightbulb },
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'chat', path: '/chat', labelKey: 'session.new', icon: MessageSquare },
+  { id: 'tasks', path: '/tasks', labelKey: 'cron.title', icon: ListChecks },
+  { id: 'kanban', path: '/kanban', labelKey: 'kanban.title', icon: KanbanSquare },
+  { id: 'skills', path: '/skills', labelKey: 'skills.title', icon: Layers },
+  { id: 'memory', path: '/memory', labelKey: 'memory.title', icon: Brain },
+  { id: 'workspaces', path: '/workspaces', labelKey: 'workspaces.title', icon: FolderOpen },
+  { id: 'profiles', path: '/profiles', labelKey: 'profiles.title', icon: User },
+  { id: 'todos', path: '/todos', labelKey: 'todo.title', icon: ClipboardList },
+  { id: 'insights', path: '/insights', labelKey: 'insights.title', icon: BarChart3 },
+  { id: 'logs', path: '/logs', labelKey: 'logs.title', icon: FileText },
+  { id: 'settings', path: '/settings', labelKey: 'settings.title', icon: Settings },
 ];
 
-export function RailNav({
-  activePanel,
-  onPanelChange,
-}: {
-  activePanel?: string;
-  onPanelChange?: (panel: string) => void;
-}) {
+export function RailNav({ onPanelChange }: { activePanel?: string; onPanelChange?: (panel: string) => void }) {
+  const { t: t18n } = useTranslation();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Derive active panel from pathname
+  const currentRoute = pathname.split('/')[1] || 'chat';
+
   return (
     <nav className="flex flex-col items-center gap-1 py-2 w-12 bg-[var(--sidebar)] border-r border-[var(--border)]">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
-        const isActive = activePanel === item.id;
+        const isActive = currentRoute === item.id;
+        const label = t18n(item.labelKey);
         return (
           <button
             key={item.id}
-            aria-label={item.label}
-            title={item.label}
-            onClick={() => onPanelChange?.(item.id)}
+            aria-label={label}
+            title={label}
+            onClick={() => {
+              onPanelChange?.(item.id);
+              router.push(item.path);
+            }}
             className={cn(
-              'flex items-center justify-center w-9 h-9 rounded-lg transition-colors',
+              'flex items-center justify-center w-9 h-9 transition-colors relative',
               isActive
-                ? 'active bg-[var(--accent-bg-strong)] text-[var(--accent)]'
+                ? 'text-[var(--accent-text)]'
                 : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
             )}
           >
-            <Icon className="w-4 h-4" />
+            {isActive && (
+              <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--accent)] rounded-r-sm" />
+            )}
+            <Icon className="w-[18px] h-[18px]" />
           </button>
         );
       })}

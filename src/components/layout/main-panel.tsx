@@ -6,13 +6,14 @@ import { messagesAtom, busyAtom, approvalAtom, clarifyAtom, yoloAtom } from '@/a
 import { activeSessionAtom } from '@/atoms/session';
 import { useChatStream } from '@/hooks/use-chat-stream';
 import { ComposerFooter } from './composer-footer';
+import { TopBar } from './topbar';
 import { MessageList } from '@/components/chat/message-list';
 import { StreamingCursor } from '@/components/chat/streaming-cursor';
+import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { ApprovalCard } from '@/components/chat/approval-card';
 import { ClarifyCard } from '@/components/chat/clarify-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiPost } from '@/lib/api-client';
-
 export function MainPanel() {
   const [messages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
@@ -21,7 +22,7 @@ export function MainPanel() {
   const [clarify, setClarify] = useAtom(clarifyAtom);
   const [, setYolo] = useAtom(yoloAtom);
 
-  const sessionId = activeSession?.id ?? '';
+  const sessionId = activeSession?.session_id ?? '';
   const { send, cancel } = useChatStream(sessionId);
 
   const handleSend = (message: string, _attachments?: File[]) => {
@@ -98,18 +99,146 @@ export function MainPanel() {
     [sessionId],
   );
 
+  const handleFork = useCallback(
+    async (messageId: string) => {
+      try {
+        await apiPost('/session/branch', { session_id: sessionId, message_id: messageId });
+      } catch (err) {
+        console.error('Failed to fork:', err);
+      }
+    },
+    [sessionId],
+  );
+
   return (
     <div className="flex flex-col h-full">
+      <TopBar />
       {messages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-[var(--muted)]">
-          <div className="text-center">
-            <h2 className="text-2xl font-serif mb-2 text-[var(--text)]">Hermes</h2>
-            <p className="text-sm">Start a conversation</p>
+        <div
+          className="flex-1 flex items-center justify-center p-10"
+          style={{ background: 'radial-gradient(ellipse at 50% 20%, var(--accent-bg) 0%, transparent 60%)' }}
+        >
+          <div className="text-center flex flex-col items-center" style={{ gap: '12px', maxWidth: '380px' }}>
+            <div className="mb-0 flex justify-center" style={{ marginBottom: '4px' }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '20px',
+                  background: 'linear-gradient(145deg, var(--accent-bg), var(--accent-bg))',
+                  border: '1px solid var(--accent-bg)',
+                  boxShadow: '0 4px 20px var(--accent-bg)',
+                }}
+              >
+                <svg width="40" height="40" viewBox="0 0 80 80" fill="none">
+                  <defs>
+                    <linearGradient id="hermes-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.7" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="40" cy="16" r="6" fill="url(#hermes-grad)" />
+                  <path d="M40 22 L40 56" stroke="url(#hermes-grad)" strokeWidth="2.5" />
+                  <path d="M28 36 Q40 30 52 36" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
+                  <path d="M28 44 Q40 38 52 44" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
+                  <path d="M30 56 L40 62 L50 56" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
+                  <path d="M24 14 L34 10" stroke="url(#hermes-grad)" strokeWidth="1.5" />
+                  <path d="M56 14 L46 10" stroke="url(#hermes-grad)" strokeWidth="1.5" />
+                  <circle cx="22" cy="14" r="2.5" fill="url(#hermes-grad)" />
+                  <circle cx="58" cy="14" r="2.5" fill="url(#hermes-grad)" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-[20px] font-bold text-[var(--text)]" style={{ letterSpacing: '-.02em' }}>
+              What can I help with?
+            </h2>
+            <p className="text-sm text-[var(--muted)]" style={{ maxWidth: '320px' }}>
+              Ask anything, run commands, explore files, or manage your scheduled tasks.
+            </p>
+            <div className="flex flex-col w-full" style={{ gap: '8px', marginTop: '12px' }}>
+              {[
+                {
+                  icon: (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                  ),
+                  text: 'What files are in this workspace?',
+                },
+                {
+                  icon: (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  ),
+                  text: "What's on my schedule today?",
+                },
+                {
+                  icon: (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                      <line x1="8" y1="2" x2="8" y2="18" />
+                      <line x1="16" y1="6" x2="16" y2="22" />
+                    </svg>
+                  ),
+                  text: 'Help me plan a small project.',
+                },
+              ].map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  onClick={() => {
+                    const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
+                    if (textarea) {
+                      textarea.value = suggestion.text;
+                      textarea.focus();
+                      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                  }}
+                  className="flex items-center gap-2.5 text-left text-[13px] px-[14px] py-3 rounded-[10px] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-bg)] hover:border-[var(--accent-bg)] hover:translate-x-0.5 transition-all"
+                  style={{ background: 'var(--input-bg, transparent)' }}
+                >
+                  {suggestion.icon}
+                  {suggestion.text}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
-        <ScrollArea className="flex-1 p-4">
-          <MessageList messages={messages} onEdit={handleEdit} onRegenerate={handleRegenerate} />
+        <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
+          <MessageList onEdit={handleEdit} onRegenerate={handleRegenerate} onFork={handleFork} />
+          <LiveRunStatus />
           {busy && <StreamingCursor streaming={true} />}
         </ScrollArea>
       )}

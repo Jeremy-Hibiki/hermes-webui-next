@@ -11,15 +11,26 @@ export interface AppSettings {
   send_key: 'enter' | 'cmd-enter';
   password_enabled: boolean;
   active_profile: string;
+  password_env_var?: boolean;
+  webui_version?: string;
+  agent_version?: string;
 }
 
 export interface Profile {
   name: string;
   display_name?: string;
   is_default: boolean;
+  is_active?: boolean;
   model?: string;
   provider?: string;
   workspace?: string;
+  path?: string;
+  gateway_running?: boolean;
+  has_env?: boolean;
+  visible?: boolean;
+  skill_count?: number;
+  enabled_skills?: number;
+  total_skills?: number;
 }
 
 export interface ModelInfo {

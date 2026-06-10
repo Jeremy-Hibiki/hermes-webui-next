@@ -30,7 +30,7 @@ export function SessionContextMenu({
 }: SessionContextMenuProps) {
   const handleDelete = () => {
     if (window.confirm(`Delete "${session.title || 'New Chat'}"?`)) {
-      onDelete(session.id);
+      onDelete(session.session_id);
     }
   };
 
@@ -38,12 +38,12 @@ export function SessionContextMenu({
     <ContextMenu>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={() => onRename(session.id)}>
+        <ContextMenuItem onClick={() => onRename(session.session_id)}>
           <Pencil className="size-4" />
           Rename
         </ContextMenuItem>
 
-        <ContextMenuItem onClick={() => onPin(session.id)}>
+        <ContextMenuItem onClick={() => onPin(session.session_id)}>
           {session.pinned ? (
             <>
               <PinOff className="size-4" />
@@ -57,7 +57,7 @@ export function SessionContextMenu({
           )}
         </ContextMenuItem>
 
-        <ContextMenuItem onClick={() => onArchive(session.id)}>
+        <ContextMenuItem onClick={() => onArchive(session.session_id)}>
           {session.archived ? (
             <>
               <ArchiveRestore className="size-4" />

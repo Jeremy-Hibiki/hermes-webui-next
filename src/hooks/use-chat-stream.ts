@@ -15,6 +15,7 @@ import { activeSessionAtom } from '@/atoms/session';
 import { SSEClient } from '@/lib/sse-client';
 import { apiPost } from '@/lib/api-client';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
+import { type TurnUsage } from '@/types/message';
 
 interface SSEApprovalData {
   approval_id?: string;
@@ -38,7 +39,7 @@ export function useChatStream(sessionId: string) {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy, setBusy] = useAtom(busyAtom);
   const [, setStreamId] = useAtom(activeStreamIdAtom);
-  const [, setActiveSession] = useAtom(activeSessionAtom);
+  const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
   const [, setApproval] = useAtom(approvalAtom);
   const [, setClarify] = useAtom(clarifyAtom);
   const [, setTodos] = useAtom(todosAtom);
@@ -60,12 +61,21 @@ export function useChatStream(sessionId: string) {
       setBusy(true);
 
       try {
-        // Start chat on backend
-        const res = await apiPost<{ stream_id: string; session_id: string }>('/chat/start', {
+        // Build payload matching backend _handle_chat_start expectations
+        const payload: Record<string, unknown> = {
           session_id: sessionId,
           message: text,
-          attachments,
-        });
+          profile: activeSession?.profile ?? 'default',
+          workspace: activeSession?.workspace ?? null,
+          model: activeSession?.model ?? null,
+          model_provider: activeSession?.model_provider ?? null,
+          explicit_model_pick: false,
+        };
+        if (attachments && attachments.length > 0) {
+          payload.attachments = attachments;
+        }
+        // Start chat on backend
+        const res = await apiPost<{ stream_id: string; session_id: string }>('/chat/start', payload);
 
         setStreamId(res.stream_id);
 
@@ -83,25 +93,31 @@ export function useChatStream(sessionId: string) {
         setMessages((prev) => [...prev, assistantMsg]);
 
         client.connect(`/api/chat/stream?stream_id=${res.stream_id}`, {
-          message: (data: unknown) => {
-            const d = data as { content?: string };
-            if (d.content) {
-              assistantContent += d.content;
+          token: (data: unknown) => {
+            const d = data as { text?: string };
+            if (d.text) {
+              assistantContent += d.text;
               setMessages((prev) =>
                 prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: assistantContent } : m)),
               );
             }
           },
           reasoning: (data: unknown) => {
-            const d = data as { content?: string };
-            if (d.content) {
+            const d = data as { text?: string };
+            if (d.text) {
               setMessages((prev) =>
-                prev.map((m) => (m.id === assistantMsg.id ? { ...m, reasoning: (m.reasoning || '') + d.content } : m)),
+                prev.map((m) => (m.id === assistantMsg.id ? { ...m, reasoning: (m.reasoning || '') + d.text } : m)),
               );
             }
           },
-          tool_call: (data: unknown) => {
-            const d = data as { id?: string; name?: string; arguments?: string; status?: string };
+          tool: (data: unknown) => {
+            const d = data as {
+              tid?: string;
+              name?: string;
+              preview?: string;
+              args?: Record<string, unknown>;
+              event_type?: string;
+            };
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMsg.id
@@ -110,15 +126,33 @@ export function useChatStream(sessionId: string) {
                       tool_calls: [
                         ...(m.tool_calls || []),
                         {
-                          id: d.id || '',
+                          id: d.tid || `tool-${Date.now()}`,
                           name: d.name || '',
-                          arguments: d.arguments || '{}',
-                          status: (d.status || 'pending') as ToolCall['status'],
+                          arguments: JSON.stringify(d.args || {}),
+                          status: 'running' as ToolCall['status'],
+                          preview: d.preview,
                         },
                       ],
                     }
                   : m,
               ),
+            );
+          },
+          tool_complete: (data: unknown) => {
+            const d = data as { tid?: string; name?: string; preview?: string; is_error?: boolean };
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== assistantMsg.id || !m.tool_calls) return m;
+                const idx = m.tool_calls.findIndex((tc) => tc.id === d.tid || tc.name === d.name);
+                if (idx === -1) return m;
+                const updated = [...m.tool_calls];
+                updated[idx] = {
+                  ...updated[idx],
+                  status: d.is_error ? 'error' : 'completed',
+                  result: d.preview,
+                };
+                return { ...m, tool_calls: updated };
+              }),
             );
           },
           approval: (data: unknown) => {
@@ -157,25 +191,74 @@ export function useChatStream(sessionId: string) {
             if (d.todos) setTodos(d.todos);
             if (d.meta) setTodoMeta(d.meta);
           },
-          done: () => {
+          stream_end: () => {
             setBusy(false);
             setStreamId(null);
             client.close();
             // Update session title if new
             setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
           },
+          done: (data: unknown) => {
+            const d = data as {
+              usage?: {
+                input_tokens?: number;
+                output_tokens?: number;
+                estimated_cost?: number;
+                cache_read_tokens?: number;
+                cache_write_tokens?: number;
+                cache_hit_percent?: number;
+              };
+              duration?: number;
+              tps?: number;
+              effective_model?: string;
+              gateway_routing?: string;
+            };
+            if (d.usage || d.duration != null || d.effective_model) {
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id !== assistantMsg.id) return m;
+                  const updated = { ...m };
+                  if (d.usage) updated._turnUsage = d.usage as TurnUsage;
+                  if (d.duration != null) updated._turnDuration = d.duration;
+                  if (d.tps != null) updated._turnTps = d.tps;
+                  if (d.effective_model) updated._effectiveModel = d.effective_model;
+                  if (d.gateway_routing) updated._gatewayRouting = d.gateway_routing;
+                  return updated;
+                }),
+              );
+            }
+            setBusy(false);
+            setStreamId(null);
+            client.close();
+            setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
+          },
           error: (data: unknown) => {
-            const d = data as { message?: string };
+            const d = data as { message?: string; error?: string };
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === assistantMsg.id ? { ...m, content: `⚠️ Error: ${d.message || 'Unknown error'}` } : m,
+                m.id === assistantMsg.id
+                  ? { ...m, content: `⚠️ Error: ${d.message || d.error || 'Unknown error'}` }
+                  : m,
               ),
             );
             setBusy(false);
             setStreamId(null);
             client.close();
           },
-          cancelled: () => {
+          apperror: (data: unknown) => {
+            const d = data as { message?: string; error?: string; label?: string };
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? { ...m, content: `⚠️ Error: ${d.message || d.error || d.label || 'Unknown error'}` }
+                  : m,
+              ),
+            );
+            setBusy(false);
+            setStreamId(null);
+            client.close();
+          },
+          cancel: () => {
             setBusy(false);
             setStreamId(null);
             client.close();
@@ -198,6 +281,7 @@ export function useChatStream(sessionId: string) {
     [
       sessionId,
       busy,
+      activeSession,
       setMessages,
       setBusy,
       setStreamId,

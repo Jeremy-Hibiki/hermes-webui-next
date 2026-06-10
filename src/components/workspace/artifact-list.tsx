@@ -5,6 +5,7 @@ import { useAtomValue } from 'jotai';
 import { messagesAtom } from '@/atoms/chat';
 import { FileText } from 'lucide-react';
 import type { ToolCall } from '@/types/message';
+import { extractTextContent } from '@/types/message';
 
 const ARTIFACT_TOOLS = new Set([
   'write_file',
@@ -75,7 +76,7 @@ export function useArtifacts() {
       if (msg.tool_calls) {
         for (const tc of msg.tool_calls as ToolCall[]) {
           if (ARTIFACT_TOOLS.has(tc.name)) {
-            const extracted = extractPathFromArgs(tc.name, tc.arguments);
+            const extracted = extractPathFromArgs(tc.name, tc.arguments ?? JSON.stringify(tc.args ?? {}));
             for (const raw of extracted) {
               const p = normalizePath(raw);
               if (p && !seen.has(p)) {
@@ -88,7 +89,7 @@ export function useArtifacts() {
       }
       // Extract from diff blocks in content
       if (msg.content) {
-        const diffPaths = extractDiffPaths(msg.content);
+        const diffPaths = extractDiffPaths(extractTextContent(msg.content));
         for (const raw of diffPaths) {
           const p = normalizePath(raw);
           if (p && !seen.has(p)) {

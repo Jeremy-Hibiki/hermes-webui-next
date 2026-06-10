@@ -10,7 +10,7 @@ interface GitBadgeProps {
 export function GitBadge({ status }: GitBadgeProps) {
   if (!status) return null;
 
-  const totalChanges = status.staged.length + status.unstaged.length + status.untracked.length;
+  const totalChanges = (status.dirty ?? 0) + (status.untracked ?? 0);
 
   return (
     <div className="flex items-center gap-2 text-xs text-[var(--muted)] px-2 py-1 rounded bg-[var(--surface)]">
@@ -18,7 +18,7 @@ export function GitBadge({ status }: GitBadgeProps) {
       <span className="font-medium text-[var(--text)]">{status.branch}</span>
       {totalChanges > 0 && (
         <span className="px-1.5 py-0.5 rounded-full bg-[var(--accent-bg)] text-[var(--accent)] font-medium">
-          {status.staged.length}
+          {status.dirty}
         </span>
       )}
       {status.ahead > 0 && <span className="text-[var(--success)]">↑{status.ahead}</span>}

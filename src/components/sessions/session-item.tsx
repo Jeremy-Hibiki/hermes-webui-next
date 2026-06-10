@@ -6,7 +6,6 @@ import { formatRelativeTime } from '@/lib/relative-time';
 import type { Session } from '@/types';
 import {
   Pin,
-  MessageSquare,
   MoreVertical,
   Pencil,
   PinOff,
@@ -14,15 +13,17 @@ import {
   ArchiveRestore,
   Trash2,
   GitBranch,
-  Terminal,
+  Terminal as TerminalIcon,
+  Globe,
+  Zap,
 } from 'lucide-react';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 interface SessionItemProps {
   session: Session;
@@ -56,7 +57,7 @@ export function SessionItem({
   const submitRename = () => {
     const trimmed = draft.trim();
     if (trimmed && trimmed !== session.title) {
-      onRename?.(session.id, trimmed);
+      onRename?.(session.session_id, trimmed);
     }
     setRenaming(false);
   };
@@ -72,18 +73,17 @@ export function SessionItem({
   };
 
   const startRename = () => setRenaming(true);
-
-  const handlePin = () => onPin?.(session.id);
-
-  const handleArchive = () => onArchive?.(session.id);
-
+  const handlePin = () => onPin?.(session.session_id);
+  const handleArchive = () => onArchive?.(session.session_id);
   const handleDelete = () => {
     if (window.confirm(`Delete "${session.title || 'New Chat'}"?`)) {
-      onDelete?.(session.id);
+      onDelete?.(session.session_id);
     }
   };
 
-  const titleContent = renaming ? (
+  const relativeTime = formatRelativeTime(session.last_message_at || session.updated_at || session.created_at);
+
+  const titleRow = renaming ? (
     <input
       ref={inputRef}
       value={draft}
@@ -91,118 +91,137 @@ export function SessionItem({
       onBlur={submitRename}
       onKeyDown={handleKeyDown}
       onClick={(e) => e.stopPropagation()}
-      className="w-full bg-transparent border-none outline-none text-sm text-[var(--text)] px-0 py-0"
+      aria-label="Rename session"
+      className="flex-1 bg-[var(--surface)] border border-[var(--accent)] rounded-md text-[13px] text-[var(--text)] px-2 py-0.5 outline-none min-w-0 shadow-[0_0_0_2px_var(--accent-bg-strong)]"
     />
   ) : (
-    <span className="truncate flex-1">{session.title || 'New Chat'}</span>
+    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--text)] select-none">
+      {session.title || 'New Chat'}
+    </span>
   );
 
-  const relativeTime = formatRelativeTime(session.last_message_at || session.updated_at || session.created_at);
+  const metaLine =
+    (session.message_count > 0 || relativeTime) && !renaming ? (
+      <div className="text-[11px] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-2">
+        {session.message_count > 0 && <span>{session.message_count} messages</span>}
+        {relativeTime && <span>{relativeTime}</span>}
+      </div>
+    ) : null;
+
+  const pinIcon = session.pinned && (
+    <span className="shrink-0 w-[10px] h-[10px] text-[var(--accent)] inline-flex items-center justify-center leading-none">
+      <Pin className="w-[10px] h-[10px]" />
+    </span>
+  );
+
+  const sourceIcon = (() => {
+    const src = session.raw_source || session.session_source;
+    const tag = session.source_tag;
+    if (src === 'cli' || session.is_cli_session || tag === 'claude-code' || tag === 'codex')
+      return <TerminalIcon className="w-3 h-3 shrink-0 text-orange-400" />;
+    if (src === 'cron' || tag === 'cron') return <Zap className="w-3 h-3 shrink-0 text-blue-400" />;
+    if (src === 'api' || tag === 'api') return <Globe className="w-3 h-3 shrink-0 text-purple-400" />;
+    return null;
+  })();
 
   const indicators = (
     <>
       {projectColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />}
-      {session.parent_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
+      {session.parent_session_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
       {session.worktree_path && <GitBranch className="w-3 h-3 shrink-0 text-orange-500" />}
-      {session.source === 'cli' && <Terminal className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
-      {session.pinned && <Pin className="w-3 h-3 shrink-0 text-[var(--accent)]" />}
-      {session.message_count > 0 && <span className="text-xs text-[var(--muted)]">{session.message_count}</span>}
-      {relativeTime && <span className="text-xs text-[var(--muted)] ml-auto shrink-0">{relativeTime}</span>}
+      {sourceIcon}
     </>
   );
 
   const hasActions = onRename || onPin || onArchive || onDelete;
 
-  // Simple button when no action handlers (backward compatible)
+  const baseClasses = cn(
+    'w-full text-left px-2 py-2 mb-0.5 rounded-lg text-[13px] cursor-pointer transition-colors flex items-start gap-2 min-w-0 relative select-none group',
+    isActive
+      ? 'active bg-[var(--accent-bg)] text-[var(--accent)]'
+      : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
+  );
+
+  const innerContent = (
+    <div className="flex-1 min-w-0 flex flex-col gap-0.5 overflow-hidden">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {pinIcon}
+        {titleRow}
+        {indicators}
+      </div>
+      {metaLine}
+    </div>
+  );
+
   if (!hasActions) {
     return (
-      <button
-        onClick={() => onSelect(session.id)}
-        className={cn(
-          'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
-          isActive
-            ? 'active bg-[var(--accent-bg-strong)] text-[var(--text)]'
-            : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
-        )}
-      >
-        <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
-        {titleContent}
-        {indicators}
+      <button onClick={() => onSelect(session.session_id)} className={baseClasses}>
+        {innerContent}
       </button>
     );
   }
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div
-          onClick={() => !renaming && onSelect(session.id)}
+    <button
+      type="button"
+      onClick={() => !renaming && onSelect(session.session_id)}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && !renaming) {
+          e.preventDefault();
+          onSelect(session.session_id);
+        }
+      }}
+      className={baseClasses}
+    >
+      {innerContent}
+      <DropdownMenu>
+        <DropdownMenuTrigger
           className={cn(
-            'group w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
-            isActive
-              ? 'active bg-[var(--accent-bg-strong)] text-[var(--text)]'
-              : 'text-[var(--text)] hover:bg-[var(--hover-bg)]',
+            'absolute right-1.5 top-1/2 -translate-y-1/2 shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity w-[26px] h-[26px] rounded-lg inline-flex items-center justify-center text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)] outline-none',
+            isActive && 'opacity-100',
           )}
+          onClick={(e) => e.stopPropagation()}
         >
-          <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
-          {titleContent}
-          {indicators}
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-            className={cn(
-              'shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--hover-bg)]',
-              isActive && 'opacity-100',
+          <MoreVertical className="w-4 h-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="right" sideOffset={4}>
+          <DropdownMenuItem onClick={startRename}>
+            <Pencil className="size-4" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handlePin}>
+            {session.pinned ? (
+              <>
+                <PinOff className="size-4" />
+                Unpin
+              </>
+            ) : (
+              <>
+                <Pin className="size-4" />
+                Pin
+              </>
             )}
-            aria-label="Session actions"
-          >
-            <MoreVertical className="w-3.5 h-3.5 text-[var(--muted)]" />
-          </span>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={startRename}>
-          <Pencil className="size-4" />
-          Rename
-        </ContextMenuItem>
-
-        <ContextMenuItem onClick={handlePin}>
-          {session.pinned ? (
-            <>
-              <PinOff className="size-4" />
-              Unpin
-            </>
-          ) : (
-            <>
-              <Pin className="size-4" />
-              Pin
-            </>
-          )}
-        </ContextMenuItem>
-
-        <ContextMenuItem onClick={handleArchive}>
-          {session.archived ? (
-            <>
-              <ArchiveRestore className="size-4" />
-              Unarchive
-            </>
-          ) : (
-            <>
-              <Archive className="size-4" />
-              Archive
-            </>
-          )}
-        </ContextMenuItem>
-
-        <ContextMenuSeparator />
-
-        <ContextMenuItem variant="destructive" onClick={handleDelete}>
-          <Trash2 className="size-4" />
-          Delete
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleArchive}>
+            {session.archived ? (
+              <>
+                <ArchiveRestore className="size-4" />
+                Unarchive
+              </>
+            ) : (
+              <>
+                <Archive className="size-4" />
+                Archive
+              </>
+            )}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+            <Trash2 className="size-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </button>
   );
 }

@@ -135,7 +135,14 @@ vi.mock('jotai', () => ({
     if (atom.key === 'defaultModelAtom') return ['gpt-4', vi.fn()];
     if (atom.key === 'todosAtom') return [[], vi.fn()];
     if (atom.key === 'todoMetaAtom') return [{}, vi.fn()];
+    if (atom.key === 'activeSessionAtom') return [null, vi.fn()];
+    if (atom.key === 'sessionsListAtom') return [[], vi.fn()];
+    if (atom.key === 'busyAtom') return [false, vi.fn()];
     return [undefined, vi.fn()];
+  },
+  useAtomValue: (atom: { key: string }) => {
+    if (atom.key === 'languageAtom') return 'en';
+    return undefined;
   },
   atom: (initial: unknown) => ({ init: initial, key: '' }),
 }));
@@ -159,10 +166,12 @@ vi.mock('@/atoms/settings', () => ({
   themeAtom: { key: 'themeAtom' },
   skinAtom: { key: 'skinAtom' },
   fontSizeAtom: { key: 'fontSizeAtom' },
+  languageAtom: { key: 'languageAtom' },
 }));
 
 vi.mock('@/atoms/session', () => ({
   activeSessionAtom: { key: 'activeSessionAtom' },
+  sessionsListAtom: { key: 'sessionsListAtom' },
 }));
 
 vi.mock('@/hooks/use-cron', () => ({
@@ -189,10 +198,16 @@ vi.mock('@/hooks/use-cron', () => ({
     loading: false,
     error: null,
     fetchJobs: vi.fn(),
-    createJob: vi.fn().mockResolvedValue(undefined),
+    createJob: vi.fn().mockResolvedValue({}),
+    updateJob: vi.fn().mockResolvedValue(undefined),
     deleteJob: vi.fn().mockResolvedValue(undefined),
     toggleJob: vi.fn().mockResolvedValue(undefined),
+    pauseJob: vi.fn().mockResolvedValue(undefined),
+    resumeJob: vi.fn().mockResolvedValue(undefined),
     runJob: vi.fn().mockResolvedValue(undefined),
+    fetchHistory: vi.fn().mockResolvedValue({ runs: [], total: 0 }),
+    fetchRunContent: vi.fn().mockResolvedValue({ content: '', snippet: '' }),
+    fetchGatewayStatus: vi.fn().mockResolvedValue({ configured: true, running: true }),
   }),
 }));
 
@@ -322,8 +337,8 @@ describe('CronPanel', () => {
     expect(screen.getByText('0 9 * * 1')).toBeTruthy();
   });
 
-  it('shows paused badge for disabled jobs', () => {
+  it('shows off badge for disabled jobs', () => {
     render(<CronPanel />);
-    expect(screen.getByText('paused')).toBeTruthy();
+    expect(screen.getByText('Off')).toBeTruthy();
   });
 });

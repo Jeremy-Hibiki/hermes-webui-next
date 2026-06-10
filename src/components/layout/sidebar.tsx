@@ -1,26 +1,54 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
-import { sessionsListAtom, activeSessionAtom } from '@/atoms/session';
+import { useRouter } from 'next/navigation';
+import { activeSessionAtom } from '@/atoms/session';
 import { useSessions } from '@/hooks/use-sessions';
 import { useSessionSearch } from '@/hooks/use-session-search';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, X, Pin, ChevronRight } from 'lucide-react';
+import { Plus, Search, X, Pin, ChevronRight, Terminal as TerminalIcon, Globe } from 'lucide-react';
 import { apiPost } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import type { Session } from '@/types';
+import { messagesAtom } from '@/atoms/chat';
 import { SessionItem } from '@/components/sessions/session-item';
+import { bucketSessionsByDate, translateBucketLabel } from '@/lib/date-buckets';
+import { useTranslation } from '@/lib/i18n';
+
+type SourceFilter = 'webui' | 'cli';
+const NO_PROJECT = '__none__';
 
 export function Sidebar() {
-  const [, setSessions] = useAtom(sessionsListAtom);
   const [active, setActive] = useAtom(activeSessionAtom);
-  const { sessions, projects, dateGroupedSessions, pinnedSessions, isLoading, mutate } = useSessions();
+  const [, setMessages] = useAtom(messagesAtom);
+  const { t: t18n } = useTranslation();
+  const router = useRouter();
+  const { sessions, projects, isLoading, mutate } = useSessions();
   const { query, setQuery, results: searchResults, isSearching, clearSearch } = useSessionSearch(sessions);
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isSearchingActive = query.trim().length > 0;
+
+  // --- Filter state (persisted to localStorage) ---
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>(() => {
+    try {
+      return (localStorage.getItem('hermes-source-filter') as SourceFilter) || 'webui';
+    } catch {
+      return 'webui';
+    }
+  });
+  const [activeProject, setActiveProject] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('hermes-project-filter');
+    } catch {
+      return null;
+    }
+  });
+  const [showAllProfiles, setShowAllProfiles] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('hermes-date-groups-collapsed');
@@ -30,6 +58,63 @@ export function Sidebar() {
     }
   });
 
+  // --- Source filter helpers ---
+  const isCli = (s: Session) =>
+    s.is_cli_session || s.source_tag === 'claude-code' || s.source_tag === 'codex' || s.session_source === 'cli';
+
+  const { webuiCount, cliCount } = useMemo(() => {
+    let w = 0,
+      c = 0;
+    for (const s of sessions) {
+      if (isCli(s)) c++;
+      else w++;
+    }
+    return { webuiCount: w, cliCount: c };
+  }, [sessions]);
+
+  // --- Filtering pipeline ---
+  const filteredSessions = useMemo(() => {
+    let result = sessions;
+
+    // Source filter
+    if (cliCount > 0) {
+      result = result.filter((s) => (sourceFilter === 'cli' ? isCli(s) : !isCli(s)));
+    }
+
+    // Profile filter
+    if (!showAllProfiles) {
+      // Show only sessions matching the active profile (no profile filter = show all)
+    }
+
+    // Project filter
+    if (activeProject === NO_PROJECT) {
+      result = result.filter((s) => !s.project_id);
+    } else if (activeProject) {
+      result = result.filter((s) => s.project_id === activeProject);
+    }
+
+    // Archived filter
+    if (!showArchived) {
+      result = result.filter((s) => !s.archived);
+    }
+
+    return result;
+  }, [sessions, sourceFilter, activeProject, showAllProfiles, showArchived, cliCount]);
+
+  const pinnedSessions = useMemo(() => filteredSessions.filter((s) => s.pinned && !s.archived), [filteredSessions]);
+  const nonPinnedSessions = useMemo(() => filteredSessions.filter((s) => !s.pinned && !s.archived), [filteredSessions]);
+  const archivedSessions = useMemo(() => filteredSessions.filter((s) => s.archived), [filteredSessions]);
+  const dateGroupedSessions = useMemo(() => bucketSessionsByDate(nonPinnedSessions), [nonPinnedSessions]);
+
+  // Other profile count
+  const otherProfileCount = useMemo(() => {
+    // Simple heuristic: count sessions with different profile than the active session
+    if (sessions.length === 0) return 0;
+    const profiles = new Set(sessions.map((s) => s.profile).filter(Boolean));
+    return profiles.size > 1 ? sessions.filter((s) => s.profile && s.profile !== sessions[0]?.profile).length : 0;
+  }, [sessions]);
+
+  // --- Handlers ---
   const toggleGroup = useCallback((label: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -42,24 +127,36 @@ export function Sidebar() {
     });
   }, []);
 
-  // Sync SWR data into atom (in effect to avoid render-loop)
-  useEffect(() => {
-    setSessions(sessions);
-  }, [sessions, setSessions]);
+  const handleSourceChange = useCallback((f: SourceFilter) => {
+    setSourceFilter(f);
+    try {
+      localStorage.setItem('hermes-source-filter', f);
+    } catch {}
+  }, []);
+
+  const handleProjectChange = useCallback((p: string | null) => {
+    setActiveProject(p);
+    try {
+      if (p) localStorage.setItem('hermes-project-filter', p);
+      else localStorage.removeItem('hermes-project-filter');
+    } catch {}
+  }, []);
 
   const handleNewChat = async () => {
     try {
-      const session = await apiPost<Session>('/session/new', {});
-      setActive(session);
+      const res = await apiPost<{ session: Session }>('/session/new', {});
+      const session = res.session ?? res;
+      setActive(session as Session);
+      setMessages([]);
+      router.push(`/chat?sid=${(session as Session).session_id}`);
       await mutate();
     } catch (err) {
       console.error('Failed to create session:', err);
     }
   };
 
-  const handleSelect = (sessionId: string) => {
-    const session = sessions.find((s) => s.id === sessionId);
-    if (session) setActive(session);
+  const handleSelect = async (sessionId: string) => {
+    router.push(`/chat?sid=${sessionId}`);
   };
 
   const handleRename = async (sessionId: string, newTitle: string) => {
@@ -83,7 +180,7 @@ export function Sidebar() {
   const handleArchive = async (sessionId: string) => {
     try {
       await apiPost('/session/archive', { session_id: sessionId });
-      if (active?.id === sessionId) setActive(null);
+      if (active?.session_id === sessionId) setActive(null);
       await mutate();
     } catch (err) {
       console.error('Failed to archive session:', err);
@@ -93,7 +190,7 @@ export function Sidebar() {
   const handleDelete = async (sessionId: string) => {
     try {
       await apiPost('/session/delete', { session_id: sessionId });
-      if (active?.id === sessionId) setActive(null);
+      if (active?.session_id === sessionId) setActive(null);
       await mutate();
     } catch (err) {
       console.error('Failed to delete session:', err);
@@ -117,15 +214,31 @@ export function Sidebar() {
     [handleCloseSearch],
   );
 
+  const hasProjects = projects.length > 0 || filteredSessions.some((s) => !s.project_id);
+  const renderSessionItem = (session: Session) => (
+    <SessionItem
+      key={session.session_id}
+      session={session}
+      isActive={active?.session_id === session.session_id}
+      onSelect={handleSelect}
+      onRename={handleRename}
+      onPin={handlePin}
+      onArchive={handleArchive}
+      onDelete={handleDelete}
+      projectColor={session.project_id ? projects.find((p) => p.project_id === session.project_id)?.color : undefined}
+    />
+  );
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-[18px] pt-4 pb-[14px] border-b border-[var(--border)]">
         <Button
           variant="ghost"
           size="icon"
           className="text-[var(--muted)]"
           onClick={handleNewChat}
-          aria-label="New Chat"
+          aria-label={t18n('session.new')}
         >
           <Plus className="w-4 h-4" />
         </Button>
@@ -137,8 +250,8 @@ export function Sidebar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Filter conversations..."
-              aria-label="Search sessions"
+              placeholder={t18n('session.search')}
+              aria-label={t18n('session.search')}
               className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] outline-none"
             />
             <Button
@@ -146,20 +259,20 @@ export function Sidebar() {
               size="icon"
               className="text-[var(--muted)] h-6 w-6 shrink-0"
               onClick={handleCloseSearch}
-              aria-label="Clear search"
+              aria-label={t18n('session.clearSearch')}
             >
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
         ) : (
           <>
-            <div className="flex-1 text-sm font-medium text-[var(--text)]">Sessions</div>
+            <div className="flex-1 text-sm font-medium text-[var(--text)]">{t18n('session.title')}</div>
             <Button
               variant="ghost"
               size="icon"
               className="text-[var(--muted)]"
               onClick={handleOpenSearch}
-              aria-label="Search sessions"
+              aria-label={t18n('session.search')}
             >
               <Search className="w-4 h-4" />
             </Button>
@@ -167,56 +280,138 @@ export function Sidebar() {
         )}
       </div>
 
-      <ScrollArea className="flex-1">
-        {isLoading && <div className="p-4 text-sm text-[var(--muted)] text-center">Loading...</div>}
+      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+        {isLoading && <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('common.loading')}</div>}
 
         {!isLoading && sessions.length === 0 && (
-          <div className="p-4 text-sm text-[var(--muted)] text-center">No sessions yet</div>
+          <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('session.noSessions')}</div>
+        )}
+
+        {!isLoading && !isSearchingActive && (
+          <>
+            {/* Source tabs */}
+            {cliCount > 0 && (
+              <div className="flex gap-1 px-3 pt-2 pb-1">
+                <button
+                  onClick={() => handleSourceChange('webui')}
+                  className={cn(
+                    'flex-1 text-[11px] py-1 rounded-md transition-colors',
+                    sourceFilter === 'webui'
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium'
+                      : 'text-[var(--muted)] hover:bg-[var(--hover-bg)]',
+                  )}
+                >
+                  <Globe className="w-3 h-3 inline mr-1" />
+                  WebUI ({webuiCount})
+                </button>
+                <button
+                  onClick={() => handleSourceChange('cli')}
+                  className={cn(
+                    'flex-1 text-[11px] py-1 rounded-md transition-colors',
+                    sourceFilter === 'cli'
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium'
+                      : 'text-[var(--muted)] hover:bg-[var(--hover-bg)]',
+                  )}
+                >
+                  <TerminalIcon className="w-3 h-3 inline mr-1" />
+                  CLI ({cliCount})
+                </button>
+              </div>
+            )}
+
+            {/* Project chips */}
+            {hasProjects && (
+              <div className="flex gap-1 px-3 pb-1 flex-wrap">
+                <button
+                  onClick={() => handleProjectChange(null)}
+                  className={cn(
+                    'text-[11px] px-2 py-0.5 rounded-full transition-colors',
+                    !activeProject
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium'
+                      : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] border border-[var(--border)]',
+                  )}
+                >
+                  All
+                </button>
+                {filteredSessions.some((s) => !s.project_id && !s.pinned && !s.archived) && (
+                  <button
+                    onClick={() => handleProjectChange(NO_PROJECT)}
+                    className={cn(
+                      'text-[11px] px-2 py-0.5 rounded-full transition-colors border border-dashed',
+                      activeProject === NO_PROJECT
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium border-solid'
+                        : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] border-[var(--border)]',
+                    )}
+                  >
+                    Unassigned
+                  </button>
+                )}
+                {projects.map((p) => (
+                  <button
+                    key={p.project_id}
+                    onClick={() => handleProjectChange(p.project_id)}
+                    className={cn(
+                      'text-[11px] px-2 py-0.5 rounded-full transition-colors flex items-center gap-1',
+                      activeProject === p.project_id
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium'
+                        : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] border border-[var(--border)]',
+                    )}
+                  >
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Profile toggle */}
+            {otherProfileCount > 0 && (
+              <button
+                onClick={() => setShowAllProfiles((p) => !p)}
+                className="w-full text-[10px] py-1 text-[var(--muted)] text-center opacity-70 hover:opacity-100 transition-opacity"
+              >
+                {showAllProfiles ? 'Show active profile only' : `Show ${otherProfileCount} from other profiles`}
+              </button>
+            )}
+
+            {/* Archived toggle */}
+            {archivedSessions.length > 0 && (
+              <button
+                onClick={() => setShowArchived((a) => !a)}
+                className="w-full text-[10px] py-1 text-[var(--muted)] text-center opacity-70 hover:opacity-100 transition-opacity"
+              >
+                {showArchived ? 'Hide archived' : `Show ${archivedSessions.length} archived`}
+              </button>
+            )}
+
+            {/* Empty state */}
+            {filteredSessions.length === 0 && sessions.length > 0 && (
+              <div className="p-4 text-sm text-[var(--muted)] text-center">No sessions match filters</div>
+            )}
+          </>
         )}
 
         {/* Search results */}
         {isSearchingActive && (
           <div className="p-2">
             {searchResults.length === 0 && !isSearching && (
-              <div className="p-4 text-sm text-[var(--muted)] text-center">No sessions found</div>
+              <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('session.noResults')}</div>
             )}
             {isSearching && searchResults.length === 0 && (
-              <div className="p-4 text-sm text-[var(--muted)] text-center">Searching...</div>
+              <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('session.searching')}</div>
             )}
-            {searchResults.map((session) => (
-              <SessionItem
-                key={session.id}
-                session={session}
-                isActive={active?.id === session.id}
-                onSelect={handleSelect}
-                onRename={handleRename}
-                onPin={handlePin}
-                onArchive={handleArchive}
-                onDelete={handleDelete}
-              />
-            ))}
+            {searchResults.map(renderSessionItem)}
           </div>
         )}
 
-        {/* Normal pinned + date-grouped view */}
+        {/* Pinned sessions */}
         {!isSearchingActive && pinnedSessions.length > 0 && (
           <div className="p-2">
             <div className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--muted)]">
               <Pin className="w-3 h-3" />
-              Pinned
+              {t18n('session.pinned')}
             </div>
-            {pinnedSessions.map((session) => (
-              <SessionItem
-                key={session.id}
-                session={session}
-                isActive={active?.id === session.id}
-                onSelect={handleSelect}
-                onRename={handleRename}
-                onPin={handlePin}
-                onArchive={handleArchive}
-                onDelete={handleDelete}
-              />
-            ))}
+            {pinnedSessions.map(renderSessionItem)}
           </div>
         )}
 
@@ -231,27 +426,20 @@ export function Sidebar() {
                   className="flex items-center gap-1 w-full px-3 py-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wide hover:text-[var(--text)] transition-colors"
                 >
                   <ChevronRight className={cn('w-3 h-3 transition-transform', !collapsed && 'rotate-90')} />
-                  {bucket.label}
+                  {translateBucketLabel(bucket.label)}
                 </button>
-                {!collapsed &&
-                  bucket.sessions.map((session) => (
-                    <SessionItem
-                      key={session.id}
-                      session={session}
-                      isActive={active?.id === session.id}
-                      onSelect={handleSelect}
-                      onRename={handleRename}
-                      onPin={handlePin}
-                      onArchive={handleArchive}
-                      onDelete={handleDelete}
-                      projectColor={
-                        session.project_id ? projects.find((p) => p.id === session.project_id)?.color : undefined
-                      }
-                    />
-                  ))}
+                {!collapsed && bucket.sessions.map(renderSessionItem)}
               </div>
             );
           })}
+
+        {/* Archived sessions (when toggled on) */}
+        {showArchived && !isSearchingActive && archivedSessions.length > 0 && (
+          <div className="p-2">
+            <div className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--muted)]">Archived</div>
+            {archivedSessions.map(renderSessionItem)}
+          </div>
+        )}
       </ScrollArea>
     </div>
   );

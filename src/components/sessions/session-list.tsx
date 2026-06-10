@@ -25,7 +25,7 @@ export function SessionList({ sessions, projects, activeSessionId, onSelect }: S
       if (!map[s.project_id]) map[s.project_id] = [];
       map[s.project_id].push(s);
     }
-    return projects.filter((p) => map[p.id]?.length).map((p) => ({ project: p, sessions: map[p.id] }));
+    return projects.filter((p) => map[p.project_id]?.length).map((p) => ({ project: p, sessions: map[p.project_id] }));
   }, [sessions, projects]);
 
   if (sessions.length === 0) {
@@ -40,23 +40,33 @@ export function SessionList({ sessions, projects, activeSessionId, onSelect }: S
           <div className="mb-2">
             <div className="text-xs text-[var(--muted)] px-3 py-1 uppercase tracking-wide">Pinned</div>
             {pinned.map((s) => (
-              <SessionItem key={s.id} session={s} isActive={s.id === activeSessionId} onSelect={onSelect} />
+              <SessionItem
+                key={s.session_id}
+                session={s}
+                isActive={s.session_id === activeSessionId}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         )}
 
         {/* Project groups */}
         {grouped.map(({ project, sessions: groupSessions }) => (
-          <SessionGroup key={project.id} name={project.name} color={project.color}>
+          <SessionGroup key={project.project_id} name={project.name} color={project.color}>
             {groupSessions.map((s) => (
-              <SessionItem key={s.id} session={s} isActive={s.id === activeSessionId} onSelect={onSelect} />
+              <SessionItem
+                key={s.session_id}
+                session={s}
+                isActive={s.session_id === activeSessionId}
+                onSelect={onSelect}
+              />
             ))}
           </SessionGroup>
         ))}
 
         {/* Ungrouped sessions */}
         {ungrouped.map((s) => (
-          <SessionItem key={s.id} session={s} isActive={s.id === activeSessionId} onSelect={onSelect} />
+          <SessionItem key={s.session_id} session={s} isActive={s.session_id === activeSessionId} onSelect={onSelect} />
         ))}
       </div>
     </ScrollArea>

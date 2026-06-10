@@ -1,21 +1,21 @@
-export interface SSEMessageEvent {
-  event: 'message';
-  data: { content: string };
+export interface SSETokenEvent {
+  event: 'token';
+  data: { text: string };
 }
 
 export interface SSEReasoningEvent {
   event: 'reasoning';
-  data: { content: string };
+  data: { text: string };
 }
 
-export interface SSEToolCallEvent {
-  event: 'tool_call';
-  data: { id: string; name: string; arguments: string; status: string };
+export interface SSEToolEvent {
+  event: 'tool';
+  data: { tid?: string; name?: string; preview?: string; args?: Record<string, unknown>; event_type?: string };
 }
 
-export interface SSEToolResultEvent {
-  event: 'tool_result';
-  data: { id: string; result: string; status: string };
+export interface SSEToolCompleteEvent {
+  event: 'tool_complete';
+  data: { tid?: string; name?: string; preview?: string; is_error?: boolean };
 }
 
 export interface SSEApprovalEvent {
@@ -45,19 +45,29 @@ export interface SSEClarifyEvent {
   };
 }
 
+export interface SSEStreamEndEvent {
+  event: 'stream_end';
+  data: Record<string, unknown>;
+}
+
 export interface SSEDoneEvent {
   event: 'done';
   data: Record<string, unknown>;
 }
 
-export interface SSECancelledEvent {
-  event: 'cancelled';
+export interface SSECancelEvent {
+  event: 'cancel';
   data: Record<string, unknown>;
 }
 
 export interface SSEErrorEvent {
-  event: 'error' | 'apperror';
-  data: { message: string; code?: string };
+  event: 'error';
+  data: { message?: string; error?: string };
+}
+
+export interface SSEAppErrorEvent {
+  event: 'apperror';
+  data: { message?: string; error?: string; label?: string };
 }
 
 export interface SSETodoStateEvent {
@@ -71,14 +81,16 @@ export interface SSEHeartbeatEvent {
 }
 
 export type SSEEvent =
-  | SSEMessageEvent
+  | SSETokenEvent
   | SSEReasoningEvent
-  | SSEToolCallEvent
-  | SSEToolResultEvent
+  | SSEToolEvent
+  | SSEToolCompleteEvent
   | SSEApprovalEvent
   | SSEClarifyEvent
+  | SSEStreamEndEvent
   | SSEDoneEvent
-  | SSECancelledEvent
+  | SSECancelEvent
   | SSEErrorEvent
+  | SSEAppErrorEvent
   | SSETodoStateEvent
   | SSEHeartbeatEvent;

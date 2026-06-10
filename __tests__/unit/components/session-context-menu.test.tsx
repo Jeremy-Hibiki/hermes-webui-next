@@ -4,19 +4,22 @@ import { SessionItem } from '@/components/sessions/session-item';
 import type { Session } from '@/types';
 
 const makeSession = (overrides: Partial<Session> = {}): Session => ({
-  id: 's1',
+  session_id: 's1',
   title: 'Test Chat',
-  created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
-  messages: [],
+  created_at: 0,
+  updated_at: 0,
+  last_message_at: 0,
   model: null,
-  provider: null,
+  model_provider: null,
   workspace: null,
   profile: 'default',
   pinned: false,
   archived: false,
   project_id: null,
   message_count: 0,
+  input_tokens: 0,
+  output_tokens: 0,
+  estimated_cost: null,
   ...overrides,
 });
 

@@ -19,12 +19,27 @@ export function useSessions() {
     revalidateOnFocus: false,
   });
 
-  const activeSessions = useMemo(() => (data?.sessions ?? []).filter((s) => !s.archived), [data]);
+  // Normalize: ensure every session has both session_id and id
+  const normalizedData = useMemo(() => {
+    if (!data) return data;
+    return {
+      ...data,
+      sessions: data.sessions.map((s) => ({
+        ...s,
+        id: s.session_id,
+      })),
+    };
+  }, [data]);
 
-  const pinnedSessions = useMemo(() => (data?.sessions ?? []).filter((s) => s.pinned && !s.archived), [data]);
+  const activeSessions = useMemo(() => (normalizedData?.sessions ?? []).filter((s) => !s.archived), [normalizedData]);
+
+  const pinnedSessions = useMemo(
+    () => (normalizedData?.sessions ?? []).filter((s) => s.pinned && !s.archived),
+    [normalizedData],
+  );
 
   const groupedSessions = useMemo<SessionGroup[]>(() => {
-    const projects = data?.projects ?? [];
+    const projects = normalizedData?.projects ?? [];
     const groups: Record<string, Session[]> = {};
     const ungrouped: Session[] = [];
 
@@ -41,10 +56,10 @@ export function useSessions() {
     const result: SessionGroup[] = [];
 
     for (const project of projects) {
-      const projectSessions = groups[project.id];
+      const projectSessions = groups[project.project_id];
       if (projectSessions && projectSessions.length > 0) {
         result.push({
-          projectId: project.id,
+          projectId: project.project_id,
           projectName: project.name,
           projectColor: project.color,
           sessions: projectSessions,
@@ -62,7 +77,7 @@ export function useSessions() {
     }
 
     return result;
-  }, [activeSessions, data]);
+  }, [activeSessions, normalizedData]);
 
   const dateGroupedSessions = useMemo<DateBucket[]>(() => bucketSessionsByDate(activeSessions), [activeSessions]);
 
@@ -93,8 +108,8 @@ export function useSessions() {
   }, [mutate]);
 
   return {
-    sessions: data?.sessions ?? [],
-    projects: data?.projects ?? [],
+    sessions: normalizedData?.sessions ?? [],
+    projects: normalizedData?.projects ?? [],
     activeSessions,
     pinnedSessions,
     groupedSessions,

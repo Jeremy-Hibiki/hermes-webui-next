@@ -1,9 +1,10 @@
-export function formatRelativeTime(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  if (!Number.isFinite(then)) return '';
+export function formatRelativeTime(raw: string | number | undefined): string {
+  if (raw == null) return '';
+  const ms = toMs(raw);
+  if (!Number.isFinite(ms)) return '';
 
-  const diffMs = now - then;
+  const now = Date.now();
+  const diffMs = now - ms;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
   const diffHour = Math.floor(diffMin / 60);
@@ -16,6 +17,15 @@ export function formatRelativeTime(dateStr: string): string {
   if (diffDay < 7) return `${diffDay}d ago`;
   if (diffDay < 30) return `${Math.floor(diffDay / 7)}w ago`;
 
-  const d = new Date(then);
+  const d = new Date(ms);
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function toMs(raw: string | number): number {
+  if (typeof raw === 'number') return raw > 1e12 ? raw : raw * 1000;
+  const parsed = new Date(raw).getTime();
+  if (Number.isFinite(parsed)) return parsed;
+  const num = parseFloat(raw);
+  if (Number.isFinite(num)) return num > 1e12 ? num : num * 1000;
+  return NaN;
 }

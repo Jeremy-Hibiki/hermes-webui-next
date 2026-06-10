@@ -4,9 +4,12 @@ import { useState, useMemo, useCallback } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
 import { MarkdownRenderer } from '@/components/chat/markdown-renderer';
-import { Zap, Search, Plus, ChevronDown, ChevronRight, Pencil, Trash2, X, FileText } from 'lucide-react';
+import { Zap, Search, Plus, ChevronDown, ChevronRight, Pencil, Trash2, X, FileText, AlertCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
+import { useTranslation } from '@/lib/i18n';
 
 interface Skill {
   name: string;
@@ -21,12 +24,26 @@ interface SkillsResponse {
 
 interface SkillContent {
   content: string;
-  linked_files?: { path: string; name: string }[];
+  linked_files?: Record<string, string[]>;
 }
 
 interface FileContent {
   content: string;
   path: string;
+}
+
+/** Separate YAML frontmatter (--- ... ---) from the markdown body. */
+function stripYamlFrontmatter(raw: string | undefined): { frontmatter: string | null; body: string } {
+  if (!raw) return { frontmatter: null, body: '' };
+  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
+  if (!m) return { frontmatter: null, body: raw };
+  return { frontmatter: m[1], body: raw.slice(m[0].length) };
+}
+
+/** Determine whether a file extension indicates markdown. */
+function isMarkdownFile(path: string): boolean {
+  const ext = (path.split('.').pop() || '').toLowerCase();
+  return ['md', 'markdown'].includes(ext);
 }
 
 export function SkillsPanel() {
@@ -38,11 +55,13 @@ export function SkillsPanel() {
   const [editDraft, setEditDraft] = useState('');
   const [createDraft, setCreateDraft] = useState({ name: '', category: '', content: '' });
   const [viewingFile, setViewingFile] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { t: t18n } = useTranslation();
 
   const { data, mutate } = useSWR<SkillsResponse>('/skills', fetcher, { revalidateOnFocus: false });
   const skills = useMemo(() => data?.skills ?? [], [data]);
 
-  const { data: skillContent } = useSWR<SkillContent>(
+  const { data: skillContent, error: skillContentError } = useSWR<SkillContent>(
     selectedSkill ? `/skills/content?name=${encodeURIComponent(selectedSkill)}` : null,
     fetcher,
     { revalidateOnFocus: false },
@@ -119,11 +138,13 @@ export function SkillsPanel() {
         setCreateMode(false);
         setCreateDraft({ name: '', category: '', content: '' });
         if (!selectedSkill) setSelectedSkill(name);
+        toast(editMode ? 'Skill updated' : 'Skill created', 'success');
       } catch (err) {
         console.error('Failed to save skill:', err);
+        toast('Failed to save skill: ' + (err instanceof Error ? err.message : String(err)), 'error');
       }
     },
-    [mutate, selectedSkill],
+    [mutate, selectedSkill, editMode, toast],
   );
 
   const handleDelete = useCallback(
@@ -136,11 +157,13 @@ export function SkillsPanel() {
           setEditMode(false);
         }
         void mutate();
+        toast('Skill deleted', 'success');
       } catch (err) {
         console.error('Failed to delete skill:', err);
+        toast('Failed to delete skill: ' + (err instanceof Error ? err.message : String(err)), 'error');
       }
     },
-    [mutate, selectedSkill],
+    [mutate, selectedSkill, toast],
   );
 
   const startEdit = useCallback(() => {
@@ -148,14 +171,41 @@ export function SkillsPanel() {
     setEditMode(true);
   }, [skillContent]);
 
-  const displayContent = viewingFile ? fileContent?.content : skillContent?.content;
+  // Detect error state from SWR or from API response
+  const effectiveError = useMemo(() => {
+    if (skillContentError) {
+      return skillContentError instanceof Error ? skillContentError.message : String(skillContentError);
+    }
+    if (
+      skillContent &&
+      typeof skillContent === 'object' &&
+      'success' in skillContent &&
+      (skillContent as Record<string, unknown>).success === false
+    ) {
+      return ((skillContent as Record<string, unknown>).error as string) || 'Failed to load skill';
+    }
+    return null;
+  }, [skillContentError, skillContent]);
+
+  // Parse frontmatter from the skill content (not from linked files)
+  const { frontmatter, body: markdownBody } = useMemo(
+    () => stripYamlFrontmatter(skillContent?.content),
+    [skillContent?.content],
+  );
+
+  // Linked files grouped by category (object keyed by category name)
+  const linkedFileCategories = useMemo(() => {
+    const lf = skillContent?.linked_files;
+    if (!lf || typeof lf !== 'object') return [];
+    return Object.entries(lf).filter(([, files]) => Array.isArray(files) && files.length > 0) as [string, string[]][];
+  }, [skillContent?.linked_files]);
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
         <h2 className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
           <Zap className="w-4 h-4" />
-          Skills
+          {t18n('skills.title')}
         </h2>
         <Button
           variant="ghost"
@@ -211,27 +261,24 @@ export function SkillsPanel() {
                       className={cn(
                         'w-full text-left px-3 py-1.5 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors',
                         selectedSkill === s.name && 'bg-[var(--accent-bg)] text-[var(--accent)]',
+                        s.disabled && 'opacity-60',
                       )}
                     >
-                      <button
-                        type="button"
+                      <Switch
+                        size="sm"
+                        checked={!s.disabled}
+                        onCheckedChange={(checked) => void handleToggle(s.name, checked)}
                         aria-label={s.disabled ? 'Enable skill' : 'Disable skill'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleToggle(s.name, !!s.disabled);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.stopPropagation();
-                            void handleToggle(s.name, !!s.disabled);
-                          }
-                        }}
-                        className={cn(
-                          'shrink-0 w-2 h-2 rounded-full border-none bg-transparent p-0',
-                          s.disabled ? 'bg-[var(--muted)]' : 'bg-green-500',
-                        )}
+                        onClick={(e) => e.stopPropagation()}
                       />
-                      <span className="truncate">{s.name}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="truncate block">{s.name}</span>
+                        {s.description && (
+                          <span className="block text-[10px] text-[var(--muted)] truncate leading-tight mt-0.5">
+                            {s.description}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   ))}
               </div>
@@ -345,7 +392,16 @@ export function SkillsPanel() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 text-sm">
-                {editMode ? (
+                {/* Error panel when skill fails to load */}
+                {effectiveError && !editMode ? (
+                  <div className="flex items-start gap-3 p-4 rounded-lg border border-[var(--error)] bg-red-500/5">
+                    <AlertCircle className="w-4 h-4 text-[var(--error)] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-medium text-[var(--error)] text-xs mb-1">Failed to load skill</div>
+                      <div className="text-xs text-[var(--muted)]">{effectiveError}</div>
+                    </div>
+                  </div>
+                ) : editMode ? (
                   <div className="space-y-3">
                     <textarea
                       value={editDraft}
@@ -365,34 +421,73 @@ export function SkillsPanel() {
                   </div>
                 ) : (
                   <>
-                    {viewingFile && (
-                      <div className="flex items-center gap-2 mb-3 text-xs text-[var(--muted)]">
-                        <button className="hover:text-[var(--text)]" onClick={() => setViewingFile(null)}>
-                          {selectedSkill}
-                        </button>
-                        <span>/</span>
-                        <span className="text-[var(--text)]">{viewingFile}</span>
-                      </div>
-                    )}
-                    {displayContent !== undefined ? (
-                      <MarkdownRenderer content={displayContent} />
-                    ) : (
-                      <div className="text-[var(--muted)] text-center">Loading...</div>
-                    )}
-                    {!viewingFile && skillContent?.linked_files && skillContent.linked_files.length > 0 && (
-                      <div className="mt-4 border-t border-[var(--border)] pt-3">
-                        <div className="text-xs font-medium text-[var(--muted)] mb-2">Linked Files</div>
-                        {skillContent.linked_files.map((f) => (
-                          <button
-                            key={f.path}
-                            onClick={() => setViewingFile(f.path)}
-                            className="flex items-center gap-2 w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] text-[var(--text)]"
-                          >
-                            <FileText className="w-3 h-3 text-[var(--muted)]" />
-                            {f.name || f.path}
+                    {viewingFile ? (
+                      /* Viewing a linked file */
+                      <>
+                        <div className="flex items-center gap-2 mb-3 text-xs text-[var(--muted)]">
+                          <button className="hover:text-[var(--text)]" onClick={() => setViewingFile(null)}>
+                            &larr; Back to {selectedSkill}
                           </button>
-                        ))}
-                      </div>
+                          <span>/</span>
+                          <span className="text-[var(--text)]">{viewingFile}</span>
+                        </div>
+                        {fileContent !== undefined ? (
+                          isMarkdownFile(viewingFile) ? (
+                            <MarkdownRenderer content={fileContent.content} />
+                          ) : (
+                            <pre className="text-xs font-mono whitespace-pre-wrap break-all text-[var(--text)] bg-[var(--surface)] p-3 rounded border border-[var(--border)] overflow-x-auto">
+                              <code>{fileContent.content}</code>
+                            </pre>
+                          )
+                        ) : (
+                          <div className="text-[var(--muted)] text-center">Loading...</div>
+                        )}
+                      </>
+                    ) : (
+                      /* Viewing the skill itself */
+                      <>
+                        {/* YAML frontmatter in collapsible details */}
+                        {frontmatter && (
+                          <details className="mb-4 border border-[var(--border)] rounded">
+                            <summary className="px-3 py-2 text-xs font-medium text-[var(--muted)] cursor-pointer hover:text-[var(--text)] select-none">
+                              Metadata
+                            </summary>
+                            <pre className="px-3 py-2 text-xs font-mono text-[var(--text)] border-t border-[var(--border)] overflow-x-auto">
+                              <code>{frontmatter}</code>
+                            </pre>
+                          </details>
+                        )}
+
+                        {markdownBody !== undefined ? (
+                          <MarkdownRenderer content={markdownBody || '(no content)'} />
+                        ) : (
+                          <div className="text-[var(--muted)] text-center">Loading...</div>
+                        )}
+
+                        {/* Linked files grouped by category */}
+                        {linkedFileCategories.length > 0 && (
+                          <div className="mt-4 border-t border-[var(--border)] pt-3">
+                            <div className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wide mb-2">
+                              Linked Files
+                            </div>
+                            {linkedFileCategories.map(([cat, files]) => (
+                              <div key={cat} className="mb-3">
+                                <h4 className="text-xs font-medium text-[var(--text)] mb-1">{cat}</h4>
+                                {files.map((f) => (
+                                  <button
+                                    key={f}
+                                    onClick={() => setViewingFile(f)}
+                                    className="flex items-center gap-2 w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] text-[var(--text)]"
+                                  >
+                                    <FileText className="w-3 h-3 text-[var(--muted)]" />
+                                    {f}
+                                  </button>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}

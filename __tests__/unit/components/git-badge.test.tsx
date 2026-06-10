@@ -5,9 +5,9 @@ import type { GitStatus } from '@/types';
 
 const mockStatus: GitStatus = {
   branch: 'main',
-  staged: ['src/app.ts'],
-  unstaged: ['README.md'],
-  untracked: ['new.txt'],
+  dirty: 2,
+  modified: 1,
+  untracked: 1,
   ahead: 2,
   behind: 0,
 };

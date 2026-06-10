@@ -50,11 +50,11 @@ export function useSessionSearch(allSessions: Session[]) {
 
     const ql = q.toLowerCase();
     const titleMatches = allSessions.filter((s) => s.title && s.title.toLowerCase().includes(ql));
-    const titleMatchIds = new Set(titleMatches.map((s) => s.id));
+    const titleMatchIds = new Set(titleMatches.map((s) => s.session_id));
 
     if (!searchData?.sessions?.length) return titleMatches;
 
-    const sessionMap = new Map(allSessions.map((s) => [s.id, s]));
+    const sessionMap = new Map(allSessions.map((s) => [s.session_id, s]));
     const contentOnly: Session[] = [];
     for (const hit of searchData.sessions) {
       if (hit.match_type !== 'content' || titleMatchIds.has(hit.session_id)) continue;

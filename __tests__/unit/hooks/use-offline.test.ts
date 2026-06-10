@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vite-plus/test';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 
 describe('useOffline', () => {
   const listeners: Record<string, EventListener[]> = {};
 
   beforeEach(() => {
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
-    window.addEventListener = vi.fn((event: string, handler: EventListener) => {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(handler);
+    window.addEventListener = vi.fn((event: string, handler: EventListenerOrEventListenerObject) => {
+      if (typeof handler === 'function') {
+        if (!listeners[event]) listeners[event] = [];
+        listeners[event].push(handler);
+      }
     });
     window.removeEventListener = vi.fn();
   });

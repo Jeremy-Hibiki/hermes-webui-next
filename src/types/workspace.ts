@@ -1,8 +1,9 @@
 export interface FileEntry {
   name: string;
   path: string;
-  is_dir: boolean;
+  type: 'file' | 'dir' | 'symlink';
   size?: number;
+  mtime_ns?: number;
   modified?: string;
   git_status?: string;
   children?: FileEntry[];
@@ -13,27 +14,29 @@ export interface FileContent {
   content: string;
   language?: string;
   encoding?: string;
+  size?: number;
+  lines?: number;
 }
 
 export interface WorkspaceInfo {
-  id: string;
   name: string;
   path: string;
   is_git: boolean;
   branch?: string;
+  last?: string;
+  terminal_remote_backend?: boolean;
 }
 
 export interface GitStatus {
   branch: string;
-  staged: string[];
-  unstaged: string[];
-  untracked: string[];
+  dirty: number;
+  modified: number;
+  untracked: number;
   ahead: number;
   behind: number;
+  is_git?: boolean;
 }
 
 export interface GitDiff {
-  path: string;
-  staged: string;
-  unstaged: string;
+  diff: string;
 }

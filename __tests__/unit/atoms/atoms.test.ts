@@ -29,26 +29,32 @@ describe('Session atoms', () => {
 
   it('can set active session', () => {
     const s: Session = {
-      id: 's1',
+      session_id: 's1',
       title: 'Test',
-      created_at: '',
-      updated_at: '',
-      messages: [],
+      created_at: 0,
+      updated_at: 0,
+      last_message_at: 0,
       model: null,
-      provider: null,
+      model_provider: null,
       workspace: null,
       profile: 'default',
       pinned: false,
       archived: false,
       project_id: null,
       message_count: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+      estimated_cost: null,
     };
     store.set(activeSessionAtom, s);
-    expect(store.get(activeSessionAtom)?.id).toBe('s1');
+    expect(store.get(activeSessionAtom)?.session_id).toBe('s1');
   });
 
   it('pinnedSessionIds derives from list', () => {
-    store.set(sessionsListAtom, [{ id: 's1', pinned: true } as Session, { id: 's2', pinned: false } as Session]);
+    store.set(sessionsListAtom, [
+      { session_id: 's1', pinned: true } as Session,
+      { session_id: 's2', pinned: false } as Session,
+    ]);
     expect(store.get(pinnedSessionIdsAtom)).toEqual(['s1']);
   });
 });

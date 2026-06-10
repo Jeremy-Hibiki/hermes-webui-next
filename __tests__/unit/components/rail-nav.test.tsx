@@ -5,14 +5,14 @@ import { RailNav } from '@/components/layout/rail-nav';
 describe('RailNav', () => {
   it('renders navigation buttons', () => {
     render(<RailNav activePanel="chat" onPanelChange={() => {}} />);
-    expect(screen.getByLabelText('Chat')).toBeDefined();
+    expect(screen.getByLabelText('New Chat')).toBeDefined();
     expect(screen.getByLabelText('Settings')).toBeDefined();
   });
 
   it('highlights active panel', () => {
     render(<RailNav activePanel="chat" onPanelChange={() => {}} />);
-    const chatBtn = screen.getByLabelText('Chat');
-    expect(chatBtn.className).toContain('active');
+    const chatBtn = screen.getByLabelText('New Chat');
+    expect(chatBtn.className).toContain('accent-text');
   });
 
   it('calls onPanelChange when button clicked', async () => {

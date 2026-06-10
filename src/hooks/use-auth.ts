@@ -30,9 +30,9 @@ export function useAuth(): UseAuthReturn {
       });
       if (!res.ok) throw new Error(`API Error: ${res.status}`);
       const data = await res.json();
-      setEnabled(data.enabled ?? false);
+      setEnabled(data.auth_enabled ?? false);
       setLoggedIn(data.logged_in ?? false);
-      setHasPasskeys(data.has_passkeys ?? false);
+      setHasPasskeys(data.passkeys_enabled ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check auth');
     } finally {

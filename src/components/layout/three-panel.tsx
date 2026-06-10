@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 
 interface ThreePanelProps {
   sidebar: React.ReactNode;
-  main: React.ReactNode;
-  workspace: React.ReactNode;
+  main?: React.ReactNode;
+  workspace?: React.ReactNode;
   workspaceOpen?: boolean;
 }
 
@@ -64,25 +64,41 @@ export function ThreePanel({ sidebar, main, workspace, workspaceOpen }: ThreePan
     );
   }
 
+  const sidebarExpanded = !main;
+
   return (
     <div className="flex h-full w-full overflow-hidden bg-[var(--bg)]">
       <aside
         className={cn(
-          'shrink-0 border-r border-[var(--border)] bg-[var(--sidebar)] transition-all duration-200 overflow-hidden',
-          collapsed ? 'w-0' : 'w-64',
+          'shrink-0 border-r border-[var(--border)] bg-[var(--sidebar)] overflow-hidden',
+          collapsed && !sidebarExpanded
+            ? 'w-0 opacity-0 -translate-x-[14px]'
+            : sidebarExpanded
+              ? 'flex-1'
+              : 'w-[300px]',
         )}
+        style={{
+          transition:
+            'width .24s cubic-bezier(.22,1,.36,1), opacity .18s ease, transform .24s cubic-bezier(.22,1,.36,1)',
+        }}
         data-testid="panel-sidebar"
       >
-        <div className="w-64 h-full overflow-y-auto">{sidebar}</div>
+        <div className={cn('h-full overflow-y-auto', !sidebarExpanded && 'w-[300px]')}>{sidebar}</div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 bg-[var(--main-bg)]" data-testid="panel-main">
-        {main}
-      </main>
+      {main && (
+        <main className="flex-1 flex flex-col min-w-0 bg-[var(--main-bg)]" data-testid="panel-main">
+          {main}
+        </main>
+      )}
 
       {showWorkspace && (
         <aside
-          className="shrink-0 w-80 border-l border-[var(--border)] bg-[var(--sidebar)] overflow-hidden"
+          className="shrink-0 w-[300px] border-l border-[var(--border)] bg-[var(--sidebar)] overflow-hidden"
+          style={{
+            transition:
+              'width .24s cubic-bezier(.22,1,.36,1), opacity .18s ease, transform .24s cubic-bezier(.22,1,.36,1)',
+          }}
           data-testid="panel-workspace"
         >
           <div className="h-full overflow-y-auto">{workspace}</div>

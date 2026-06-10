@@ -1,4 +1,5 @@
 import type { Session } from '@/types';
+import { t } from '@/lib/i18n';
 
 export interface DateBucket {
   label: string;
@@ -10,8 +11,16 @@ type BucketLabel = (typeof BUCKET_ORDER)[number];
 
 function sessionTimestampMs(session: Session): number {
   const raw = session.last_message_at || session.updated_at || session.created_at || '';
+  // Backend returns Unix timestamps in seconds (float) or ISO strings
+  if (typeof raw === 'number') {
+    return raw > 1e12 ? raw : raw * 1000;
+  }
   const ms = new Date(raw).getTime();
-  return Number.isFinite(ms) ? ms : 0;
+  if (Number.isFinite(ms)) return ms;
+  // Try parsing as a number string (Unix seconds)
+  const num = parseFloat(raw);
+  if (Number.isFinite(num)) return num > 1e12 ? num : num * 1000;
+  return 0;
 }
 
 export function getDateBucketBoundaries(nowMs: number = Date.now()) {
@@ -68,4 +77,17 @@ export function bucketSessionsByDate(sessions: Session[], nowMs: number = Date.n
   }
 
   return result;
+}
+
+const BUCKET_I18N_MAP: Record<BucketLabel, string> = {
+  Today: 'session.today',
+  Yesterday: 'session.yesterday',
+  'This week': 'session.last7',
+  'Last week': 'session.last7',
+  Older: 'session.older',
+};
+
+export function translateBucketLabel(label: string): string {
+  const key = BUCKET_I18N_MAP[label as BucketLabel];
+  return key ? t(key) : label;
 }

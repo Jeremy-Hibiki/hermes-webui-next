@@ -2,16 +2,16 @@
 
 import { useAtom } from 'jotai';
 import { todosAtom, todoMetaAtom } from '@/atoms/chat';
-import { apiPost } from '@/lib/api-client';
 import type { TodoItem } from '@/types';
-import { ListTodo, Square, CheckCircle2, CircleDot } from 'lucide-react';
+import { ListTodo, Square, CheckCircle2, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
-const STATUS_LABEL: Record<TodoItem['status'], string> = {
-  pending: 'Pending',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
+const STATUS_I18N_KEY: Record<TodoItem['status'], string> = {
+  pending: 'todo.pending',
+  in_progress: 'todo.pending',
+  completed: 'todo.completed',
+  cancelled: 'todo.pending',
 };
 
 function toggleStatus(status: TodoItem['status']): TodoItem['status'] {
@@ -30,6 +30,7 @@ function toggleStatus(status: TodoItem['status']): TodoItem['status'] {
 export function TodoPanel() {
   const [todos, setTodos] = useAtom(todosAtom);
   const [meta] = useAtom(todoMetaAtom);
+  const { t: t18n } = useTranslation();
 
   const completed = todos.filter((t) => t.status === 'completed').length;
   const total = todos.length;
@@ -37,14 +38,9 @@ export function TodoPanel() {
 
   const handleToggle = async (todo: TodoItem) => {
     const newStatus = toggleStatus(todo.status);
-    // Optimistic update
+    // Backend has no /todos/update endpoint; todos are SSE-driven only.
+    // Perform local-only optimistic update.
     setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, status: newStatus } : t)));
-    try {
-      await apiPost('/todos/update', { id: todo.id, status: newStatus });
-    } catch {
-      // Revert on failure
-      setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, status: todo.status } : t)));
-    }
   };
 
   return (
@@ -52,7 +48,7 @@ export function TodoPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
         <h2 className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
           <ListTodo className="w-4 h-4" />
-          Todo
+          {t18n('todo.title')}
         </h2>
         {total > 0 && (
           <span className="text-xs text-[var(--muted)]">
@@ -97,7 +93,7 @@ export function TodoPanel() {
                   {isDone ? (
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                   ) : todo.status === 'in_progress' ? (
-                    <CircleDot className={cn('w-4 h-4', color)} />
+                    <Loader className={cn('w-4 h-4 animate-spin text-blue-400')} />
                   ) : (
                     <Square className={cn('w-4 h-4', color)} />
                   )}
@@ -113,7 +109,7 @@ export function TodoPanel() {
                     {todo.content}
                   </div>
                   <div className="text-xs text-[var(--muted)] mt-0.5">
-                    {todo.id.slice(0, 8)} &middot; {STATUS_LABEL[todo.status]}
+                    {todo.id.slice(0, 8)} &middot; {t18n(STATUS_I18N_KEY[todo.status])}
                   </div>
                 </div>
               </div>

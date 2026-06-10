@@ -1,29 +1,32 @@
 import { describe, it, expect } from 'vite-plus/test';
-import type { Session, Project } from '@/types/session';
-import type { Message, ToolCall, ApprovalRequest } from '@/types/message';
-import type { FileEntry, WorkspaceInfo, GitStatus } from '@/types/workspace';
-import type { CronJob, CronCreateParams } from '@/types/cron';
-import type { AppSettings, ThemeMode, FontSize, Profile } from '@/types/settings';
+import type { Session } from '@/types/session';
+import type { Message, ToolCall } from '@/types/message';
+import type { FileEntry } from '@/types/workspace';
+import type { CronJob } from '@/types/cron';
+import type { AppSettings } from '@/types/settings';
 import type { SSEEvent } from '@/types/sse';
 
 describe('Type definitions', () => {
   it('Session accepts valid object', () => {
     const session: Session = {
-      id: 'abc-123',
+      session_id: 'abc-123',
       title: 'Test Session',
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-      messages: [],
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      last_message_at: Date.now(),
       model: 'gpt-4',
-      provider: 'openai',
+      model_provider: 'openai',
       workspace: '/home/user/workspace',
       profile: 'default',
       pinned: false,
       archived: false,
       project_id: null,
       message_count: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+      estimated_cost: null,
     };
-    expect(session.id).toBe('abc-123');
+    expect(session.session_id).toBe('abc-123');
   });
 
   it('Message accepts all roles', () => {
@@ -59,8 +62,8 @@ describe('Type definitions', () => {
     const dir: FileEntry = {
       name: 'src',
       path: 'src',
-      is_dir: true,
-      children: [{ name: 'index.ts', path: 'src/index.ts', is_dir: false }],
+      type: 'dir',
+      children: [{ name: 'index.ts', path: 'src/index.ts', type: 'file' }],
     };
     expect(dir.children).toHaveLength(1);
   });
@@ -95,9 +98,9 @@ describe('Type definitions', () => {
   });
 
   it('SSEEvent discriminated union', () => {
-    const msgEvent: SSEEvent = { event: 'message', data: { content: 'hi' } };
+    const msgEvent: SSEEvent = { event: 'token', data: { text: 'hi' } };
     const doneEvent: SSEEvent = { event: 'done', data: {} };
-    expect(msgEvent.event).toBe('message');
+    expect(msgEvent.event).toBe('token');
     expect(doneEvent.event).toBe('done');
   });
 });

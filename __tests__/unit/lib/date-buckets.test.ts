@@ -3,19 +3,22 @@ import { getDateBucketLabel, getDateBucketBoundaries, bucketSessionsByDate } fro
 import type { Session } from '@/types';
 
 const makeSession = (overrides: Partial<Session> = {}): Session => ({
-  id: 's1',
+  session_id: 's1',
   title: 'Test',
-  created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
-  messages: [],
+  created_at: 0,
+  updated_at: 0,
+  last_message_at: 0,
   model: null,
-  provider: null,
+  model_provider: null,
   workspace: null,
   profile: 'default',
   pinned: false,
   archived: false,
   project_id: null,
   message_count: 0,
+  input_tokens: 0,
+  output_tokens: 0,
+  estimated_cost: null,
   ...overrides,
 });
 
@@ -106,20 +109,20 @@ describe('bucketSessionsByDate', () => {
   it('groups sessions into date buckets', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'today1',
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        session_id: 'today1',
+        updated_at: NOW_MS - 60000,
       }),
       makeSession({
-        id: 'today2',
-        updated_at: new Date(NOW_MS - 120000).toISOString(),
+        session_id: 'today2',
+        updated_at: NOW_MS - 120000,
       }),
       makeSession({
-        id: 'yesterday1',
-        updated_at: new Date(NOW_MS - 86400000).toISOString(),
+        session_id: 'yesterday1',
+        updated_at: NOW_MS - 86400000,
       }),
       makeSession({
-        id: 'older1',
-        updated_at: new Date(NOW_MS - 30 * 86400000).toISOString(),
+        session_id: 'older1',
+        updated_at: NOW_MS - 30 * 86400000,
       }),
     ];
 
@@ -138,8 +141,8 @@ describe('bucketSessionsByDate', () => {
   it('hides empty buckets', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'today1',
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        session_id: 'today1',
+        updated_at: NOW_MS - 60000,
       }),
     ];
 
@@ -151,23 +154,23 @@ describe('bucketSessionsByDate', () => {
   it('sorts sessions within each bucket by updated_at descending', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'older1',
-        updated_at: new Date(NOW_MS - 20 * 86400000).toISOString(),
+        session_id: 'older1',
+        updated_at: NOW_MS - 20 * 86400000,
       }),
       makeSession({
-        id: 'today2',
-        updated_at: new Date(NOW_MS - 120000).toISOString(),
+        session_id: 'today2',
+        updated_at: NOW_MS - 120000,
       }),
       makeSession({
-        id: 'today1',
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        session_id: 'today1',
+        updated_at: NOW_MS - 60000,
       }),
     ];
 
     const buckets = bucketSessionsByDate(sessions, NOW_MS);
     const todayBucket = buckets.find((b) => b.label === 'Today');
-    expect(todayBucket!.sessions[0].id).toBe('today1');
-    expect(todayBucket!.sessions[1].id).toBe('today2');
+    expect(todayBucket!.sessions[0].session_id).toBe('today1');
+    expect(todayBucket!.sessions[1].session_id).toBe('today2');
   });
 
   it('returns empty array for empty input', () => {
@@ -178,23 +181,23 @@ describe('bucketSessionsByDate', () => {
   it('excludes pinned and archived sessions', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'pinned1',
+        session_id: 'pinned1',
         pinned: true,
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        updated_at: NOW_MS - 60000,
       }),
       makeSession({
-        id: 'archived1',
+        session_id: 'archived1',
         archived: true,
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        updated_at: NOW_MS - 60000,
       }),
       makeSession({
-        id: 'normal1',
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        session_id: 'normal1',
+        updated_at: NOW_MS - 60000,
       }),
     ];
 
     const buckets = bucketSessionsByDate(sessions, NOW_MS);
-    const allIds = buckets.flatMap((b) => b.sessions.map((s) => s.id));
+    const allIds = buckets.flatMap((b) => b.sessions.map((s) => s.session_id));
     expect(allIds).not.toContain('pinned1');
     expect(allIds).not.toContain('archived1');
     expect(allIds).toContain('normal1');
@@ -203,12 +206,12 @@ describe('bucketSessionsByDate', () => {
   it('maintains canonical bucket order: Today, Yesterday, This week, Last week, Older', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'old',
-        updated_at: new Date(NOW_MS - 30 * 86400000).toISOString(),
+        session_id: 'old',
+        updated_at: NOW_MS - 30 * 86400000,
       }),
       makeSession({
-        id: 'today',
-        updated_at: new Date(NOW_MS - 60000).toISOString(),
+        session_id: 'today',
+        updated_at: NOW_MS - 60000,
       }),
     ];
 

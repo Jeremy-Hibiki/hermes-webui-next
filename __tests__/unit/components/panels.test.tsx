@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vite-plus/test';
+import { describe, it, expect } from 'vite-plus/test';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ControlCenter } from '@/components/panels/control-center';
 import { CronPanel } from '@/components/panels/cron-panel';
@@ -27,7 +27,7 @@ describe('ControlCenter', () => {
 describe('CronPanel', () => {
   it('renders cron panel header', () => {
     render(<CronPanel />);
-    expect(screen.getAllByText(/cron/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/tasks/i).length).toBeGreaterThan(0);
   });
 });
 

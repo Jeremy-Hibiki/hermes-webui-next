@@ -8,26 +8,44 @@ export interface ChatStartRequest {
   session_id: string;
   message: string;
   model?: string;
-  provider?: string;
+  model_provider?: string;
+  profile?: string;
+  workspace?: string;
   attachments?: string[];
-  system_prompt?: string;
+  explicit_model_pick?: boolean;
 }
 
 export interface ChatStartResponse {
   stream_id: string;
   session_id: string;
+  pending_started_at?: number;
+  turn_id?: string;
+  title?: string;
+  effective_model?: string;
+  effective_model_provider?: string;
 }
 
 export interface HealthResponse {
   status: 'ok' | 'degraded';
-  version: string;
-  uptime: number;
+  sessions: number;
+  active_streams: number;
+  active_runs: number;
+  runs: unknown[];
+  last_run_finished_at: number | null;
+  server_started_at: number;
+  uptime_seconds: number;
+  accept_loop?: Record<string, unknown>;
+  checks?: Record<string, unknown>;
 }
 
 export interface AuthStatusResponse {
-  enabled: boolean;
+  auth_enabled: boolean;
   logged_in: boolean;
-  has_passkeys: boolean;
+  password_auth_enabled: boolean;
+  passwordless_enabled: boolean;
+  passkeys_enabled: boolean;
+  passkeys_count: number;
+  passkey_feature_flag: boolean;
 }
 
 export interface LoginRequest {
@@ -37,6 +55,12 @@ export interface LoginRequest {
 export interface SessionsResponse {
   sessions: import('./session').Session[];
   projects: import('./session').Project[];
+  cli_count: number;
+  all_profiles: boolean;
+  active_profile: string;
+  other_profile_count: number;
+  server_time: number;
+  server_tz: string;
 }
 
 export interface OnboardingStatus {
@@ -99,9 +123,19 @@ export interface OnboardingOAuthPollResponse {
   error?: string;
 }
 
+export interface UpdateCheckComponent {
+  name: string;
+  behind: number;
+  current_sha: string;
+  latest_sha: string;
+  branch: string;
+  repo_url: string;
+  compare_url: string;
+}
+
 export interface UpdateCheckResponse {
-  available: boolean;
-  current_version: string;
-  latest_version: string;
-  release_notes: string;
+  webui?: UpdateCheckComponent;
+  agent?: UpdateCheckComponent;
+  checked_at?: number;
+  disabled?: boolean;
 }

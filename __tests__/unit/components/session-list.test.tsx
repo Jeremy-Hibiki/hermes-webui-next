@@ -5,27 +5,30 @@ import { bucketSessionsByDate } from '@/lib/date-buckets';
 import type { Session } from '@/types';
 
 const makeSession = (overrides: Partial<Session> = {}): Session => ({
-  id: 's1',
+  session_id: 's1',
   title: 'Test Chat',
-  created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
-  messages: [],
+  created_at: 0,
+  updated_at: 0,
+  last_message_at: 0,
   model: null,
-  provider: null,
+  model_provider: null,
   workspace: null,
   profile: 'default',
   pinned: false,
   archived: false,
   project_id: null,
   message_count: 0,
+  input_tokens: 0,
+  output_tokens: 0,
+  estimated_cost: null,
   ...overrides,
 });
 
 describe('SessionList', () => {
   it('renders sessions with titles', () => {
     const sessions = [
-      makeSession({ id: 's1', title: 'Chat about Python' }),
-      makeSession({ id: 's2', title: 'React discussion' }),
+      makeSession({ session_id: 's1', title: 'Chat about Python' }),
+      makeSession({ session_id: 's2', title: 'React discussion' }),
     ];
     render(<SessionList sessions={sessions} projects={[]} activeSessionId={null} onSelect={() => {}} />);
     expect(screen.getByText('Chat about Python')).toBeDefined();
@@ -33,7 +36,7 @@ describe('SessionList', () => {
   });
 
   it('highlights active session', () => {
-    const sessions = [makeSession({ id: 's1', title: 'Active' })];
+    const sessions = [makeSession({ session_id: 's1', title: 'Active' })];
     render(<SessionList sessions={sessions} projects={[]} activeSessionId="s1" onSelect={() => {}} />);
     const item = screen.getByText('Active').closest('button');
     expect(item?.className).toContain('active');
@@ -41,7 +44,7 @@ describe('SessionList', () => {
 
   it('calls onSelect when session clicked', () => {
     const onSelect = vi.fn();
-    const sessions = [makeSession({ id: 's1', title: 'Click me' })];
+    const sessions = [makeSession({ session_id: 's1', title: 'Click me' })];
     render(<SessionList sessions={sessions} projects={[]} activeSessionId={null} onSelect={onSelect} />);
     fireEvent.click(screen.getByText('Click me'));
     expect(onSelect).toHaveBeenCalledWith('s1');
@@ -59,16 +62,16 @@ describe('Date group headers from bucketSessionsByDate', () => {
   it('produces expected date group labels for display', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'today',
-        updated_at: new Date(nowMs - 60000).toISOString(),
+        session_id: 'today',
+        updated_at: nowMs - 60000,
       }),
       makeSession({
-        id: 'yesterday',
-        updated_at: new Date(nowMs - 86400000).toISOString(),
+        session_id: 'yesterday',
+        updated_at: nowMs - 86400000,
       }),
       makeSession({
-        id: 'older',
-        updated_at: new Date(nowMs - 30 * 86400000).toISOString(),
+        session_id: 'older',
+        updated_at: nowMs - 30 * 86400000,
       }),
     ];
 
@@ -83,12 +86,12 @@ describe('Date group headers from bucketSessionsByDate', () => {
   it('assigns sessions to correct date buckets', () => {
     const sessions: Session[] = [
       makeSession({
-        id: 'today-session',
-        updated_at: new Date(nowMs - 60000).toISOString(),
+        session_id: 'today-session',
+        updated_at: nowMs - 60000,
       }),
       makeSession({
-        id: 'yesterday-session',
-        updated_at: new Date(nowMs - 86400000).toISOString(),
+        session_id: 'yesterday-session',
+        updated_at: nowMs - 86400000,
       }),
     ];
 
@@ -96,7 +99,7 @@ describe('Date group headers from bucketSessionsByDate', () => {
     const todayBucket = buckets.find((b) => b.label === 'Today');
     const yesterdayBucket = buckets.find((b) => b.label === 'Yesterday');
 
-    expect(todayBucket!.sessions[0].id).toBe('today-session');
-    expect(yesterdayBucket!.sessions[0].id).toBe('yesterday-session');
+    expect(todayBucket!.sessions[0].session_id).toBe('today-session');
+    expect(yesterdayBucket!.sessions[0].session_id).toBe('yesterday-session');
   });
 });

@@ -6,7 +6,7 @@ import { fetcher, apiPost } from '@/lib/api-client';
 import type { GitStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { GitCommit, GitPullRequest, Upload, Plus, Minus, FileQuestion, RotateCcw, Trash2 } from 'lucide-react';
+import { GitCommit, GitPullRequest, Upload } from 'lucide-react';
 
 interface GitOperationsProps {
   sessionId?: string;
@@ -24,16 +24,16 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
     { revalidateOnFocus: false },
   );
 
-  const { data: diffData, mutate: mutateDiff } = useSWR<{ staged: string; unstaged: string }>(
+  const { data: diffData, mutate: mutateDiff } = useSWR<{ diff: string }>(
     sessionId ? `/git/diff?session_id=${sessionId}` : null,
     fetcher,
     { revalidateOnFocus: false },
   );
 
   const status = statusData?.git;
-  const staged = status?.staged ?? [];
-  const unstaged = status?.unstaged ?? [];
-  const untracked = status?.untracked ?? [];
+  const dirty = status?.dirty ?? 0;
+  const untracked = status?.untracked ?? 0;
+  const hasChanges = dirty > 0 || untracked > 0;
 
   const runGit = useCallback(
     async (endpoint: string, body?: Record<string, unknown>) => {
@@ -54,30 +54,8 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
     [sessionId, mutateStatus, mutateDiff, toast],
   );
 
-  const handleStage = useCallback(
-    (file: string) => {
-      void runGit('stage', { files: [file] });
-    },
-    [runGit],
-  );
-
-  const handleUnstage = useCallback(
-    (file: string) => {
-      void runGit('unstage', { files: [file] });
-    },
-    [runGit],
-  );
-
-  const handleDiscard = useCallback(
-    (file: string) => {
-      if (!window.confirm(`Discard changes in "${file}"?`)) return;
-      void runGit('discard', { files: [file] });
-    },
-    [runGit],
-  );
-
   const handleStageAll = () => {
-    void runGit('stage', { files: [...unstaged, ...untracked] });
+    void runGit('stage', { all: true });
   };
 
   const handleCommit = useCallback(async () => {
@@ -121,111 +99,35 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
         </div>
       </div>
 
-      {/* Error banner */}
       {error && (
         <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-red-500/10 border-b border-[var(--border)]">
           <span className="text-[10px] text-[var(--error)] truncate flex-1">{error}</span>
           <button
             onClick={() => setError(null)}
             className="text-[var(--muted)] text-[10px] shrink-0 hover:text-[var(--text)]"
-            aria-label="Dismiss error"
           >
             dismiss
           </button>
         </div>
       )}
 
-      {/* Staged files */}
-      {staged.length > 0 && (
-        <div className="border-b border-[var(--border)]">
-          <div className="px-3 py-1.5 text-[10px] font-semibold text-[var(--success)] uppercase tracking-wide">
-            Staged ({staged.length})
-          </div>
-          {staged.map((f) => (
-            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
-              <Plus className="w-3 h-3 text-green-400 shrink-0" />
-              <span className="flex-1 truncate text-[var(--text)]">{f}</span>
-              <button
-                onClick={() => {
-                  handleUnstage(f);
-                }}
-                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Unstage ${f}`}
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Unstaged files */}
-      {(unstaged.length > 0 || untracked.length > 0) && (
-        <div className="border-b border-[var(--border)]">
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <span className="text-[10px] font-semibold text-[var(--warning)] uppercase tracking-wide">
-              Changes ({unstaged.length + untracked.length})
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 text-[10px] text-[var(--muted)]"
-              onClick={handleStageAll}
-              disabled={busy}
-            >
-              Stage all
-            </Button>
-          </div>
-          {unstaged.map((f) => (
-            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
-              <span className="w-3 h-3 text-[var(--warning)] shrink-0 text-center leading-3 text-[8px]">M</span>
-              <span className="flex-1 truncate text-[var(--text)]">{f}</span>
-              <button
-                onClick={() => {
-                  handleDiscard(f);
-                }}
-                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Discard changes in ${f}`}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  handleStage(f);
-                }}
-                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Stage ${f}`}
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-          {untracked.map((f) => (
-            <div key={f} className="flex items-center gap-2 px-3 py-1 text-xs hover:bg-[var(--hover-bg)] group">
-              <FileQuestion className="w-3 h-3 text-[var(--muted)] shrink-0" />
-              <span className="flex-1 truncate text-[var(--text)]">{f}</span>
-              <button
-                onClick={() => {
-                  handleDiscard(f);
-                }}
-                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Delete untracked file ${f}`}
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  handleStage(f);
-                }}
-                className="text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={`Stage ${f}`}
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Status summary */}
+      <div className="px-3 py-2 border-b border-[var(--border)] space-y-1">
+        {dirty > 0 && <div className="text-[10px] text-[var(--warning)]">{dirty} modified</div>}
+        {untracked > 0 && <div className="text-[10px] text-[var(--muted)]">{untracked} untracked</div>}
+        {status && dirty === 0 && untracked === 0 && <div className="text-[10px] text-[var(--success)]">Clean</div>}
+        {hasChanges && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 text-[10px] text-[var(--muted)]"
+            onClick={handleStageAll}
+            disabled={busy}
+          >
+            Stage all
+          </Button>
+        )}
+      </div>
 
       {/* Commit input */}
       <div className="p-3 border-b border-[var(--border)]">
@@ -237,18 +139,10 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
             aria-label="Commit message"
             className="flex-1 px-2 py-1.5 text-xs border border-[var(--border)] rounded bg-[var(--input-bg)] text-[var(--text)] placeholder:text-[var(--muted)] outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                void handleCommit();
-              }
+              if (e.key === 'Enter') void handleCommit();
             }}
           />
-          <Button
-            size="sm"
-            onClick={() => {
-              void handleCommit();
-            }}
-            disabled={!commitMsg.trim() || busy || staged.length === 0}
-          >
+          <Button size="sm" onClick={() => void handleCommit()} disabled={!commitMsg.trim() || busy || !hasChanges}>
             <GitCommit className="w-3 h-3 mr-1" />
             Commit
           </Button>
@@ -257,14 +151,7 @@ export function GitOperations({ sessionId }: GitOperationsProps) {
 
       {/* Diff preview */}
       <div className="flex-1 overflow-auto p-2 font-mono text-[10px] leading-4 text-[var(--muted)] whitespace-pre-wrap">
-        {diffData?.staged || diffData?.unstaged ? (
-          <>
-            {diffData.staged && <div>{diffData.staged}</div>}
-            {diffData.unstaged && <div>{diffData.unstaged}</div>}
-          </>
-        ) : (
-          <div className="text-center py-8">No changes</div>
-        )}
+        {diffData?.diff ? <pre>{diffData.diff}</pre> : <div className="text-center py-8">No changes</div>}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ describe('MessageBubble', () => {
   it('renders user message', () => {
     render(<MessageBubble message={{ id: 'm1', role: 'user', content: 'Hello', timestamp: '' } as Message} />);
     expect(screen.getByText('Hello')).toBeDefined();
-    expect(screen.getByText('user')).toBeDefined();
+    expect(screen.getByLabelText('user message')).toBeDefined();
   });
 
   it('renders assistant message', () => {
