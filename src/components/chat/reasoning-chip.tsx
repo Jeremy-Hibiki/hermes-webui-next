@@ -80,13 +80,16 @@ export function ReasoningChip() {
   if (!supports) return null;
 
   return (
-    <div ref={wrapRef} className="relative flex-shrink-0">
+    <div ref={wrapRef} className="composer-reasoning-wrap relative flex-shrink-0">
       <button
+        id="composerReasoningChip"
         ref={chipRef}
         onClick={() => setOpen(!open)}
         disabled={loading}
+        aria-label="Reasoning effort level"
+        title="Reasoning effort level"
         className={cn(
-          'inline-flex items-center gap-2 max-w-[180px] px-3 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
+          'composer-reasoning-chip inline-flex items-center gap-2 max-w-[180px] px-3 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
           'hover:text-[var(--text)] hover:bg-[var(--hover-bg)]',
           open && 'text-[var(--text)] bg-[var(--accent-bg)] border-[var(--accent-bg)]',
           isInactive && 'opacity-[0.78]',
@@ -94,13 +97,16 @@ export function ReasoningChip() {
         style={{ color: open ? undefined : 'var(--muted)' }}
       >
         <Brain className="w-3.5 h-3.5 shrink-0" />
-        <span className="truncate">{formatLabel(effort)}</span>
+        <span id="composerReasoningLabel" className="truncate">
+          {formatLabel(effort)}
+        </span>
         <ChevronDown className={cn('w-3 h-3 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
         <div
-          className="absolute bottom-[calc(100%+4px)] left-0 min-w-[140px] rounded-[10px] border border-[var(--border2)] bg-[var(--surface)] z-[200] p-1 overflow-hidden"
+          id="composerReasoningDropdown"
+          className="composer-reasoning-dropdown absolute bottom-[calc(100%+4px)] left-0 min-w-[140px] rounded-[10px] border border-[var(--border2)] bg-[var(--surface)] z-[200] p-1 overflow-hidden"
           style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
         >
           {ALL_EFFORTS.map((eff) => (

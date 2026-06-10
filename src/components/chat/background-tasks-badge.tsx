@@ -10,12 +10,14 @@ export function BackgroundTasksBadge() {
 
   return (
     <span
-      className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full text-[10px] font-semibold shrink-0"
+      id="bgBadge"
+      className="bg-badge inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full text-[10px] font-semibold shrink-0"
       style={{
         background: 'var(--accent-bg-strong)',
         color: 'var(--accent-text)',
       }}
       title={`${count} background task${count > 1 ? 's' : ''} running`}
+      aria-label={`${count} background task${count > 1 ? 's' : ''} running`}
     >
       {count}
     </span>

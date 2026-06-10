@@ -47,10 +47,12 @@ export function useModels() {
 }
 
 export function ModelSelectorTrigger({
+  id,
   model,
   open,
   onToggle,
 }: {
+  id?: string;
   model: string | null;
   open: boolean;
   onToggle: () => void;
@@ -64,10 +66,15 @@ export function ModelSelectorTrigger({
 
   return (
     <button
+      id={id}
       onClick={onToggle}
-      className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
+      aria-label="Conversation model"
+      title="Conversation model"
+      className="composer-model-chip inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
     >
-      <span className="truncate max-w-24">{selectedName}</span>
+      <span id="composerModelLabel" className="truncate max-w-24">
+        {selectedName}
+      </span>
       <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
     </button>
   );

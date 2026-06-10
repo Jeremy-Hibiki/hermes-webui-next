@@ -124,6 +124,7 @@ export function ProviderQuotaChip() {
 
   return (
     <button
+      id="providerQuotaChip"
       onClick={() => {
         window.location.href = '/settings?section=providers';
       }}
@@ -134,12 +135,15 @@ export function ProviderQuotaChip() {
         border: '1px solid var(--border2)',
       }}
       title={text.title}
+      aria-label={text.title}
     >
       <span
         className="w-[6px] h-[6px] rounded-full shrink-0"
         style={{ background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,.12)' }}
       />
-      <span className="truncate">{text.label}</span>
+      <span id="providerQuotaChipLabel" className="truncate">
+        {text.label}
+      </span>
     </button>
   );
 }

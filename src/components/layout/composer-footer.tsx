@@ -319,6 +319,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
   return (
     <div
+      id="composerWrap"
       ref={composerWrapRef}
       className="composer-wrap relative shrink-0 px-5 pt-3 pb-4"
       onDrop={handleDrop}
@@ -337,9 +338,10 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
       />
 
       <div
+        id="composerBox"
         className={cn(
           'composer-box mx-auto flex flex-col relative z-[2] rounded-2xl border transition-all',
-          dragOver && 'border-[var(--accent)]',
+          dragOver && 'border-[var(--accent)] drag-over',
         )}
         style={{
           maxWidth: 'clamp(780px, 60vw, 1100px)',
@@ -349,6 +351,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         }}
       >
         <input
+          id="fileInput"
           ref={fileInputRef}
           type="file"
           multiple
@@ -364,7 +367,8 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         {/* Drop hint overlay */}
         {dragOver && (
           <div
-            className="absolute inset-0 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-[var(--accent)] z-30 pointer-events-none"
+            id="dropHint"
+            className="drop-hint absolute inset-0 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-[var(--accent)] z-30 pointer-events-none"
             style={{
               background: 'linear-gradient(var(--input-bg), var(--input-bg)), var(--bg)',
             }}
@@ -376,7 +380,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
         {/* Attachment tray */}
         {pendingFiles.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-2.5 px-3.5">
+          <div id="attachTray" className="attach-tray flex flex-wrap gap-1.5 pt-2.5 px-3.5">
             {pendingFiles.map((f, i) => {
               const key = `${f.name}-${f.size}`;
               const uploading = uploadingFiles.has(key);
@@ -420,6 +424,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             />
           )}
           <textarea
+            id="msg"
             aria-label="Message input"
             ref={textareaRef}
             placeholder={t18n('chat.placeholder')}
@@ -436,29 +441,35 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         </div>
 
         {/* Composer footer: chips row */}
-        <div className="flex items-center justify-between gap-2.5 px-2.5 pt-1.5 pb-2.5">
+        <div
+          id="composerFooter"
+          className="composer-footer flex items-center justify-between gap-2.5 px-2.5 pt-1.5 pb-2.5"
+        >
           <div
-            className="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-            style={{ scrollbarWidth: 'none' }}
+            className="composer-left flex items-center gap-1 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           >
             {/* Attach button */}
             <button
+              id="btnAttach"
               aria-label="Attach file"
+              data-tooltip="Attach file"
               onClick={() => fileInputRef.current?.click()}
-              className="w-[34px] h-[34px] flex items-center justify-center rounded-lg opacity-75 text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover-bg)] hover:opacity-100 transition-colors"
+              className="icon-btn has-tooltip w-[34px] h-[34px] flex items-center justify-center rounded-lg opacity-75 text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover-bg)] hover:opacity-100 transition-colors"
             >
               <Paperclip className="w-4 h-4" />
             </button>
 
             {/* Divider */}
-            <div className="w-px h-4 bg-[var(--border)] mx-[3px] shrink-0" />
+            <div aria-hidden="true" className="composer-divider w-px h-4 bg-[var(--border)] mx-[3px] shrink-0" />
 
             {/* YOLO pill */}
             {yolo && (
               <button
+                id="yoloPill"
                 onClick={() => setYolo(false)}
                 title={t18n('yolo_pill_title_active')}
-                className="inline-flex items-center gap-1 px-2.5 py-[3px] rounded-full text-[11px] font-bold uppercase tracking-[.04em] shrink-0 transition-all hover:-translate-y-px"
+                className="yolo-pill inline-flex items-center gap-1 px-2.5 py-[3px] rounded-full text-[11px] font-bold uppercase tracking-[.04em] shrink-0 transition-all hover:-translate-y-px"
                 style={{
                   background: 'rgba(245,158,11,0.15)',
                   color: '#f59e0b',
@@ -472,8 +483,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             )}
 
             {/* Profile chip */}
-            <div className="relative flex-shrink-0">
+            <div className="composer-profile-wrap relative flex-shrink-0">
               <button
+                id="profileChip"
                 ref={profileChipRef}
                 onClick={() => {
                   computeProfilePosition();
@@ -481,14 +493,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 }}
                 title={t18n('profile_switch_title')}
                 className={cn(
-                  'inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
+                  'composer-profile-chip inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
                   'hover:text-[var(--text)] hover:bg-[var(--hover-bg)]',
-                  profileDropdownOpen && 'text-[var(--text)] bg-[var(--accent-bg)] border-[var(--accent-bg)]',
+                  profileDropdownOpen && 'text-[var(--text)] bg-[var(--accent-bg)] border-[var(--accent-bg)] switching',
                 )}
                 style={{ color: profileDropdownOpen ? undefined : 'var(--muted)' }}
               >
                 <User className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate capitalize">{activeProfileName}</span>
+                <span id="profileChipLabel" className="truncate capitalize">
+                  {activeProfileName}
+                </span>
                 <ChevronDown
                   className={cn('w-3 h-3 shrink-0 transition-transform', profileDropdownOpen && 'rotate-180')}
                 />
@@ -496,8 +510,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
               {profileDropdownOpen && (
                 <div
+                  id="profileDropdown"
                   ref={profileDropdownRef}
-                  className="absolute bottom-[calc(100%+4px)] left-0 min-w-[160px] max-h-48 overflow-hidden rounded-[10px] border border-[var(--border2)] bg-[var(--surface)] z-[200] p-1"
+                  className="composer-profile-dropdown absolute bottom-[calc(100%+4px)] left-0 min-w-[160px] max-h-48 overflow-hidden rounded-[10px] border border-[var(--border2)] bg-[var(--surface)] z-[200] p-1"
                   style={{ left: profileDropdownLeft, boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
                 >
                   <div className="overflow-y-auto max-h-44 p-0.5">
@@ -528,14 +543,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Workspace group: files toggle + workspace switcher */}
             <div
-              className="inline-flex items-stretch max-w-[284px] rounded-full overflow-hidden shrink-0 border border-[var(--border2,var(--border))] hover:bg-[var(--hover-bg)] transition-colors"
+              id="composerWorkspaceGroup"
+              className="composer-workspace-group inline-flex items-stretch max-w-[284px] rounded-full overflow-hidden shrink-0 border border-[var(--border2,var(--border))] hover:bg-[var(--hover-bg)] transition-colors"
               role="group"
               aria-label="Workspace controls"
             >
               <button
+                id="btnWorkspacePanelToggle"
                 onClick={() => setWorkspaceOpen((v) => !v)}
                 className={cn(
-                  'inline-flex items-center justify-center px-3 py-2 bg-transparent border-none cursor-pointer transition-colors',
+                  'composer-workspace-files-btn inline-flex items-center justify-center px-3 py-2 bg-transparent border-none cursor-pointer transition-colors',
                   workspaceOpen ? 'text-[var(--accent-text)] bg-[var(--accent-bg)]' : 'text-[var(--muted)]',
                 )}
                 aria-label="Toggle workspace files panel"
@@ -545,6 +562,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 <FolderOpen className="w-3.5 h-3.5" />
               </button>
               <button
+                id="composerWorkspaceChip"
                 ref={wsChipRef}
                 onClick={() => {
                   computeWsPosition();
@@ -552,22 +570,33 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 }}
                 disabled={workspaces.length === 0}
                 title={t18n('workspace_switch_title')}
-                className="inline-flex items-center gap-2 min-w-0 max-w-[200px] px-3 py-2 bg-transparent border-none border-l border-transparent cursor-pointer text-[var(--muted)] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="composer-workspace-chip inline-flex items-center gap-2 min-w-0 max-w-[200px] px-3 py-2 bg-transparent border-none border-l border-transparent cursor-pointer text-[var(--muted)] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="text-xs truncate">{currentWsName}</span>
+                <span id="composerWorkspaceLabel" className="text-xs truncate">
+                  {currentWsName}
+                </span>
                 <ChevronDown className={cn('w-3 h-3 transition-transform', wsDropdown && 'rotate-180')} />
               </button>
             </div>
 
             {/* Reasoning effort chip */}
-            <ReasoningChip />
+            <div id="composerReasoningWrap" className="composer-reasoning-wrap relative flex-shrink-0">
+              <ReasoningChip />
+            </div>
 
             {/* Toolsets chip */}
-            <ToolsetsChip />
+            <div id="composerToolsetsWrap" className="composer-toolsets-wrap relative flex-shrink-0">
+              <ToolsetsChip />
+            </div>
 
             {/* Model chip - trigger only, dropdown is at footer level */}
-            <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>} className="relative flex-shrink-0">
+            <div
+              id="composerModelWrap"
+              ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}
+              className="composer-model-wrap relative flex-shrink-0"
+            >
               <ModelSelectorTrigger
+                id="composerModelChip"
                 model={defaultModel}
                 open={modelDropdownOpen}
                 onToggle={() => {
@@ -579,26 +608,30 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             </div>
 
             {/* Provider quota chip */}
-            <ProviderQuotaChip />
+            <div id="providerQuotaChip" className="provider-quota-chip-wrap relative flex-shrink-0">
+              <ProviderQuotaChip />
+            </div>
 
             {/* Mobile composer config button — visible only on narrow screens */}
-            <MobileComposerConfigButton
-              onOpenWorkspace={() => {
-                computeWsPosition();
-                setWsDropdown(true);
-              }}
-              onOpenModel={() => {
-                computeModelPosition();
-                setModelDropdownOpen(true);
-              }}
-            />
+            <div id="composerMobileConfigBtn" className="composer-mobile-config-wrap relative flex-shrink-0">
+              <MobileComposerConfigButton
+                onOpenWorkspace={() => {
+                  computeWsPosition();
+                  setWsDropdown(true);
+                }}
+                onOpenModel={() => {
+                  computeModelPosition();
+                  setModelDropdownOpen(true);
+                }}
+              />
+            </div>
           </div>
 
           {/* Right side: status, context, bg badge, send/stop */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="composer-right flex items-center gap-2 shrink-0">
             {/* Composer status text */}
             {busy && (
-              <span className="hidden sm:inline text-[11px] text-[var(--muted)] mr-1">
+              <span id="composerStatus" className="hidden sm:inline text-[11px] text-[var(--muted)] mr-1">
                 {t18n('composer.status_sending')}
               </span>
             )}
@@ -611,6 +644,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {busy ? (
               <button
+                id="btnSend"
                 onClick={onCancel}
                 className="stop-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-105"
                 style={{
@@ -618,13 +652,14 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                   color: '#fff',
                   boxShadow: '0 2px 10px rgba(0,0,0,.18)',
                 }}
-                aria-label="Stop"
+                aria-label="Stop generation"
                 title={t18n('chat.stop')}
               >
                 <Square className="w-4 h-4" fill="currentColor" />
               </button>
             ) : (
               <button
+                id="btnSend"
                 onClick={handleSend}
                 disabled={!hasContent}
                 className="send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35 disabled:cursor-not-allowed hover:scale-[1.08]"
@@ -633,6 +668,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                   color: '#fff',
                   boxShadow: hasContent ? '0 2px 8px var(--accent-bg-strong,var(--accent-bg))' : 'none',
                 }}
+                aria-label="Send message"
                 title={t18n('chat.send')}
               >
                 <ArrowUp className="w-4 h-4" />
@@ -714,6 +750,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         }
         .send-btn:active {
           transform: scale(0.95) !important;
+        }
+        .composer-left::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
     </div>

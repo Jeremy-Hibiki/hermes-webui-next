@@ -137,6 +137,7 @@ export function ContextIndicator() {
 
   return (
     <div
+      id="ctxIndicatorWrap"
       className="ctx-indicator-wrap relative inline-flex items-center justify-center flex-shrink-0"
       onMouseEnter={() => setTooltipOpen(true)}
       onMouseLeave={() => setTooltipOpen(false)}
@@ -144,8 +145,10 @@ export function ContextIndicator() {
       onBlur={() => setTooltipOpen(false)}
     >
       <button
+        id="ctxIndicator"
         className={`ctx-indicator relative inline-flex items-center justify-center w-[34px] h-[34px] p-0 border-none bg-none text-[var(--muted)] cursor-pointer flex-shrink-0 transition-opacity duration-150 hover:opacity-[0.88] hover:-translate-y-px ${colorClass}`}
         aria-label={`Context window ${hasPromptTok ? pct + '%' : fmtTokens(totalTok) + ' tokens'} used`}
+        aria-describedby="ctxTooltip"
       >
         <span className="ctx-ring relative flex w-6 h-6 items-center justify-center">
           <svg
@@ -190,7 +193,9 @@ export function ContextIndicator() {
       {/* Tooltip */}
       {tooltipOpen && (
         <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-xl border border-[var(--border2)] bg-[var(--surface)] shadow-lg z-[300] px-3.5 py-3 text-xs"
+          id="ctxTooltip"
+          role="tooltip"
+          className="ctx-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-xl border border-[var(--border2)] bg-[var(--surface)] shadow-lg z-[300] px-3.5 py-3 text-xs"
           style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
         >
           <div className="flex flex-col gap-1">
