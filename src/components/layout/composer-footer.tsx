@@ -27,6 +27,7 @@ import {
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api-client';
 import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
+import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atoms/settings';
 import { ModelSelectorTrigger, ModelDropdownPopover } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
@@ -81,6 +82,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [_model, setModel] = useAtom(defaultModelAtom);
   const [activeWorkspace, setActiveWorkspace] = useAtom(activeWorkspaceAtom);
   const [yolo, setYolo] = useAtom(yoloAtom);
+  const [workspaceOpen, setWorkspaceOpen] = useAtom(workspacePanelOpenAtom);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -417,23 +419,31 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
               <ChevronDown className="w-3 h-3 shrink-0 opacity-50" />
             </button>
 
-            {/* Workspace chip - trigger only, dropdown is at footer level */}
-            <button
-              ref={wsChipRef}
-              onClick={() => {
-                computeWsPosition();
-                setWsDropdown(!wsDropdown);
-              }}
-              className="inline-flex items-center gap-2 max-w-[284px] rounded-full border border-[var(--border2,var(--border))] bg-transparent hover:bg-[var(--hover-bg)] transition-colors overflow-hidden shrink-0"
-            >
-              <span className="inline-flex items-center justify-center px-3 py-2 text-[var(--muted)]">
+            {/* Workspace group: files toggle + workspace switcher */}
+            <div className="inline-flex items-stretch max-w-[284px] rounded-full overflow-hidden shrink-0 border border-[var(--border2,var(--border))] hover:bg-[var(--hover-bg)] transition-colors">
+              <button
+                onClick={() => setWorkspaceOpen((v) => !v)}
+                className={cn(
+                  'inline-flex items-center justify-center px-3 py-2 bg-transparent border-none cursor-pointer transition-colors',
+                  workspaceOpen ? 'text-[var(--accent-text)] bg-[var(--accent-bg)]' : 'text-[var(--muted)]',
+                )}
+                aria-label="Toggle workspace files panel"
+                title="Toggle workspace files panel"
+              >
                 <FolderOpen className="w-3.5 h-3.5" />
-              </span>
-              <span className="text-xs text-[var(--muted)] font-medium truncate">{currentWsName}</span>
-              <ChevronDown
-                className={cn('w-3 h-3 text-[var(--muted)] mr-2 transition-transform', wsDropdown && 'rotate-180')}
-              />
-            </button>
+              </button>
+              <button
+                ref={wsChipRef}
+                onClick={() => {
+                  computeWsPosition();
+                  setWsDropdown(!wsDropdown);
+                }}
+                className="inline-flex items-center gap-2 min-w-0 max-w-[200px] px-3 py-2 bg-transparent border-none border-l border-transparent cursor-pointer text-[var(--muted)] font-medium transition-colors"
+              >
+                <span className="text-xs truncate">{currentWsName}</span>
+                <ChevronDown className={cn('w-3 h-3 transition-transform', wsDropdown && 'rotate-180')} />
+              </button>
+            </div>
 
             {/* Reasoning effort chip */}
             <ReasoningChip />
