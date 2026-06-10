@@ -14,6 +14,7 @@ import { useChatStream } from '@/hooks/use-chat-stream';
 import { apiPost } from '@/lib/api-client';
 import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
+import { ReconnectBanner, UpdateBanner, AgentHealthBanner } from '@/components/shared/system-banners';
 
 function ScrollToBottomBtn({ onClick }: { onClick: () => void }) {
   return (
@@ -342,6 +343,8 @@ export function MainPanel() {
         </div>
       ) : (
         <div className="flex-1 min-h-0 relative">
+          <UpdateBanner />
+          <ReconnectBanner />
           <div ref={scrollContainerRef} className="absolute inset-0 overflow-y-auto p-4">
             <div ref={messagesRef}>
               <MessageList
@@ -351,6 +354,7 @@ export function MainPanel() {
                 onUndoExchange={handleUndoExchange}
               />
             </div>
+            <AgentHealthBanner />
             <LiveRunStatus />
             {busy && <StreamingCursor streaming={true} />}
             <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />

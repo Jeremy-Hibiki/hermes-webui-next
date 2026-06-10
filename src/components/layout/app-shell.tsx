@@ -13,6 +13,7 @@ import { SidebarContent } from '@/components/layout/sidebar-content';
 import { MainPanel } from '@/components/layout/main-panel';
 import { WorkspacePanel } from '@/components/layout/workspace-panel';
 import { AppTitlebar } from '@/components/layout/app-titlebar';
+import { OfflineBanner } from '@/components/shared/system-banners';
 import { LoginPage } from '@/app/login/login-page';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -214,6 +215,7 @@ export function AppShell({ panel }: AppShellProps) {
 
   return (
     <div className={`flex flex-col h-screen w-full overflow-hidden ${isMobile ? 'pb-14' : ''}`}>
+      <OfflineBanner />
       <AppTitlebar />
       <div className="flex flex-1 min-h-0">
         {!isMobile && <RailNav activePanel={panel} onPanelChange={handlePanelChange} />}
