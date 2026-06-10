@@ -204,8 +204,9 @@ export function SessionItem({
   }
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => !renaming && onSelect(session.session_id)}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !renaming) {
@@ -277,6 +278,6 @@ export function SessionItem({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </button>
+    </div>
   );
 }
