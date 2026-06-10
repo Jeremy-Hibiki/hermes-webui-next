@@ -1,15 +1,23 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type DragEvent } from 'react';
 import { useAtom } from 'jotai';
-import { activeProfileAtom, defaultModelAtom } from '@/atoms/settings';
+import { ArrowUp, FileText, FolderOpen, Image as ImageIcon, Paperclip, Square, User, X, Zap } from 'lucide-react';
+import {
+  type ClipboardEvent,
+  type DragEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
-import { Paperclip, Square, X, Image as ImageIcon, FileText, ArrowUp, User, FolderOpen, Zap } from 'lucide-react';
-import { apiUpload } from '@/lib/api-client';
-import { cn } from '@/lib/utils';
-import { useTranslation } from '@/lib/i18n';
+import { activeProfileAtom, defaultModelAtom } from '@/atoms/settings';
 import { ModelSelector } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
+import { apiUpload } from '@/lib/api-client';
+import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
@@ -18,10 +26,33 @@ interface ComposerFooterProps {
   onAttach?: () => void;
   onVoice?: () => void;
   sendKey?: 'enter' | 'cmd-enter';
+  sessionId?: string;
 }
 
-export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: ComposerFooterProps) {
-  const [text, setText] = useState('');
+export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sessionId }: ComposerFooterProps) {
+  const DRAFT_KEY = 'hermes-composer-drafts';
+
+  const getDraft = (sid: string): string => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      const map: Record<string, string> = raw ? JSON.parse(raw) : {};
+      return map[sid] || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const saveDraft = (sid: string, val: string) => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      const map: Record<string, string> = raw ? JSON.parse(raw) : {};
+      if (val) map[sid] = val;
+      else delete map[sid];
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(map));
+    } catch {}
+  };
+
+  const [text, setText] = useState(() => (sessionId ? getDraft(sessionId) : ''));
   const [pendingFiles, setPendingFiles] = useAtom(pendingFilesAtom);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
   const [_uploadedPaths, setUploadedPaths] = useState<string[]>([]);
@@ -42,6 +73,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: Co
       ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
     }
   }, [text]);
+
+  // Save draft when text changes
+  useEffect(() => {
+    if (sessionId) saveDraft(sessionId, text);
+  }, [text, sessionId]);
+
+  // Restore draft when session changes
+  useEffect(() => {
+    if (sessionId) setText(getDraft(sessionId));
+  }, [sessionId]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -115,6 +156,25 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: Co
     [sendKey, handleSend],
   );
 
+  const handlePaste = useCallback(
+    (e: ClipboardEvent<HTMLTextAreaElement>) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) void handleFileSelect(new DataTransfer().files || new FileList());
+          const dt = new DataTransfer();
+          if (file) dt.items.add(file);
+          void handleFileSelect(dt.files);
+          return;
+        }
+      }
+    },
+    [handleFileSelect],
+  );
+
   const hasContent = text.trim().length > 0;
 
   return (
@@ -130,7 +190,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: Co
       {/* Fade gradient above composer */}
       <div
         className="absolute left-0 right-0 bottom-full h-8 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, var(--bg))' }}
+        style={{
+          background: 'linear-gradient(to bottom, transparent, var(--bg))',
+        }}
       />
 
       <div
@@ -161,7 +223,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: Co
         {dragOver && (
           <div
             className="absolute inset-0 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-[var(--accent)] z-30 pointer-events-none"
-            style={{ background: 'linear-gradient(var(--input-bg), var(--input-bg)), var(--bg)' }}
+            style={{
+              background: 'linear-gradient(var(--input-bg), var(--input-bg)), var(--bg)',
+            }}
           >
             <Paperclip className="w-4 h-4 text-[var(--accent-text)]" />
             <span className="text-[13.5px] font-semibold text-[var(--accent-text)]">Drop files here</span>
@@ -223,6 +287,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter' }: Co
               setShowSlashMenu(e.target.value.startsWith('/'));
             }}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             rows={1}
             className="w-full bg-transparent border-none outline-none text-[var(--text)] text-base leading-[1.65] px-4 pt-3 pb-1.5 resize-none min-h-[44px] max-h-[200px] font-[inherit] placeholder:text-[var(--muted)]"
           />

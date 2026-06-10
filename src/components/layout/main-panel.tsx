@@ -1,19 +1,19 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useAtom } from 'jotai';
-import { messagesAtom, busyAtom, approvalAtom, clarifyAtom, yoloAtom } from '@/atoms/chat';
+import { useCallback } from 'react';
+import { approvalAtom, busyAtom, clarifyAtom, messagesAtom, yoloAtom } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
-import { useChatStream } from '@/hooks/use-chat-stream';
-import { ComposerFooter } from './composer-footer';
-import { TopBar } from './topbar';
-import { MessageList } from '@/components/chat/message-list';
-import { StreamingCursor } from '@/components/chat/streaming-cursor';
-import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { ApprovalCard } from '@/components/chat/approval-card';
 import { ClarifyCard } from '@/components/chat/clarify-card';
+import { LiveRunStatus } from '@/components/chat/live-run-status';
+import { MessageList } from '@/components/chat/message-list';
+import { StreamingCursor } from '@/components/chat/streaming-cursor';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useChatStream } from '@/hooks/use-chat-stream';
 import { apiPost } from '@/lib/api-client';
+import { ComposerFooter } from './composer-footer';
+import { TopBar } from './topbar';
 export function MainPanel() {
   const [messages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
@@ -79,7 +79,10 @@ export function MainPanel() {
   const handleEdit = useCallback(
     async (messageId: string, newContent: string) => {
       try {
-        await apiPost('/session/truncate', { session_id: sessionId, message_id: messageId });
+        await apiPost('/session/truncate', {
+          session_id: sessionId,
+          message_id: messageId,
+        });
         void send(newContent);
       } catch (err) {
         console.error('Failed to edit message:', err);
@@ -91,7 +94,10 @@ export function MainPanel() {
   const handleRegenerate = useCallback(
     async (messageId: string) => {
       try {
-        await apiPost('/session/retry', { session_id: sessionId, message_id: messageId });
+        await apiPost('/session/retry', {
+          session_id: sessionId,
+          message_id: messageId,
+        });
       } catch (err) {
         console.error('Failed to regenerate:', err);
       }
@@ -102,7 +108,10 @@ export function MainPanel() {
   const handleFork = useCallback(
     async (messageId: string) => {
       try {
-        await apiPost('/session/branch', { session_id: sessionId, message_id: messageId });
+        await apiPost('/session/branch', {
+          session_id: sessionId,
+          message_id: messageId,
+        });
       } catch (err) {
         console.error('Failed to fork:', err);
       }
@@ -116,7 +125,9 @@ export function MainPanel() {
       {messages.length === 0 ? (
         <div
           className="flex-1 flex items-center justify-center p-10"
-          style={{ background: 'radial-gradient(ellipse at 50% 20%, var(--accent-bg) 0%, transparent 60%)' }}
+          style={{
+            background: 'radial-gradient(ellipse at 50% 20%, var(--accent-bg) 0%, transparent 60%)',
+          }}
         >
           <div className="text-center flex flex-col items-center" style={{ gap: '12px', maxWidth: '380px' }}>
             <div className="mb-0 flex justify-center" style={{ marginBottom: '4px' }}>
@@ -255,7 +266,7 @@ export function MainPanel() {
         </div>
       )}
 
-      <ComposerFooter onSend={handleSend} busy={busy} onCancel={handleCancel} />
+      <ComposerFooter onSend={handleSend} busy={busy} onCancel={handleCancel} sessionId={sessionId} />
     </div>
   );
 }
