@@ -25,7 +25,7 @@ import {
   useState,
 } from 'react';
 import useSWR from 'swr';
-import { fetcher } from '@/lib/api-client';
+import { fetcher, apiPost } from '@/lib/api-client';
 import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atoms/settings';
@@ -78,8 +78,8 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [uploadProgress, setUploadProgress] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profile] = useAtom(activeProfileAtom);
-  const [_model, setModel] = useAtom(defaultModelAtom);
+  const [profile, setActiveProfile] = useAtom(activeProfileAtom);
+  const [defaultModel, setDefaultModel] = useAtom(defaultModelAtom);
   const [activeWorkspace, setActiveWorkspace] = useAtom(activeWorkspaceAtom);
   const [yolo, setYolo] = useAtom(yoloAtom);
   const [workspaceOpen, setWorkspaceOpen] = useAtom(workspacePanelOpenAtom);
@@ -87,13 +87,17 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [wsDropdownLeft, setWsDropdownLeft] = useState<number>(0);
   const [modelDropdownRight, setModelDropdownRight] = useState<number>(0);
+  const [profileDropdownLeft, setProfileDropdownLeft] = useState<number>(0);
   const { t: t18n } = useTranslation();
   const composerWrapRef = useRef<HTMLDivElement>(null);
   const wsChipRef = useRef<HTMLButtonElement>(null);
   const modelChipRef = useRef<HTMLButtonElement>(null);
+  const profileChipRef = useRef<HTMLButtonElement>(null);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Compute dropdown position relative to trigger chip
   const computeWsPosition = useCallback(() => {
@@ -110,17 +114,27 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
     setModelDropdownRight(wrapRect.right - chipRect.right);
   }, []);
 
+  const computeProfilePosition = useCallback(() => {
+    if (!profileChipRef.current || !composerWrapRef.current) return;
+    const chipRect = profileChipRef.current.getBoundingClientRect();
+    const wrapRect = composerWrapRef.current.getBoundingClientRect();
+    setProfileDropdownLeft(chipRect.left - wrapRect.left);
+  }, []);
+
   // Close dropdowns on click outside
   useEffect(() => {
-    if (!wsDropdown && !modelDropdownOpen) return;
+    if (!wsDropdown && !modelDropdownOpen && !profileDropdownOpen) return;
     function handleClick(e: MouseEvent) {
       if (wsDropdown && wsDropdownRef.current && !wsDropdownRef.current.contains(e.target as Node)) {
         setWsDropdown(false);
       }
+      if (profileDropdownOpen && profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [wsDropdown, modelDropdownOpen]);
+  }, [wsDropdown, modelDropdownOpen, profileDropdownOpen]);
 
   const { data: wsData } = useSWR<{ workspaces: { name: string; path: string; active?: boolean }[]; active: string }>(
     '/workspaces',
@@ -128,6 +142,32 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
     { revalidateOnFocus: false },
   );
   const workspaces = wsData?.workspaces ?? [];
+
+  const { data: profilesData, mutate: mutateProfiles } = useSWR<{
+    profiles: { name: string; model?: string; provider?: string }[];
+    active: string;
+  }>('/profiles', fetcher, { revalidateOnFocus: false });
+  const profiles = profilesData?.profiles ?? [];
+  const activeProfileName = profilesData?.active ?? profile ?? 'default';
+
+  const handleProfileSwitch = useCallback(
+    async (name: string) => {
+      if (name === activeProfileName) {
+        setProfileDropdownOpen(false);
+        return;
+      }
+      try {
+        const res = await apiPost<{ active: string; default_model?: string }>('/profile/switch', { name });
+        setActiveProfile(res.active);
+        if (res.default_model) setDefaultModel(res.default_model);
+        void mutateProfiles();
+      } catch {
+        /* ignore */
+      }
+      setProfileDropdownOpen(false);
+    },
+    [activeProfileName, setActiveProfile, setDefaultModel, mutateProfiles],
+  );
   const currentWsName = useMemo(() => {
     if (!wsData) return activeWorkspace || 'workspace';
     const active = workspaces.find((w) => w.active);
@@ -407,17 +447,58 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             )}
 
             {/* Profile chip */}
-            <button
-              onClick={() => {
-                // Navigate to profiles panel for switching
-                window.location.href = '/profiles';
-              }}
-              className="inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer text-[var(--muted)] hover:bg-[var(--hover-bg)] transition-colors text-xs"
-            >
-              <User className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate capitalize">{profile || 'default'}</span>
-              <ChevronDown className="w-3 h-3 shrink-0 opacity-50" />
-            </button>
+            <div className="relative flex-shrink-0">
+              <button
+                ref={profileChipRef}
+                onClick={() => {
+                  computeProfilePosition();
+                  setProfileDropdownOpen((v) => !v);
+                }}
+                className={cn(
+                  'inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
+                  'hover:text-[var(--text)] hover:bg-[var(--hover-bg)]',
+                  profileDropdownOpen && 'text-[var(--text)] bg-[var(--accent-bg)] border-[var(--accent-bg)]',
+                )}
+                style={{ color: profileDropdownOpen ? undefined : 'var(--muted)' }}
+              >
+                <User className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate capitalize">{activeProfileName}</span>
+                <ChevronDown
+                  className={cn('w-3 h-3 shrink-0 transition-transform', profileDropdownOpen && 'rotate-180')}
+                />
+              </button>
+
+              {profileDropdownOpen && (
+                <div
+                  ref={profileDropdownRef}
+                  className="absolute bottom-[calc(100%+4px)] left-0 min-w-[160px] max-h-48 overflow-hidden rounded-[10px] border border-[var(--border2)] bg-[var(--surface)] z-[200] p-1"
+                  style={{ left: profileDropdownLeft, boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
+                >
+                  <div className="overflow-y-auto max-h-44 p-0.5">
+                    {profiles.map((p) => (
+                      <button
+                        key={p.name}
+                        onClick={() => void handleProfileSwitch(p.name)}
+                        className={cn(
+                          'w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-[13px] whitespace-nowrap transition-colors cursor-pointer',
+                          'hover:bg-[rgba(255,255,255,0.07)]',
+                          p.name === activeProfileName && 'bg-[var(--accent-bg)] text-[var(--accent)]',
+                          p.name !== activeProfileName && 'text-[var(--text)]',
+                        )}
+                      >
+                        <span className="w-3.5 shrink-0 flex items-center justify-center">
+                          {p.name === activeProfileName && <Check className="w-3 h-3" />}
+                        </span>
+                        <span className="truncate">{p.name}</span>
+                      </button>
+                    ))}
+                    {profiles.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-[var(--muted)] text-center">No profiles</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Workspace group: files toggle + workspace switcher */}
             <div className="inline-flex items-stretch max-w-[284px] rounded-full overflow-hidden shrink-0 border border-[var(--border2,var(--border))] hover:bg-[var(--hover-bg)] transition-colors">
@@ -451,7 +532,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             {/* Model chip - trigger only, dropdown is at footer level */}
             <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}>
               <ModelSelectorTrigger
-                model={_model}
+                model={defaultModel}
                 open={modelDropdownOpen}
                 onToggle={() => {
                   computeModelPosition();
@@ -557,9 +638,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
       {/* Model dropdown - rendered at composer-wrap level */}
       {modelDropdownOpen && (
         <ModelDropdownPopover
-          selectedModel={_model}
+          selectedModel={defaultModel}
           onSelect={(id) => {
-            setModel(id);
+            setDefaultModel(id);
             setModelDropdownOpen(false);
             try {
               localStorage.setItem('hermes-default-model', id);
