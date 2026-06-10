@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Copy, Check, Pencil, RefreshCw, GitFork, Trash2 } from 'lucide-react';
+import { Copy, Check, Pencil, RefreshCw, GitFork, Trash2, FileText, X } from 'lucide-react';
+import NextImage from 'next/image';
 import type { Message } from '@/types';
 import { useTranslation } from '@/lib/i18n';
-import { extractTextContent } from '@/types/message';
+import { extractTextContent, type Attachment } from '@/types/message';
 import { MarkdownRenderer } from './markdown-renderer';
 import { ToolCallCard } from './tool-call-card';
 import { ThinkingCard } from './thinking-card';
@@ -18,6 +19,72 @@ interface MessageBubbleProps {
   onDelete?: (messageId: string) => void;
   isLastAssistant?: boolean;
   prevMessage?: Message | null;
+}
+
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center cursor-zoom-out"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+        onClick={onClose}
+      >
+        <X className="w-6 h-6" />
+      </button>
+      <NextImage
+        src={src}
+        alt={alt}
+        width={1200}
+        height={800}
+        className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
+function AttachmentTray({ attachments }: { attachments: Attachment[] }) {
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  if (!attachments.length) return null;
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 mt-1.5 mb-1">
+        {attachments.map((a, i) =>
+          a.is_image ? (
+            <button
+              key={i}
+              className="relative rounded-lg overflow-hidden border border-[var(--border)] hover:border-[var(--accent)] transition-colors cursor-zoom-in"
+              onClick={() => setLightbox(a.path)}
+            >
+              <NextImage
+                src={a.path}
+                alt={a.name}
+                width={200}
+                height={150}
+                className="max-w-[200px] max-h-[150px] object-cover"
+              />
+            </button>
+          ) : (
+            <a
+              key={i}
+              href={a.path}
+              download={a.name}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--border)] text-[11px] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover-bg)] transition-colors"
+            >
+              <FileText className="w-3 h-3 shrink-0" />
+              <span className="truncate max-w-[120px]">{a.name}</span>
+              {a.size != null && <span className="text-[10px] opacity-60">{(a.size / 1024).toFixed(1)}k</span>}
+            </a>
+          ),
+        )}
+      </div>
+      {lightbox && <ImageLightbox src={lightbox} alt="" onClose={() => setLightbox(null)} />}
+    </>
+  );
 }
 
 function TurnUsageFooter({ message }: { message: Message }) {
@@ -87,6 +154,12 @@ export function MessageBubble({
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const textContent = extractTextContent(message.content);
+  // Strip DeepSeek XML function call blocks and other tool-use XML
+  const cleanedContent = textContent
+    .replace(/<function_calls>[\s\S]*?<\/function_calls>/g, '')
+    .replace(/<antThinking>[\s\S]*?<\/antThinking>/g, '')
+    .replace(/<tool_call[\s\S]*?<\/tool_call>/g, '')
+    .trim();
   const [draft, setDraft] = useState(textContent);
   const editRef = useRef<HTMLTextAreaElement>(null);
   const isUser = message.role === 'user';
@@ -206,6 +279,11 @@ export function MessageBubble({
             isToolError && 'bg-[rgba(239,83,80,.06)] border-[rgba(239,83,80,.3)] text-[var(--error)]',
           )}
         >
+          {/* Inline attachments */}
+          {message.attachments && message.attachments.length > 0 && (
+            <AttachmentTray attachments={message.attachments} />
+          )}
+
           {editing ? (
             <div className="space-y-2">
               <textarea
@@ -242,7 +320,7 @@ export function MessageBubble({
                 <span className="hermes-cursor-blink" />
               </div>
             ) : (
-              <MarkdownRenderer content={textContent} />
+              <MarkdownRenderer content={cleanedContent} />
             )
           ) : (
             <div className="whitespace-pre-wrap">{textContent}</div>
