@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vite-plus/test';
+import { describe, it, expect } from 'vite-plus/test';
 import { renderHook, act } from '@testing-library/react';
 import { useCommands } from '@/hooks/use-commands';
 

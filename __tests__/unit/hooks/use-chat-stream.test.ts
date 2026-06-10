@@ -11,7 +11,7 @@ class MockES {
   onerror: ((e: Event) => void) | null = null;
   readyState = 0;
   static last: MockES | null = null;
-  _handlers: Record<string, Function[]> = {};
+  _handlers: Record<string, ((e: Event) => void)[]> = {};
 
   constructor(url: string) {
     this.url = url;
@@ -20,7 +20,7 @@ class MockES {
 
   addEventListener(event: string, handler: EventListener) {
     if (!this._handlers[event]) this._handlers[event] = [];
-    this._handlers[event].push(handler as Function);
+    this._handlers[event].push(handler as (e: Event) => void);
   }
 
   removeEventListener = vi.fn();

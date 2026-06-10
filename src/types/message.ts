@@ -116,4 +116,7 @@ export interface TurnUsage {
   cache_read_tokens?: number;
   cache_write_tokens?: number;
   cache_hit_percent?: number;
+  context_length?: number;
+  threshold_tokens?: number;
+  last_prompt_tokens?: number;
 }

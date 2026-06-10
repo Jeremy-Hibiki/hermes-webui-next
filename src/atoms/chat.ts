@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
+import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem, TurnUsage } from '@/types';
 
 export const messagesAtom = atom<Message[]>([]);
 export const busyAtom = atom<boolean>(false);
@@ -11,3 +11,4 @@ export const clarifyAtom = atom<ClarifyRequest | null>(null);
 export const yoloAtom = atom<boolean>(false);
 export const todosAtom = atom<TodoItem[]>([]);
 export const todoMetaAtom = atom<Record<string, unknown>>({});
+export const composerContextAtom = atom<TurnUsage | null>(null);

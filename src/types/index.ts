@@ -1,5 +1,5 @@
 export type { Session, Project, SessionCreateParams } from './session';
-export type { Message, MessageRole, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from './message';
+export type { Message, MessageRole, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem, TurnUsage } from './message';
 export type { FileEntry, FileContent, WorkspaceInfo, GitStatus, GitDiff } from './workspace';
 export type {
   CronJob,

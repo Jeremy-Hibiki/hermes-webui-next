@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 import { useSearchParams } from 'next/navigation';
 import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentPanelAtom } from '@/atoms/ui';
 import { activeSessionAtom } from '@/atoms/session';
-import { messagesAtom } from '@/atoms/chat';
+import { messagesAtom, composerContextAtom } from '@/atoms/chat';
 import { ThreePanel } from '@/components/layout/three-panel';
 import { RailNav } from '@/components/layout/rail-nav';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
@@ -41,6 +41,7 @@ export function AppShell({ panel }: AppShellProps) {
 
   const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
   const [, setMessages] = useAtom(messagesAtom);
+  const [, setComposerContext] = useAtom(composerContextAtom);
 
   // Sync panel from route
   useEffect(() => {
@@ -95,7 +96,28 @@ export function AppShell({ panel }: AppShellProps) {
           pinned: data.pinned as boolean,
           archived: data.archived as boolean,
           profile: data.profile as string,
+          input_tokens: (data.input_tokens as number) ?? 0,
+          output_tokens: (data.output_tokens as number) ?? 0,
+          estimated_cost: (data.estimated_cost as number) ?? null,
+          cache_read_tokens: (data.cache_read_tokens as number) ?? undefined,
+          cache_write_tokens: (data.cache_write_tokens as number) ?? undefined,
+          cache_hit_percent: (data.cache_hit_percent as number) ?? undefined,
+          context_length: (data.context_length as number) || undefined,
+          threshold_tokens: (data.threshold_tokens as number) || undefined,
+          last_prompt_tokens: (data.last_prompt_tokens as number) ?? undefined,
         } as any);
+
+        setComposerContext({
+          input_tokens: (data.input_tokens as number) ?? 0,
+          output_tokens: (data.output_tokens as number) ?? 0,
+          estimated_cost: (data.estimated_cost as number) ?? undefined,
+          cache_read_tokens: (data.cache_read_tokens as number) ?? undefined,
+          cache_write_tokens: (data.cache_write_tokens as number) ?? undefined,
+          cache_hit_percent: (data.cache_hit_percent as number) ?? undefined,
+          context_length: (data.context_length as number) || undefined,
+          threshold_tokens: (data.threshold_tokens as number) || undefined,
+          last_prompt_tokens: (data.last_prompt_tokens as number) ?? undefined,
+        });
 
         const raw = Array.isArray(data.messages) ? (data.messages as Message[]) : [];
         const sessionToolCalls = Array.isArray(data.tool_calls) ? (data.tool_calls as any[]) : [];
@@ -159,7 +181,7 @@ export function AppShell({ panel }: AppShellProps) {
     return () => {
       cancelled = true;
     };
-  }, [sid, panel, setMessages, activeSession?.session_id, setActiveSession]);
+  }, [sid, panel, setMessages, activeSession?.session_id, setActiveSession, setComposerContext]);
 
   const handleLogin = useCallback(async (password: string) => {
     setLoginError(null);

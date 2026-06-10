@@ -861,3 +861,28 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* ── Context indicator ring ── */
+.ctx-ring-value {
+  stroke: var(--muted);
+}
+.ctx-indicator.ctx-mid .ctx-ring-value {
+  stroke: var(--warning);
+}
+.ctx-indicator.ctx-high .ctx-ring-value {
+  stroke: var(--error);
+}
+.ctx-indicator.ctx-mid .ctx-ring-center {
+  color: var(--warning);
+}
+.ctx-indicator.ctx-high .ctx-ring-center {
+  color: var(--error);
+}
+.ctx-compress-btn:hover {
+  background: rgba(239, 83, 80, 0.12);
+}
+@media (max-width: 640px) {
+  .ctx-indicator-wrap {
+    display: none !important;
+  }
+}

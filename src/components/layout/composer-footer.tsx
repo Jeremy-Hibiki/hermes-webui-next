@@ -30,6 +30,7 @@ import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atoms/settings';
 import { ModelSelectorTrigger, ModelDropdownPopover } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
+import { ContextIndicator } from '@/components/chat/context-indicator';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -374,6 +375,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Divider */}
             <div className="w-px h-4 bg-[var(--border)] mx-[3px] shrink-0" />
+
+            {/* Context indicator ring */}
+            <ContextIndicator />
 
             {/* YOLO pill */}
             {yolo && (

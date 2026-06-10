@@ -10,6 +10,7 @@ import {
   clarifyAtom,
   todosAtom,
   todoMetaAtom,
+  composerContextAtom,
 } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { SSEClient } from '@/lib/sse-client';
@@ -45,6 +46,7 @@ export function useChatStream(sessionId: string) {
   const [, setClarify] = useAtom(clarifyAtom);
   const [, setTodos] = useAtom(todosAtom);
   const [, setTodoMeta] = useAtom(todoMetaAtom);
+  const [, setComposerContext] = useAtom(composerContextAtom);
   const clientRef = useRef<SSEClient | null>(null);
   const renderer = useStreamingRenderer();
 
@@ -220,26 +222,35 @@ export function useChatStream(sessionId: string) {
           },
           done: (data: unknown) => {
             const d = data as {
-              usage?: {
-                input_tokens?: number;
-                output_tokens?: number;
-                estimated_cost?: number;
-                cache_read_tokens?: number;
-                cache_write_tokens?: number;
-                cache_hit_percent?: number;
-              };
+              usage?: TurnUsage;
               duration?: number;
               tps?: number;
               effective_model?: string;
               gateway_routing?: string;
             };
+            // Merge usage with session fallback for context indicator
+            if (d.usage) {
+              const s = activeSession;
+              const merged: TurnUsage = {
+                input_tokens: d.usage.input_tokens ?? s?.input_tokens ?? 0,
+                output_tokens: d.usage.output_tokens ?? s?.output_tokens ?? 0,
+                estimated_cost: d.usage.estimated_cost ?? s?.estimated_cost ?? undefined,
+                cache_read_tokens: d.usage.cache_read_tokens ?? s?.cache_read_tokens ?? undefined,
+                cache_write_tokens: d.usage.cache_write_tokens ?? s?.cache_write_tokens ?? undefined,
+                cache_hit_percent: d.usage.cache_hit_percent ?? s?.cache_hit_percent ?? undefined,
+                context_length: d.usage.context_length || s?.context_length || undefined,
+                threshold_tokens: d.usage.threshold_tokens || s?.threshold_tokens || undefined,
+                last_prompt_tokens: d.usage.last_prompt_tokens ?? s?.last_prompt_tokens ?? undefined,
+              };
+              setComposerContext(merged);
+            }
             // Drain remaining words
             renderer.drain((html) => {
               setMessages((prev) =>
                 prev.map((m) => {
                   if (m.id !== assistantMsg.id) return m;
                   const updated = { ...m, _streamingHtml: html, _isStreaming: false };
-                  if (d.usage) updated._turnUsage = d.usage as TurnUsage;
+                  if (d.usage) updated._turnUsage = d.usage;
                   if (d.duration != null) updated._turnDuration = d.duration;
                   if (d.tps != null) updated._turnTps = d.tps;
                   if (d.effective_model) updated._effectiveModel = d.effective_model;
@@ -311,6 +322,7 @@ export function useChatStream(sessionId: string) {
       setClarify,
       setTodos,
       setTodoMeta,
+      setComposerContext,
       renderer,
     ],
   );
