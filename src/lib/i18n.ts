@@ -281,6 +281,12 @@ const en: Record<string, string> = {
   'bg.complete': 'Background task complete',
   'bg.noAnswer': 'No answer',
 
+  // Composer
+  yolo_pill_title_active: 'YOLO mode — click to disable',
+  profile_switch_title: 'Switch profile',
+  workspace_switch_title: 'Switch workspace',
+  'composer.status_sending': 'Sending…',
+
   // Workspace
   'workspace.title': 'Workspace',
   'workspace.empty': 'Empty directory',
@@ -680,6 +686,12 @@ const zh: Record<string, string> = {
   'bg.failed': '启动后台任务失败：',
   'bg.complete': '后台任务完成',
   'bg.noAnswer': '无回复',
+
+  // Composer
+  yolo_pill_title_active: 'YOLO 模式 — 点击禁用',
+  profile_switch_title: '切换配置文件',
+  workspace_switch_title: '切换工作区',
+  'composer.status_sending': '发送中…',
 
   // Workspace
   'workspace.title': '工作区',
@@ -1083,6 +1095,12 @@ const ja: Record<string, string> = {
   'bg.failed': 'バックグラウンドタスクの開始に失敗しました: ',
   'bg.complete': 'バックグラウンドタスク完了',
   'bg.noAnswer': '回答なし',
+
+  // Composer
+  yolo_pill_title_active: 'YOLOモード — クリックで無効化',
+  profile_switch_title: 'プロファイルを切り替え',
+  workspace_switch_title: 'ワークスペースを切り替え',
+  'composer.status_sending': '送信中…',
 
   // Workspace
   'workspace.title': 'ワークスペース',
