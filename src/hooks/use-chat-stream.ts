@@ -20,6 +20,7 @@ import { parseCommand } from '@/lib/commands';
 import { useStreamingRenderer } from '@/hooks/use-streaming-renderer';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 import { type TurnUsage } from '@/types/message';
+import { t } from '@/lib/i18n';
 
 interface SSEApprovalData {
   approval_id?: string;
@@ -111,7 +112,7 @@ export function useChatStream(sessionId: string) {
                         {
                           id: `bg-${Date.now()}`,
                           role: 'assistant',
-                          content: `**Background** ${prompt.slice(0, 80)}\n\n${r.answer || 'No answer'}`,
+                          content: `**${t('bg.label')}** ${prompt.slice(0, 80)}\n\n${r.answer || t('bg.noAnswer')}`,
                           timestamp: new Date().toISOString(),
                         },
                       ]);
@@ -127,7 +128,7 @@ export function useChatStream(sessionId: string) {
             void poll();
           }
         } catch (err) {
-          const errMsg = err instanceof Error ? err.message : 'Failed to start background task';
+          const errMsg = err instanceof Error ? err.message : t('bg.failed');
           setMessages((prev) => [
             ...prev,
             {

@@ -275,6 +275,12 @@ const en: Record<string, string> = {
   'auth.logout': 'Logout',
   'auth.failed': 'Login failed',
 
+  // Background tasks
+  'bg.label': 'Background',
+  'bg.failed': 'Failed to start background task: ',
+  'bg.complete': 'Background task complete',
+  'bg.noAnswer': 'No answer',
+
   // Workspace
   'workspace.title': 'Workspace',
   'workspace.empty': 'Empty directory',
@@ -668,6 +674,12 @@ const zh: Record<string, string> = {
   'auth.login': '登录',
   'auth.logout': '退出',
   'auth.failed': '登录失败',
+
+  // Background tasks
+  'bg.label': '后台任务',
+  'bg.failed': '启动后台任务失败：',
+  'bg.complete': '后台任务完成',
+  'bg.noAnswer': '无回复',
 
   // Workspace
   'workspace.title': '工作区',
@@ -1065,6 +1077,12 @@ const ja: Record<string, string> = {
   'auth.login': 'ログイン',
   'auth.logout': 'ログアウト',
   'auth.failed': 'ログインに失敗しました',
+
+  // Background tasks
+  'bg.label': 'バックグラウンド',
+  'bg.failed': 'バックグラウンドタスクの開始に失敗しました: ',
+  'bg.complete': 'バックグラウンドタスク完了',
+  'bg.noAnswer': '回答なし',
 
   // Workspace
   'workspace.title': 'ワークスペース',
