@@ -21,6 +21,7 @@ export interface CronJob {
   script?: string;
   model?: string;
   provider?: string;
+  model_provider?: string;
   skills?: string[];
   toast_notifications?: boolean;
   repeat?: { times?: number | null };
@@ -76,6 +77,10 @@ export interface CronCreateParams {
   delivery_options?: CronDeliveryOptions;
   toast_notifications?: boolean;
   skills?: string[];
+  no_agent?: boolean;
+  script?: string;
+  model?: string;
+  model_provider?: string;
 }
 
 export interface CronHistoryResponse {

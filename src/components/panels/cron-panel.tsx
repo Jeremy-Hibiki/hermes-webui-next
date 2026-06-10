@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 import { useTranslation } from '@/lib/i18n';
 import useSWR from 'swr';
+import { fetcher } from '@/lib/api-client';
 import type { CronJob, CronRunFile, CronRunContent, CronRunUsage, CronStatusMeta, GatewayStatus } from '@/types';
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -261,7 +262,23 @@ export function CronPanel() {
     schedule: '',
     prompt: '',
     profile: '',
+    no_agent: false,
+    script: '',
+    skills: [] as string[],
+    model: '',
+    model_provider: '',
+    toast_notifications: true,
   });
+
+  // Fetch profiles and skills for form dropdowns
+  const { data: profilesData } = useSWR<{ profiles: { name: string }[] }>('/profiles', fetcher, {
+    revalidateOnFocus: false,
+  });
+  const profiles = profilesData?.profiles ?? [];
+  const { data: skillsData } = useSWR<{ skills: { name: string }[] }>('/skills', fetcher, {
+    revalidateOnFocus: false,
+  });
+  const availableSkills = skillsData?.skills ?? [];
 
   // Schedule validation warning
   const scheduleWarning = detectScheduleKind(form.schedule);
@@ -390,7 +407,18 @@ export function CronPanel() {
   const selectedJob = useMemo(() => jobs.find((j) => j.id === selectedJobId) ?? null, [jobs, selectedJobId]);
 
   const resetForm = useCallback(() => {
-    setForm({ name: '', schedule: '', prompt: '', profile: '' });
+    setForm({
+      name: '',
+      schedule: '',
+      prompt: '',
+      profile: '',
+      no_agent: false,
+      script: '',
+      skills: [],
+      model: '',
+      model_provider: '',
+      toast_notifications: true,
+    });
     setCreateMode(false);
     setEditJob(null);
   }, []);
@@ -405,6 +433,11 @@ export function CronPanel() {
         };
         if (form.prompt) updates.prompt = form.prompt;
         if (form.name) updates.name = form.name;
+        if (form.no_agent) updates.no_agent = true;
+        if (form.script) updates.script = form.script;
+        if (form.skills.length > 0) updates.skills = form.skills;
+        if (form.model) updates.model = form.model;
+        if (form.model_provider) updates.model_provider = form.model_provider;
         await updateJob(updates);
         toast('Job updated', 'success');
       } else {
@@ -413,6 +446,11 @@ export function CronPanel() {
           schedule: form.schedule,
           prompt: form.prompt,
           profile: form.profile || undefined,
+          no_agent: form.no_agent || undefined,
+          script: form.script || undefined,
+          skills: form.skills.length > 0 ? form.skills : undefined,
+          model: form.model || undefined,
+          model_provider: form.model_provider || undefined,
         });
         toast('Job created', 'success');
         if (result.id) setSelectedJobId(result.id);
@@ -449,6 +487,12 @@ export function CronPanel() {
         schedule: getScheduleDisplay(job),
         prompt: job.prompt || '',
         profile: job.profile || '',
+        no_agent: !!job.no_agent,
+        script: '',
+        skills: Array.isArray(job.skills) ? job.skills : [],
+        model: job.model || '',
+        model_provider: job.model_provider || '',
+        toast_notifications: true,
       });
     },
     [jobs],
@@ -477,6 +521,12 @@ export function CronPanel() {
         schedule: getScheduleDisplay(job),
         prompt: job.prompt,
         profile: job.profile || '',
+        no_agent: !!job.no_agent,
+        script: '',
+        skills: Array.isArray(job.skills) ? job.skills : [],
+        model: job.model || '',
+        model_provider: job.model_provider || '',
+        toast_notifications: true,
       });
     },
     [jobs],
@@ -576,11 +626,110 @@ export function CronPanel() {
                   placeholder="Check the logs and report any errors..."
                 />
               </div>
-              <Field
-                label="Profile (optional)"
-                value={form.profile}
-                onChange={(v) => setForm((f) => ({ ...f, profile: v }))}
-              />
+              {/* Profile dropdown */}
+              <div>
+                <label className="text-xs font-medium text-[var(--muted)]">Profile</label>
+                <select
+                  value={form.profile}
+                  onChange={(e) => setForm((f) => ({ ...f, profile: e.target.value }))}
+                  className="w-full mt-1 px-2 py-1 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none"
+                >
+                  <option value="">(server default)</option>
+                  {profiles.map((p) => (
+                    <option key={p.name} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* No-agent mode */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="cron-no-agent"
+                  checked={form.no_agent}
+                  onChange={(e) => setForm((f) => ({ ...f, no_agent: e.target.checked }))}
+                  className="accent-[var(--accent)]"
+                />
+                <label htmlFor="cron-no-agent" className="text-xs text-[var(--muted)]">
+                  No-agent mode (script only)
+                </label>
+              </div>
+              {form.no_agent && (
+                <div>
+                  <label className="text-xs font-medium text-[var(--muted)]">Script</label>
+                  <textarea
+                    value={form.script}
+                    onChange={(e) => setForm((f) => ({ ...f, script: e.target.value }))}
+                    rows={3}
+                    className="w-full mt-1 px-2 py-1 text-sm border border-[var(--border)] rounded bg-transparent text-[var(--text)] outline-none resize-none font-mono"
+                    placeholder="#!/bin/bash&#10;echo 'Hello'"
+                  />
+                </div>
+              )}
+              {/* Skills picker */}
+              <div>
+                <label className="text-xs font-medium text-[var(--muted)]">Skills</label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {form.skills.map((s) => (
+                    <span
+                      key={s}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-[var(--accent-bg)] text-[var(--accent-text)] border border-[var(--accent-bg-strong)]"
+                    >
+                      {s}
+                      <button onClick={() => setForm((f) => ({ ...f, skills: f.skills.filter((x) => x !== s) }))}>
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value && !form.skills.includes(e.target.value)) {
+                        setForm((f) => ({ ...f, skills: [...f.skills, e.target.value] }));
+                      }
+                    }}
+                    className="px-1 py-0.5 text-[11px] border border-[var(--border)] rounded bg-transparent text-[var(--muted)] outline-none"
+                  >
+                    <option value="">+ Add skill</option>
+                    {availableSkills
+                      .filter((s) => !form.skills.includes(s.name))
+                      .map((s) => (
+                        <option key={s.name} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+              {/* Model/Provider */}
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="Model"
+                  value={form.model}
+                  onChange={(v) => setForm((f) => ({ ...f, model: v }))}
+                  placeholder="(default)"
+                />
+                <Field
+                  label="Provider"
+                  value={form.model_provider}
+                  onChange={(v) => setForm((f) => ({ ...f, model_provider: v }))}
+                  placeholder="(default)"
+                />
+              </div>
+              {/* Toast notifications */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="cron-toast"
+                  checked={form.toast_notifications}
+                  onChange={(e) => setForm((f) => ({ ...f, toast_notifications: e.target.checked }))}
+                  className="accent-[var(--accent)]"
+                />
+                <label htmlFor="cron-toast" className="text-xs text-[var(--muted)]">
+                  Show toast on completion
+                </label>
+              </div>
               <Button size="sm" onClick={() => void handleSubmit()} disabled={!form.schedule.trim()}>
                 {editJob ? 'Update' : 'Create'}
               </Button>
