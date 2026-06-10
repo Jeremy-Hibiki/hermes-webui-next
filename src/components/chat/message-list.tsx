@@ -48,7 +48,7 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
 
   return (
     <div className="flex flex-col">
-      <div className="messages-inner mx-auto w-full max-w-[var(--msg-max,780px)] px-6 pt-5 pb-8 flex flex-col">
+      <div className="messages-inner mx-auto w-full px-6 pt-5 pb-8 flex flex-col">
         {messages.map((msg, idx) => (
           <MessageBubble
             key={msg.id ?? idx}

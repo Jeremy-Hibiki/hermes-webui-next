@@ -742,6 +742,88 @@ body {
   }
 }
 
+/* ── Messages inner responsive max-width (matching original) ── */
+.messages-inner {
+  max-width: var(--msg-max, 780px);
+}
+@media (min-width: 1400px) {
+  .messages-inner {
+    max-width: calc(var(--msg-max, 780px) + 40px);
+  }
+}
+@media (min-width: 1800px) {
+  .messages-inner {
+    max-width: calc(var(--msg-max, 780px) + 80px);
+  }
+}
+
+/* ── Scroll jump controls (matching original) ── */
+.scroll-to-bottom-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--code-bg);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 10;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s,
+    transform 0.12s;
+}
+.scroll-to-bottom-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--hover-bg);
+}
+.session-jump-btn {
+  position: absolute;
+  right: 20px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--code-bg);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 11px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 11;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s,
+    opacity 0.12s,
+    transform 0.12s;
+}
+.session-jump-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--hover-bg);
+  transform: translateY(-1px);
+}
+.session-jump-btn--start {
+  top: 16px;
+}
+.session-jump-btn__text {
+  display: none;
+}
+
 /* ── Session streaming spinner ── */
 .session-streaming-dot {
   animation: session-spin 1s linear infinite;

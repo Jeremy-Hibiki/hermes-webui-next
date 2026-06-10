@@ -1,7 +1,7 @@
 'use client';
 
 import { useAtom } from 'jotai';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { approvalAtom, busyAtom, clarifyAtom, messagesAtom, yoloAtom } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { ApprovalCard } from '@/components/chat/approval-card';
@@ -10,11 +10,34 @@ import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { MessageList } from '@/components/chat/message-list';
 import { SelectionReply } from '@/components/chat/selection-reply';
 import { StreamingCursor } from '@/components/chat/streaming-cursor';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatStream } from '@/hooks/use-chat-stream';
 import { apiPost } from '@/lib/api-client';
 import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
+
+function ScrollToBottomBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button className="scroll-to-bottom-btn" onClick={onClick} aria-label="Scroll to bottom" title="Scroll to bottom">
+      <span aria-hidden="true">↓</span>
+      <span className="session-jump-btn__text">End</span>
+    </button>
+  );
+}
+
+function JumpToStartBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className="session-jump-btn session-jump-btn--start"
+      onClick={onClick}
+      aria-label="Jump to beginning of session"
+      title="Jump to beginning of session"
+    >
+      <span aria-hidden="true">↑</span>
+      <span className="session-jump-btn__text">Start</span>
+    </button>
+  );
+}
+
 export function MainPanel() {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
@@ -23,6 +46,9 @@ export function MainPanel() {
   const [clarify, setClarify] = useAtom(clarifyAtom);
   const [, setYolo] = useAtom(yoloAtom);
   const messagesRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [showJumpToStart, setShowJumpToStart] = useState(false);
 
   const sessionId = activeSession?.session_id ?? '';
   const { send, cancel } = useChatStream(sessionId);
@@ -165,6 +191,28 @@ export function MainPanel() {
     }
   }, [sessionId, setMessages]);
 
+  // Scroll jump controls
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollToBottom(!nearBottom && scrollHeight > clientHeight);
+      setShowJumpToStart(scrollTop > 200);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [messages.length]);
+
+  const scrollToBottom = () => {
+    scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: 'smooth' });
+  };
+  const jumpToSessionStart = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <TopBar />
@@ -293,19 +341,24 @@ export function MainPanel() {
           </div>
         </div>
       ) : (
-        <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
-          <div ref={messagesRef}>
-            <MessageList
-              onEdit={handleEdit}
-              onRegenerate={handleRegenerate}
-              onFork={handleFork}
-              onUndoExchange={handleUndoExchange}
-            />
+        <div className="flex-1 min-h-0 relative">
+          <div ref={scrollContainerRef} className="absolute inset-0 overflow-y-auto p-4">
+            <div ref={messagesRef}>
+              <MessageList
+                onEdit={handleEdit}
+                onRegenerate={handleRegenerate}
+                onFork={handleFork}
+                onUndoExchange={handleUndoExchange}
+              />
+            </div>
+            <LiveRunStatus />
+            {busy && <StreamingCursor streaming={true} />}
+            <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
           </div>
-          <LiveRunStatus />
-          {busy && <StreamingCursor streaming={true} />}
-          <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
-        </ScrollArea>
+
+          {showJumpToStart && <JumpToStartBtn onClick={jumpToSessionStart} />}
+          {showScrollToBottom && <ScrollToBottomBtn onClick={scrollToBottom} />}
+        </div>
       )}
 
       {approval && (
