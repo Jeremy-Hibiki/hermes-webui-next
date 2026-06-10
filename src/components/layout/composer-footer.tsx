@@ -37,6 +37,7 @@ import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
 import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
 import { ToolsetsChip } from '@/components/chat/toolsets-chip';
+import { VoiceControls } from '@/components/chat/voice-controls';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -459,6 +460,17 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             >
               <Paperclip className="w-4 h-4" />
             </button>
+
+            {/* Mic / Voice mode controls */}
+            <VoiceControls
+              onDictate={(txt) => {
+                setText(txt);
+                if (textareaRef.current) {
+                  textareaRef.current.value = txt;
+                }
+              }}
+              onSend={handleSend}
+            />
 
             {/* Divider */}
             <div aria-hidden="true" className="composer-divider w-px h-4 bg-[var(--border)] mx-[3px] shrink-0" />
