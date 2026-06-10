@@ -29,7 +29,7 @@ import { fetcher, apiPost } from '@/lib/api-client';
 import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atoms/settings';
-import { ModelSelectorTrigger, ModelDropdownPopover } from '@/components/chat/model-selector';
+import { ModelSelectorTrigger, ModelDropdownPopover, useModels } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
 import { ReasoningChip } from '@/components/chat/reasoning-chip';
@@ -40,6 +40,28 @@ import { ToolsetsChip } from '@/components/chat/toolsets-chip';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+
+function HiddenModelSelect({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
+  const models = useModels();
+  return (
+    <select
+      id="modelSelect"
+      aria-hidden="true"
+      tabIndex={-1}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="absolute left-0 top-0 w-px h-px opacity-0 overflow-hidden pointer-events-none"
+      style={{ clip: 'rect(0 0 0 0)' }}
+    >
+      <option value="">System default</option>
+      {models.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.name}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
@@ -281,10 +303,11 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         if (item.type.startsWith('image/')) {
           e.preventDefault();
           const file = item.getAsFile();
-          if (file) void handleFileSelect(new DataTransfer().files || new FileList());
-          const dt = new DataTransfer();
-          if (file) dt.items.add(file);
-          void handleFileSelect(dt.files);
+          if (file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            void handleFileSelect(dt.files);
+          }
           return;
         }
       }
@@ -543,7 +566,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             <ToolsetsChip />
 
             {/* Model chip - trigger only, dropdown is at footer level */}
-            <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}>
+            <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>} className="relative flex-shrink-0">
               <ModelSelectorTrigger
                 model={defaultModel}
                 open={modelDropdownOpen}
@@ -552,6 +575,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                   setModelDropdownOpen(!modelDropdownOpen);
                 }}
               />
+              <HiddenModelSelect value={defaultModel} onChange={setDefaultModel} />
             </div>
 
             {/* Provider quota chip */}

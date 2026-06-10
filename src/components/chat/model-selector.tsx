@@ -25,7 +25,7 @@ interface ModelsResponse {
   models?: { id: string; name: string; provider: string }[];
 }
 
-function useModels() {
+export function useModels() {
   const { data } = useSWR<ModelsResponse>('/models', fetcher, {
     revalidateOnFocus: false,
   });
