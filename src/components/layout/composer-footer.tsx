@@ -74,6 +74,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [pendingFiles, setPendingFiles] = useAtom(pendingFilesAtom);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
   const [_uploadedPaths, setUploadedPaths] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile] = useAtom(activeProfileAtom);
@@ -166,7 +167,10 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
       if (!fileList) return;
       const newFiles = Array.from(fileList);
       setPendingFiles((prev) => [...prev, ...newFiles]);
-      for (const file of newFiles) {
+      setUploadProgress(0);
+      const total = newFiles.length;
+      for (let i = 0; i < total; i++) {
+        const file = newFiles[i];
         const key = `${file.name}-${file.size}`;
         setUploadingFiles((prev) => new Map(prev).set(key, 0));
         try {
@@ -182,8 +186,10 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             next.delete(key);
             return next;
           });
+          setUploadProgress(Math.round(((i + 1) / total) * 100));
         }
       }
+      setTimeout(() => setUploadProgress(0), 600);
     },
     [setPendingFiles],
   );
@@ -487,6 +493,20 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             )}
           </div>
         </div>
+
+        {/* Upload progress bar */}
+        {uploadProgress > 0 && (
+          <div className="h-[3px] bg-[var(--hover-bg)] rounded-b-2xl overflow-hidden">
+            <div
+              className="h-full"
+              style={{
+                width: `${uploadProgress}%`,
+                background: 'linear-gradient(90deg, var(--accent), var(--accent-hover))',
+                transition: 'width .3s ease',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Workspace dropdown - rendered at composer-wrap level to avoid overflow clipping */}
