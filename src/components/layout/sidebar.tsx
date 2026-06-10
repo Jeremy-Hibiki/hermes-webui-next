@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
 import { useRouter } from 'next/navigation';
 import { activeSessionAtom } from '@/atoms/session';
+import { activeProfileAtom, activeWorkspaceAtom } from '@/atoms/settings';
 import { useSessions } from '@/hooks/use-sessions';
 import { useSessionSearch } from '@/hooks/use-session-search';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,6 +24,8 @@ const NO_PROJECT = '__none__';
 export function Sidebar() {
   const [active, setActive] = useAtom(activeSessionAtom);
   const [, setMessages] = useAtom(messagesAtom);
+  const [profile] = useAtom(activeProfileAtom);
+  const [workspace] = useAtom(activeWorkspaceAtom);
   const { t: t18n } = useTranslation();
   const router = useRouter();
   const { sessions, projects, isLoading, mutate } = useSessions();
@@ -144,7 +147,11 @@ export function Sidebar() {
 
   const handleNewChat = async () => {
     try {
-      const res = await apiPost<Record<string, unknown>>('/session/new', {});
+      const body: Record<string, unknown> = {
+        profile: profile || 'default',
+      };
+      if (workspace) body.workspace = workspace;
+      const res = await apiPost<Record<string, unknown>>('/session/new', body);
       const session = (res.session ?? res) as Record<string, unknown>;
       const sid = session.session_id as string;
       if (!sid) throw new Error('No session_id returned');

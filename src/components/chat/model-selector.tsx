@@ -14,8 +14,17 @@ interface ModelEntry {
   provider: string;
 }
 
+interface ModelGroup {
+  provider: string;
+  provider_id?: string;
+  models: { id: string; label?: string }[];
+}
+
 interface ModelsResponse {
-  models: ModelEntry[];
+  active_provider?: string;
+  default_model?: string;
+  groups: ModelGroup[];
+  models?: { id: string; name: string; provider: string }[];
 }
 
 export function ModelSelector() {
@@ -26,7 +35,22 @@ export function ModelSelector() {
     revalidateOnFocus: false,
   });
 
-  const models = useMemo(() => data?.models ?? [], [data]);
+  const models = useMemo(() => {
+    if (!data) return [];
+    // Prefer flat models array if provided (back-compat)
+    if (data.models?.length) return data.models;
+    // Flatten groups into unified list
+    if (data.groups?.length) {
+      return data.groups.flatMap((g) =>
+        (g.models || []).map((m) => ({
+          id: m.id,
+          name: m.label || m.id,
+          provider: g.provider_id || g.provider,
+        })),
+      );
+    }
+    return [];
+  }, [data]);
 
   const grouped = useMemo(() => {
     const map: Record<string, ModelEntry[]> = {};
