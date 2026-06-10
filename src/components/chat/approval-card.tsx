@@ -26,7 +26,13 @@ export function ApprovalCard({ request, onRespond, onYoloToggle, pendingCount }:
   };
 
   return (
-    <div className="border border-[var(--warning)] rounded-lg bg-[var(--surface)] p-3 space-y-2">
+    <div
+      className="border border-[var(--warning)] rounded-lg bg-[var(--surface)] p-3 space-y-2"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !responding) void handleRespond('once');
+      }}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-[var(--warning)]" />

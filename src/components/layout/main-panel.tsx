@@ -16,7 +16,7 @@ import { apiPost } from '@/lib/api-client';
 import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
 export function MainPanel() {
-  const [messages] = useAtom(messagesAtom);
+  const [messages, setMessages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
   const [activeSession] = useAtom(activeSessionAtom);
   const [approval, setApproval] = useAtom(approvalAtom);
@@ -136,6 +136,34 @@ export function MainPanel() {
     },
     [sessionId],
   );
+
+  const handleUndoExchange = useCallback(async () => {
+    try {
+      await apiPost('/session/undo-exchange', { session_id: sessionId });
+      setMessages((prev) => {
+        // Remove last user+assistant pair
+        let lastAssistant = -1;
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (prev[i].role === 'assistant') {
+            lastAssistant = i;
+            break;
+          }
+        }
+        if (lastAssistant === -1) return prev;
+        let lastUser = -1;
+        for (let i = lastAssistant - 1; i >= 0; i--) {
+          if (prev[i].role === 'user') {
+            lastUser = i;
+            break;
+          }
+        }
+        if (lastUser === -1) return prev;
+        return prev.filter((_, idx) => idx !== lastUser && idx !== lastAssistant);
+      });
+    } catch (err) {
+      console.error('Failed to undo exchange:', err);
+    }
+  }, [sessionId, setMessages]);
 
   return (
     <div className="flex flex-col h-full">
@@ -267,7 +295,12 @@ export function MainPanel() {
       ) : (
         <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
           <div ref={messagesRef}>
-            <MessageList onEdit={handleEdit} onRegenerate={handleRegenerate} onFork={handleFork} />
+            <MessageList
+              onEdit={handleEdit}
+              onRegenerate={handleRegenerate}
+              onFork={handleFork}
+              onUndoExchange={handleUndoExchange}
+            />
           </div>
           <LiveRunStatus />
           {busy && <StreamingCursor streaming={true} />}

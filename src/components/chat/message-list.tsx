@@ -9,9 +9,10 @@ interface MessageListProps {
   onEdit?: (messageId: string, newContent: string) => void;
   onRegenerate?: (messageId: string) => void;
   onFork?: (messageId: string) => void;
+  onUndoExchange?: () => void;
 }
 
-export function MessageList({ onEdit, onRegenerate, onFork }: MessageListProps) {
+export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: MessageListProps) {
   const [messages, setMessages] = useAtom(messagesAtom);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +39,7 @@ export function MessageList({ onEdit, onRegenerate, onFork }: MessageListProps) 
             onEdit={onEdit}
             onRegenerate={onRegenerate}
             onFork={onFork}
+            onUndoExchange={onUndoExchange}
             onDelete={handleDelete}
             isLastAssistant={idx === lastAssistantIdx}
             prevMessage={idx > 0 ? messages[idx - 1] : null}

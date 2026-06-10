@@ -61,6 +61,7 @@ export function useKeyboardShortcuts(handlers: ShortcutMap) {
 export function KeyboardHelpPanel({ onClose }: { onClose: () => void }) {
   const shortcuts = [
     { keys: 'Cmd/Ctrl + K', action: 'New session' },
+    { keys: 'Cmd/Ctrl + B', action: 'Toggle sidebar' },
     { keys: 'Cmd/Ctrl + Shift + P', action: 'Command palette' },
     { keys: 'Escape', action: 'Close modal / dropdown' },
     { keys: '↑ / ↓', action: 'Navigate session list' },

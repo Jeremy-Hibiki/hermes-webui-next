@@ -14,6 +14,7 @@ import { MainPanel } from '@/components/layout/main-panel';
 import { WorkspacePanel } from '@/components/layout/workspace-panel';
 import { LoginPage } from '@/app/login/login-page';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { fetcher } from '@/lib/api-client';
 import { API_BASE } from '@/lib/constants';
 import type { Message } from '@/types';
@@ -188,6 +189,12 @@ export function AppShell({ panel }: AppShellProps) {
     },
     [panel, collapsed, setCollapsed, setCurrentPanel],
   );
+
+  // Global keyboard shortcuts
+  useKeyboardShortcuts({
+    'mod+b': () => setCollapsed((c) => !c),
+    escape: () => {},
+  });
 
   if (authState === 'loading') {
     return (

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Copy, Check, Pencil, RefreshCw, GitFork, Trash2, FileText, X } from 'lucide-react';
+import { Copy, Check, Pencil, RefreshCw, GitFork, Trash2, FileText, X, Undo2 } from 'lucide-react';
 import NextImage from 'next/image';
 import type { Message } from '@/types';
 import { useTranslation } from '@/lib/i18n';
@@ -16,6 +16,7 @@ interface MessageBubbleProps {
   onEdit?: (messageId: string, newContent: string) => void;
   onRegenerate?: (messageId: string) => void;
   onFork?: (messageId: string) => void;
+  onUndoExchange?: () => void;
   onDelete?: (messageId: string) => void;
   isLastAssistant?: boolean;
   prevMessage?: Message | null;
@@ -146,6 +147,7 @@ export function MessageBubble({
   onEdit,
   onRegenerate,
   onFork,
+  onUndoExchange,
   onDelete,
   isLastAssistant,
   prevMessage,
@@ -155,10 +157,13 @@ export function MessageBubble({
   const [editing, setEditing] = useState(false);
   const textContent = extractTextContent(message.content);
   // Strip DeepSeek XML function call blocks and other tool-use XML
+  // Rewrite session:// links to navigable URLs
   const cleanedContent = textContent
     .replace(/<function_calls>[\s\S]*?<\/function_calls>/g, '')
     .replace(/<antThinking>[\s\S]*?<\/antThinking>/g, '')
     .replace(/<tool_call[\s\S]*?<\/tool_call>/g, '')
+    .replace(/\bsession:\/\/([a-zA-Z0-9_-]+)/g, `${window.location.origin}/chat?sid=$1`)
+    .replace(/\bworkspace:\/\/([^\s<>"')\]]+)/g, '$1')
     .trim();
   const [draft, setDraft] = useState(textContent);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -357,7 +362,7 @@ export function MessageBubble({
                 <Pencil className="w-[13px] h-[13px]" />
               </button>
             )}
-            {isUser && onFork && (
+            {onFork && (
               <button
                 onClick={() => onFork(message.id ?? '')}
                 aria-label={t18n('chat.fork')}
@@ -380,6 +385,15 @@ export function MessageBubble({
                 className="msg-action-btn p-[2px_5px] rounded-[5px] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
               >
                 <RefreshCw className="w-[13px] h-[13px]" />
+              </button>
+            )}
+            {isAssistant && isLastAssistant && onUndoExchange && (
+              <button
+                onClick={onUndoExchange}
+                aria-label="Undo exchange"
+                className="msg-action-btn p-[2px_5px] rounded-[5px] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
+              >
+                <Undo2 className="w-[13px] h-[13px]" />
               </button>
             )}
             {onDelete && (

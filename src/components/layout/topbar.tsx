@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
 import { useAtom } from 'jotai';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
 import { activeProfileAtom, defaultModelAtom, assistantDisplayNameAtom } from '@/atoms/settings';
 import { activeSessionAtom, sessionsListAtom } from '@/atoms/session';
 import { busyAtom } from '@/atoms/chat';
-import { ChevronDown, User, Check } from 'lucide-react';
+import { ChevronDown, User, Check, Terminal as TerminalIcon, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 
@@ -40,6 +40,75 @@ export function TopBar() {
 
   const profiles = data?.profiles ?? [];
   const active = data?.active ?? profile;
+
+  // Editable title state
+  const [editing, setEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // Sync document.title
+  useEffect(() => {
+    if (activeSession?.title) {
+      document.title = `${activeSession.title} -- ${displayName}`;
+    } else {
+      document.title = displayName;
+    }
+  }, [activeSession?.title, displayName]);
+
+  const startEditTitle = useCallback(() => {
+    setTitleDraft(activeSession?.title || '');
+    setEditing(true);
+  }, [activeSession?.title]);
+
+  const submitTitle = useCallback(async () => {
+    setEditing(false);
+    const trimmed = titleDraft.trim();
+    if (trimmed && trimmed !== (activeSession?.title || '') && activeSession?.session_id) {
+      try {
+        await apiPost('/session/rename', { session_id: activeSession.session_id, title: trimmed });
+        setActiveSession({ ...activeSession, title: trimmed } as typeof activeSession);
+      } catch {}
+    }
+  }, [titleDraft, activeSession, setActiveSession]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        void submitTitle();
+      } else if (e.key === 'Escape') setEditing(false);
+    },
+    [submitTitle],
+  );
+
+  // Source badge for session
+  const sourceBadge = (() => {
+    if (!activeSession) return null;
+    const src = activeSession.raw_source || activeSession.session_source;
+    const tag = activeSession.source_tag;
+    if (src === 'cli' || activeSession.is_cli_session || tag === 'claude-code' || tag === 'codex')
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/25">
+          <TerminalIcon className="w-2.5 h-2.5" />
+          CLI
+        </span>
+      );
+    if (src === 'cron' || tag === 'cron')
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/25">
+          <Zap className="w-2.5 h-2.5" />
+          Cron
+        </span>
+      );
+    if (src === 'api' || tag === 'api')
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25">
+          <Globe className="w-2.5 h-2.5" />
+          API
+        </span>
+      );
+    return null;
+  })();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -103,8 +172,27 @@ export function TopBar() {
       <div className="min-w-0">
         {activeSession ? (
           <>
-            <div className="text-[15px] font-semibold text-[var(--text)] truncate tracking-tight">
-              {activeSession.title || 'Untitled'}
+            <div className="flex items-center gap-2">
+              {editing ? (
+                <input
+                  ref={titleRef}
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={() => void submitTitle()}
+                  onKeyDown={handleTitleKeyDown}
+                  className="text-[15px] font-semibold text-[var(--text)] bg-[var(--input-bg)] border border-[var(--accent)] rounded px-2 py-0.5 outline-none min-w-0 w-full"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  onClick={startEditTitle}
+                  className="text-[15px] font-semibold text-[var(--text)] truncate tracking-tight hover:text-[var(--accent)] transition-colors text-left"
+                  title="Click to rename"
+                >
+                  {activeSession.title || 'Untitled'}
+                </button>
+              )}
+              {sourceBadge}
             </div>
             <div className="text-[11px] text-[var(--muted)] mt-0.5 opacity-75 truncate">
               {activeSession.model || activeSession.profile || displayName}
