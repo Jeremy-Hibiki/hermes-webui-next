@@ -824,6 +824,34 @@ body {
   display: none;
 }
 
+/* ── Composer flyout (approval / clarify / queue) ── */
+.approval-flyout-inner {
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-bg-strong);
+  border-radius: 14px;
+  padding: 16px 18px 40px;
+  transform: translateY(100%);
+  opacity: 0;
+  animation: flyout-slide-up 0.4s cubic-bezier(0.32, 0.72, 0.16, 1) forwards;
+}
+.clarify-flyout-inner {
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-bg-strong);
+  border-radius: 12px;
+  padding: 12px 14px 36px;
+  transform: translateY(100%);
+  opacity: 0;
+  animation: flyout-slide-up 0.4s cubic-bezier(0.32, 0.72, 0.16, 1) forwards;
+}
+@keyframes flyout-slide-up {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* ── Session streaming spinner ── */
 .session-streaming-dot {
   animation: session-spin 1s linear infinite;

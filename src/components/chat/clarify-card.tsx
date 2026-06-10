@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { ClarifyRequest } from '@/types';
-import { HelpCircle, Send } from 'lucide-react';
+import { HelpCircle, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ClarifyCardProps {
@@ -14,6 +14,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
   const [draft, setDraft] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,59 +64,73 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
   if (submitted) return null;
 
   return (
-    <div className="border border-blue-500/50 rounded-lg bg-[var(--surface)] p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-blue-500" />
-          <span className="font-medium text-sm text-[var(--text)]">Clarification needed</span>
-        </div>
+    <div>
+      <div className="clarify-header flex items-center gap-2 mb-2.5 text-xs font-bold text-[var(--blue)] tracking-wide">
+        <HelpCircle className="w-4 h-4" />
+        <span>Clarification needed</span>
         {remaining !== null && (
-          <span className={cn('text-xs font-mono', remaining <= 10 ? 'text-[var(--error)]' : 'text-[var(--muted)]')}>
+          <span
+            className={cn(
+              'clarify-countdown ml-auto min-w-[42px] text-right text-[var(--muted)] font-mono font-bold tabular-nums',
+              remaining <= 10 ? 'text-[var(--error)]' : '',
+            )}
+          >
             {remaining}s
           </span>
         )}
-      </div>
-
-      <p className="text-sm text-[var(--text)]">{request.question}</p>
-
-      {request.choices && request.choices.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {request.choices.map((choice, i) => (
-            <button
-              key={i}
-              onClick={() => handleChoiceClick(choice)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:bg-[var(--hover-bg)] transition-colors"
-            >
-              <span className="w-5 h-5 rounded-full bg-[var(--accent-bg)] text-[var(--accent)] flex items-center justify-center text-[10px]">
-                {i + 1}
-              </span>
-              {choice}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your answer..."
-          className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] outline-none border border-[var(--border)] rounded-lg px-3 py-1.5"
-        />
         <button
-          onClick={handleSubmit}
-          disabled={!draft.trim()}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:opacity-90 disabled:opacity-50"
+          onClick={() => setCollapsed(!collapsed)}
+          className="ml-1 inline-flex items-center justify-center w-6 h-6 border border-[var(--border2)] rounded-full bg-[var(--surface)] text-[var(--muted)] cursor-pointer hover:text-[var(--text)] hover:border-[var(--accent-bg-strong)]"
+          aria-label={collapsed ? 'Expand clarification' : 'Collapse clarification'}
         >
-          <Send className="w-3.5 h-3.5" />
-          Send
+          {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
         </button>
       </div>
 
-      <p className="text-xs text-[var(--muted)]">Pick a choice, or type your own answer below.</p>
+      {!collapsed && (
+        <>
+          <p className="clarify-question text-sm text-[var(--text)] mb-2">{request.question}</p>
+
+          {request.choices && request.choices.length > 0 && (
+            <div className="clarify-choices flex flex-wrap gap-2 mb-2">
+              {request.choices.map((choice, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleChoiceClick(choice)}
+                  className="clarify-choice flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:bg-[var(--hover-bg)] transition-colors"
+                >
+                  <span className="w-5 h-5 rounded-full bg-[var(--accent-bg)] text-[var(--accent)] flex items-center justify-center text-[10px]">
+                    {i + 1}
+                  </span>
+                  {choice}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="clarify-response flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your response…"
+              className="clarify-input flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] outline-none border border-[var(--border)] rounded-lg px-3 py-1.5"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!draft.trim()}
+              className="clarify-submit flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Send
+            </button>
+          </div>
+
+          <p className="clarify-hint text-xs text-[var(--muted)] mt-1">Pick a choice, or type your own answer below.</p>
+        </>
+      )}
     </div>
   );
 }

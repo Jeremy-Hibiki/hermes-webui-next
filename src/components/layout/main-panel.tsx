@@ -361,19 +361,26 @@ export function MainPanel() {
         </div>
       )}
 
-      {approval && (
-        <div className="px-4 pb-2">
-          <ApprovalCard request={approval} onRespond={handleApprovalRespond} onYoloToggle={handleYoloToggle} />
+      <div className="relative shrink-0">
+        {/* Composer flyout: approval / clarify / queue slide up from behind composer */}
+        <div className="relative h-0 z-[1]">
+          {approval && (
+            <div className="absolute left-0 right-0 bottom-[-24px] mx-auto max-w-[var(--msg-max)] px-5 w-full overflow-hidden pointer-events-auto z-[3]">
+              <div className="approval-flyout-inner">
+                <ApprovalCard request={approval} onRespond={handleApprovalRespond} onYoloToggle={handleYoloToggle} />
+              </div>
+            </div>
+          )}
+          {clarify && (
+            <div className="absolute left-0 right-0 bottom-[-24px] mx-auto max-w-[var(--msg-max)] px-5 w-full overflow-hidden pointer-events-auto z-[3]">
+              <div className="clarify-flyout-inner">
+                <ClarifyCard request={clarify} onRespond={handleClarifyRespond} />
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-      {clarify && (
-        <div className="px-4 pb-2">
-          <ClarifyCard request={clarify} onRespond={handleClarifyRespond} />
-        </div>
-      )}
-
-      <ComposerFooter onSend={handleSend} busy={busy} onCancel={handleCancel} sessionId={sessionId} />
+        <ComposerFooter onSend={handleSend} busy={busy} onCancel={handleCancel} sessionId={sessionId} />
+      </div>
     </div>
   );
 }
