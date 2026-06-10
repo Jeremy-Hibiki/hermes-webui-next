@@ -70,7 +70,7 @@ export function ModelSelectorTrigger({
       onClick={onToggle}
       aria-label="Conversation model"
       title="Conversation model"
-      className="composer-model-chip inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
+      className="composer-model-chip inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)] max-w-[280px]"
     >
       <span id="composerModelLabel" className="truncate max-w-24">
         {selectedName}

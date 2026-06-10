@@ -505,7 +505,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 }}
                 title={t18n('profile_switch_title')}
                 className={cn(
-                  'composer-profile-chip inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
+                  'composer-profile-chip inline-flex items-center gap-2 max-w-[180px] pl-3 pr-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer transition-colors text-xs',
                   'hover:text-[var(--text)] hover:bg-[var(--hover-bg)]',
                   profileDropdownOpen && 'text-[var(--text)] bg-[var(--accent-bg)] border-[var(--accent-bg)] switching',
                 )}
@@ -564,7 +564,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 id="btnWorkspacePanelToggle"
                 onClick={() => setWorkspaceOpen((v) => !v)}
                 className={cn(
-                  'composer-workspace-files-btn inline-flex items-center justify-center px-3 py-2 bg-transparent border-none cursor-pointer transition-colors',
+                  'composer-workspace-files-btn inline-flex items-center justify-center pl-3 pr-2.5 py-2 bg-transparent border-none cursor-pointer transition-colors',
                   workspaceOpen ? 'text-[var(--accent-text)] bg-[var(--accent-bg)]' : 'text-[var(--muted)]',
                 )}
                 aria-label="Toggle workspace files panel"
@@ -582,7 +582,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 }}
                 disabled={workspaces.length === 0}
                 title={t18n('workspace_switch_title')}
-                className="composer-workspace-chip inline-flex items-center gap-2 min-w-0 max-w-[200px] px-3 py-2 bg-transparent border-none border-l border-transparent cursor-pointer text-[var(--muted)] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="composer-workspace-chip inline-flex items-center gap-2 min-w-0 max-w-[200px] pl-2.5 pr-3 py-2 bg-transparent border-none border-l border-transparent cursor-pointer text-[var(--muted)] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span id="composerWorkspaceLabel" className="text-xs truncate">
                   {currentWsName}
@@ -664,7 +664,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
               <button
                 id="btnSend"
                 onClick={onCancel}
-                className="stop-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-105"
+                className="stop-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-[1.06]"
                 style={{
                   background: 'var(--error)',
                   color: '#fff',
