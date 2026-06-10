@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api-client';
-import { useAtom } from 'jotai';
-import { defaultModelAtom } from '@/atoms/settings';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,19 +25,14 @@ interface ModelsResponse {
   models?: { id: string; name: string; provider: string }[];
 }
 
-export function ModelSelector() {
-  const [model, setModel] = useAtom(defaultModelAtom);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
+function useModels() {
   const { data } = useSWR<ModelsResponse>('/models', fetcher, {
     revalidateOnFocus: false,
   });
 
-  const models = useMemo(() => {
+  return useMemo(() => {
     if (!data) return [];
-    // Prefer flat models array if provided (back-compat)
     if (data.models?.length) return data.models;
-    // Flatten groups into unified list
     if (data.groups?.length) {
       return data.groups.flatMap((g) =>
         (g.models || []).map((m) => ({
@@ -51,6 +44,55 @@ export function ModelSelector() {
     }
     return [];
   }, [data]);
+}
+
+export function ModelSelectorTrigger({
+  model,
+  open,
+  onToggle,
+}: {
+  model: string | null;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const models = useModels();
+  const selectedName = useMemo(() => {
+    if (!model) return 'Model';
+    const found = models.find((m) => m.id === model);
+    return found?.name || model;
+  }, [model, models]);
+
+  return (
+    <button
+      onClick={onToggle}
+      className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
+    >
+      <span className="truncate max-w-24">{selectedName}</span>
+      <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
+    </button>
+  );
+}
+
+export function ModelDropdownPopover({
+  selectedModel,
+  onSelect,
+  onClose,
+}: {
+  selectedModel: string | null;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}) {
+  const models = useModels();
+  const [search, setSearch] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
 
   const grouped = useMemo(() => {
     const map: Record<string, ModelEntry[]> = {};
@@ -76,66 +118,59 @@ export function ModelSelector() {
       .filter(([, entries]) => (entries as ModelEntry[]).length > 0) as [string, ModelEntry[]][];
   }, [grouped, search]);
 
-  const selectedName = useMemo(() => {
-    if (!model) return 'Model';
-    const found = models.find((m) => m.id === model);
-    return found?.name || model;
-  }, [model, models]);
-
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors px-2 py-1 rounded hover:bg-[var(--hover-bg)]"
-      >
-        <span className="truncate max-w-24">{selectedName}</span>
-        <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute bottom-full left-0 mb-1 w-64 max-h-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-50 flex flex-col">
-          <div className="p-2 border-b border-[var(--border)]">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search models..."
-              className="w-full text-xs bg-transparent text-[var(--text)] placeholder:text-[var(--muted)] outline-none"
-              aria-label="Search models"
-            />
-          </div>
-          <div className="overflow-y-auto flex-1 p-1">
-            {filtered.map(([provider, entries]) => (
-              <div key={provider}>
-                <div className="px-2 py-1 text-[10px] font-medium text-[var(--muted)] uppercase">{provider}</div>
-                {entries.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => {
-                      setModel(m.id);
-                      setOpen(false);
-                      setSearch('');
-                      try {
-                        localStorage.setItem('hermes-default-model', m.id);
-                      } catch {}
-                    }}
-                    className={cn(
-                      'w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors',
-                      model === m.id && 'text-[var(--accent)]',
-                    )}
-                  >
-                    <span className="truncate flex-1">{m.name}</span>
-                    {model === m.id && <Check className="w-3 h-3 shrink-0" />}
-                  </button>
-                ))}
-              </div>
+    <div
+      ref={ref}
+      className="absolute bottom-full right-5 mb-1 w-64 max-h-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-[200] flex flex-col"
+      style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
+    >
+      <div className="p-2 border-b border-[var(--border)]">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search models..."
+          className="w-full text-xs bg-transparent text-[var(--text)] placeholder:text-[var(--muted)] outline-none"
+          aria-label="Search models"
+          autoFocus
+        />
+      </div>
+      <div className="overflow-y-auto flex-1 p-1">
+        {filtered.map(([provider, entries]) => (
+          <div key={provider}>
+            <div className="px-2 py-1 text-[10px] font-medium text-[var(--muted)] uppercase">{provider}</div>
+            {entries.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => onSelect(m.id)}
+                className={cn(
+                  'w-full text-left px-2 py-1 text-xs rounded hover:bg-[var(--hover-bg)] flex items-center gap-2 transition-colors',
+                  selectedModel === m.id && 'text-[var(--accent)]',
+                )}
+              >
+                <span className="truncate flex-1">{m.name}</span>
+                {selectedModel === m.id && <Check className="w-3 h-3 shrink-0" />}
+              </button>
             ))}
-            {filtered.length === 0 && (
-              <div className="px-2 py-3 text-xs text-[var(--muted)] text-center">No models found</div>
-            )}
           </div>
-        </div>
-      )}
+        ))}
+        {filtered.length === 0 && (
+          <div className="px-2 py-3 text-xs text-[var(--muted)] text-center">No models found</div>
+        )}
+      </div>
     </div>
+  );
+}
+
+// Keep the original ModelSelector for backward compat
+export function ModelSelector() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <ModelSelectorTrigger model={null} open={open} onToggle={() => setOpen(!open)} />
+      {open && (
+        <ModelDropdownPopover selectedModel={null} onSelect={() => setOpen(false)} onClose={() => setOpen(false)} />
+      )}
+    </>
   );
 }
