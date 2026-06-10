@@ -35,6 +35,7 @@ import { ContextIndicator } from '@/components/chat/context-indicator';
 import { ReasoningChip } from '@/components/chat/reasoning-chip';
 import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
 import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
+import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -551,6 +552,18 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Provider quota chip */}
             <ProviderQuotaChip />
+
+            {/* Mobile composer config button — visible only on narrow screens */}
+            <MobileComposerConfigButton
+              onOpenWorkspace={() => {
+                computeWsPosition();
+                setWsDropdown(true);
+              }}
+              onOpenModel={() => {
+                computeModelPosition();
+                setModelDropdownOpen(true);
+              }}
+            />
           </div>
 
           {/* Right side: status, context, bg badge, send/stop */}

@@ -285,7 +285,12 @@ const en: Record<string, string> = {
   yolo_pill_title_active: 'YOLO mode — click to disable',
   profile_switch_title: 'Switch profile',
   workspace_switch_title: 'Switch workspace',
+  model_switch_title: 'Conversation model',
   'composer.status_sending': 'Sending…',
+  composer_mobile_config_title: 'Workspace, model, reasoning, and context settings',
+  composer_mobile_workspace: 'Workspace',
+  composer_mobile_model: 'Model',
+  composer_mobile_context: 'Context',
 
   // Workspace
   'workspace.title': 'Workspace',
@@ -691,7 +696,12 @@ const zh: Record<string, string> = {
   yolo_pill_title_active: 'YOLO 模式 — 点击禁用',
   profile_switch_title: '切换配置文件',
   workspace_switch_title: '切换工作区',
+  model_switch_title: '对话模型',
   'composer.status_sending': '发送中…',
+  composer_mobile_config_title: '工作区、模型、推理和上下文设置',
+  composer_mobile_workspace: '工作区',
+  composer_mobile_model: '模型',
+  composer_mobile_context: '上下文',
 
   // Workspace
   'workspace.title': '工作区',
@@ -1100,7 +1110,12 @@ const ja: Record<string, string> = {
   yolo_pill_title_active: 'YOLOモード — クリックで無効化',
   profile_switch_title: 'プロファイルを切り替え',
   workspace_switch_title: 'ワークスペースを切り替え',
+  model_switch_title: '会話モデル',
   'composer.status_sending': '送信中…',
+  composer_mobile_config_title: 'ワークスペース、モデル、推論、コンテキスト設定',
+  composer_mobile_workspace: 'ワークスペース',
+  composer_mobile_model: 'モデル',
+  composer_mobile_context: 'コンテキスト',
 
   // Workspace
   'workspace.title': 'ワークスペース',
