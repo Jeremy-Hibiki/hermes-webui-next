@@ -36,6 +36,7 @@ import { ReasoningChip } from '@/components/chat/reasoning-chip';
 import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
 import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
+import { ToolsetsChip } from '@/components/chat/toolsets-chip';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -537,6 +538,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Reasoning effort chip */}
             <ReasoningChip />
+
+            {/* Toolsets chip */}
+            <ToolsetsChip />
 
             {/* Model chip - trigger only, dropdown is at footer level */}
             <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}>

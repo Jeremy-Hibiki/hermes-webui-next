@@ -212,6 +212,14 @@ const en: Record<string, string> = {
   'settings.updateApiKey': 'Update API key...',
   'settings.enterApiKey': 'Enter API key...',
 
+  // Toolsets
+  session_toolsets: 'Session toolsets',
+  session_toolsets_global: 'Global',
+  session_toolsets_desc: 'Override which toolsets are active for this session. Leave empty to use the global default.',
+  session_toolsets_apply: 'Apply',
+  session_toolsets_clear: 'Clear (global)',
+  session_toolsets_placeholder: 'e.g. web, code, image',
+
   // Settings - Plugins
   'settings.pluginIntro': 'View installed Hermes plugins and the lifecycle hooks they register.',
   'settings.noPlugins': 'No Hermes plugins are currently visible.',
@@ -623,6 +631,14 @@ const zh: Record<string, string> = {
   'settings.notConfigured': '未配置',
   'settings.updateApiKey': '更新 API 密钥...',
   'settings.enterApiKey': '输入 API 密钥...',
+
+  // Toolsets
+  session_toolsets: '会话工具集',
+  session_toolsets_global: '全局',
+  session_toolsets_desc: '覆盖当前会话活跃的工具集。留空以使用全局默认值。',
+  session_toolsets_apply: '应用',
+  session_toolsets_clear: '清除（全局）',
+  session_toolsets_placeholder: '例如：web, code, image',
 
   // Settings - Plugins
   'settings.pluginIntro': '查看已安装的 Hermes 插件及其注册的生命周期钩子。',
@@ -1060,6 +1076,15 @@ const ja: Record<string, string> = {
   'settings.quota.unknown': '不明',
   'settings.quota.usageWindow': '使用ウィンドウ',
   'settings.quota.credential': '認証情報',
+
+  // Toolsets
+  session_toolsets: 'セッションツールセット',
+  session_toolsets_global: 'グローバル',
+  session_toolsets_desc:
+    'このセッションでアクティブなツールセットを上書きします。グローバルデフォルトを使用するには空のままにします。',
+  session_toolsets_apply: '適用',
+  session_toolsets_clear: 'クリア（グローバル）',
+  session_toolsets_placeholder: '例: web, code, image',
 
   // Settings - Plugins
   'settings.pluginIntro': 'インストール済みのHermesプラグインとそのライフサイクルフックを表示します。',
