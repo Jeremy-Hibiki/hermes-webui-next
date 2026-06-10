@@ -635,6 +635,12 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                   computeModelPosition();
                   setModelDropdownOpen(true);
                 }}
+                onOpenReasoning={() => {
+                  // Scroll to reasoning chip or open its dropdown
+                  const chip = document.getElementById('composerReasoningChip');
+                  chip?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  chip?.click();
+                }}
               />
             </div>
           </div>
