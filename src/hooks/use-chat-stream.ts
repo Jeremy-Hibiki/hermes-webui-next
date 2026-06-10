@@ -14,6 +14,7 @@ import {
   bgTasksAtom,
 } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
+import { shiftQueuedSessionMessage } from '@/atoms/streaming';
 import { SSEClient } from '@/lib/sse-client';
 import { apiPost, fetcher } from '@/lib/api-client';
 import { parseCommand } from '@/lib/commands';
@@ -414,6 +415,24 @@ export function useChatStream(sessionId: string) {
       renderer,
     ],
   );
+
+  // Ref to latest send so drain effect always calls the current version
+  const sendRef = useRef(send);
+  sendRef.current = send;
+
+  // Drain queued messages when busy transitions from true -> false
+  const wasBusyRef = useRef(false);
+  useEffect(() => {
+    if (!busy && wasBusyRef.current && sessionId) {
+      const next = shiftQueuedSessionMessage(sessionId);
+      if (next?.text) {
+        setTimeout(() => {
+          void sendRef.current(next.text, next.attachments);
+        }, 200);
+      }
+    }
+    wasBusyRef.current = busy;
+  }, [busy, sessionId]);
 
   const cancel = useCallback(() => {
     clientRef.current?.close();

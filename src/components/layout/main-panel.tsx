@@ -79,6 +79,22 @@ export function MainPanel() {
     cancel();
   };
 
+  const handleSteer = useCallback(
+    async (message: string) => {
+      if (!sessionId) return false;
+      try {
+        const res = await apiPost<{ accepted?: boolean; fallback?: string }>('/api/chat/steer', {
+          session_id: sessionId,
+          text: message,
+        });
+        return !!res.accepted;
+      } catch {
+        return false;
+      }
+    },
+    [sessionId],
+  );
+
   const handleApprovalRespond = useCallback(
     async (approvalId: string, choice: 'once' | 'session' | 'always' | 'deny') => {
       try {
@@ -383,7 +399,13 @@ export function MainPanel() {
             </div>
           )}
         </div>
-        <ComposerFooter onSend={handleSend} busy={busy} onCancel={handleCancel} sessionId={sessionId} />
+        <ComposerFooter
+          onSend={handleSend}
+          busy={busy}
+          onCancel={handleCancel}
+          onSteer={handleSteer}
+          sessionId={sessionId}
+        />
       </div>
     </div>
   );

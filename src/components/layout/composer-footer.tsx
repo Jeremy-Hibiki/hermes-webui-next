@@ -26,9 +26,10 @@ import {
 } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
-import { pendingFilesAtom, yoloAtom } from '@/atoms/chat';
+import { pendingFilesAtom, yoloAtom, activeStreamIdAtom } from '@/atoms/chat';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
-import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atoms/settings';
+import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
+import { queueSessionMessage, getSessionQueue } from '@/atoms/streaming';
 import { ModelSelectorTrigger, ModelDropdownPopover, useModels } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
@@ -64,17 +65,20 @@ function HiddenModelSelect({ value, onChange }: { value: string | null; onChange
   );
 }
 
+type ComposerAction = 'send' | 'stop' | 'queue' | 'interrupt' | 'steer' | 'disabled';
+
 interface ComposerFooterProps {
   onSend: (message: string, attachments?: File[]) => void;
   busy: boolean;
   onCancel?: () => void;
+  onSteer?: (message: string) => Promise<boolean>;
   onAttach?: () => void;
   onVoice?: () => void;
   sendKey?: 'enter' | 'cmd-enter';
   sessionId?: string;
 }
 
-export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sessionId }: ComposerFooterProps) {
+export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'enter', sessionId }: ComposerFooterProps) {
   const DRAFT_KEY = 'hermes-composer-drafts';
 
   const getDraft = (sid: string): string => {
@@ -109,6 +113,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [activeWorkspace, setActiveWorkspace] = useAtom(activeWorkspaceAtom);
   const [yolo, setYolo] = useAtom(yoloAtom);
   const [workspaceOpen, setWorkspaceOpen] = useAtom(workspacePanelOpenAtom);
+  const [busyInputMode] = useAtom(busyInputModeAtom);
+  const [activeStreamId] = useAtom(activeStreamIdAtom);
+  const [_queueCount, setQueueCount] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -219,6 +226,37 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
     if (sessionId) setText(getDraft(sessionId));
   }, [sessionId]);
 
+  // Refresh queue count when session changes or periodically
+  useEffect(() => {
+    if (!sessionId) {
+      setQueueCount(0);
+      return;
+    }
+    const update = () => setQueueCount(getSessionQueue(sessionId).length);
+    update();
+    const id = setInterval(update, 500);
+    return () => clearInterval(id);
+  }, [sessionId]);
+
+  const action: ComposerAction = useMemo(() => {
+    const hasContent = text.trim().length > 0;
+    if (!busy) return hasContent ? 'send' : 'disabled';
+    if (!hasContent) {
+      if (activeStreamId && onCancel) return 'stop';
+      return 'disabled';
+    }
+    const mode = busyInputMode || 'queue';
+    if (mode === 'steer') {
+      if (activeStreamId && onSteer) return 'steer';
+      return 'queue';
+    }
+    if (mode === 'interrupt') {
+      if (activeStreamId && onCancel) return 'interrupt';
+      return 'queue';
+    }
+    return 'queue';
+  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer]);
+
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -229,6 +267,55 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
     setUploadedPaths([]);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }, [text, busy, onSend, setPendingFiles]);
+
+  const handlePrimaryAction = useCallback(async () => {
+    const trimmed = text.trim();
+    if (action === 'disabled') return;
+    if (action === 'stop') {
+      onCancel?.();
+      return;
+    }
+    if (action === 'send') {
+      handleSend();
+      return;
+    }
+    if (!sessionId) return;
+    if (action === 'steer') {
+      if (onSteer) {
+        const accepted = await onSteer(trimmed);
+        if (accepted) {
+          setText('');
+          setPendingFiles([]);
+          if (textareaRef.current) textareaRef.current.style.height = 'auto';
+          return;
+        }
+      }
+      // Fall back to interrupt+queue
+      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      setText('');
+      setPendingFiles([]);
+      setQueueCount(getSessionQueue(sessionId).length);
+      onCancel?.();
+      return;
+    }
+    if (action === 'interrupt') {
+      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      setText('');
+      setPendingFiles([]);
+      setQueueCount(getSessionQueue(sessionId).length);
+      onCancel?.();
+      return;
+    }
+    if (action === 'queue') {
+      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      setText('');
+      setPendingFiles([]);
+      setUploadedPaths([]);
+      setQueueCount(getSessionQueue(sessionId).length);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      return;
+    }
+  }, [action, text, sessionId, onCancel, onSteer, handleSend, pendingFiles, setPendingFiles]);
 
   const handleFileSelect = useCallback(
     async (fileList: FileList | null) => {
@@ -284,16 +371,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
       if (sendKey === 'enter') {
         if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
-          handleSend();
+          void handlePrimaryAction();
         }
       } else {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
-          handleSend();
+          void handlePrimaryAction();
         }
       }
     },
-    [sendKey, handleSend],
+    [sendKey, handlePrimaryAction],
   );
 
   const handlePaste = useCallback(
@@ -315,8 +402,6 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
     },
     [handleFileSelect],
   );
-
-  const hasContent = text.trim().length > 0;
 
   return (
     <div
@@ -469,7 +554,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                   textareaRef.current.value = txt;
                 }
               }}
-              onSend={handleSend}
+              onSend={() => void handlePrimaryAction()}
             />
 
             {/* Divider */}
@@ -660,38 +745,112 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             {/* Background tasks badge */}
             <BackgroundTasksBadge />
 
-            {busy ? (
-              <button
-                id="btnSend"
-                onClick={onCancel}
-                className="stop-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-[1.06]"
-                style={{
-                  background: 'var(--error)',
-                  color: '#fff',
-                  boxShadow: '0 2px 10px rgba(0,0,0,.18)',
-                }}
-                aria-label="Stop generation"
-                title={t18n('chat.stop')}
-              >
-                <Square className="w-4 h-4" fill="currentColor" />
-              </button>
-            ) : (
-              <button
-                id="btnSend"
-                onClick={handleSend}
-                disabled={!hasContent}
-                className="send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35 disabled:cursor-not-allowed hover:scale-[1.08]"
-                style={{
-                  background: 'var(--accent)',
-                  color: '#fff',
-                  boxShadow: hasContent ? '0 2px 8px var(--accent-bg-strong,var(--accent-bg))' : 'none',
-                }}
-                aria-label="Send message"
-                title={t18n('chat.send')}
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              id="btnSend"
+              onClick={() => void handlePrimaryAction()}
+              disabled={action === 'disabled'}
+              data-action={action}
+              className={cn(
+                'send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35 disabled:cursor-not-allowed',
+                (action === 'send' || action === 'queue') && 'hover:scale-[1.08]',
+                (action === 'stop' || action === 'interrupt') && 'hover:scale-[1.06]',
+                action === 'steer' && 'hover:scale-[1.06]',
+              )}
+              style={{
+                background:
+                  action === 'stop' || action === 'interrupt'
+                    ? 'var(--error)'
+                    : action === 'steer'
+                      ? 'var(--purple, #8b5cf6)'
+                      : 'var(--accent)',
+                color: '#fff',
+                boxShadow:
+                  action === 'disabled'
+                    ? 'none'
+                    : action === 'stop' || action === 'interrupt'
+                      ? '0 2px 10px rgba(0,0,0,.18)'
+                      : action === 'steer'
+                        ? '0 2px 10px rgba(139,92,246,.25)'
+                        : '0 2px 8px var(--accent-bg-strong,var(--accent-bg))',
+              }}
+              aria-label={
+                action === 'stop'
+                  ? t18n('chat.stop')
+                  : action === 'queue'
+                    ? 'Queue message'
+                    : action === 'interrupt'
+                      ? 'Interrupt and queue'
+                      : action === 'steer'
+                        ? 'Steer'
+                        : t18n('chat.send')
+              }
+              title={
+                action === 'stop'
+                  ? t18n('chat.stop')
+                  : action === 'queue'
+                    ? 'Queue message'
+                    : action === 'interrupt'
+                      ? 'Interrupt and queue'
+                      : action === 'steer'
+                        ? 'Steer'
+                        : t18n('chat.send')
+              }
+            >
+              {action === 'stop' && <Square className="w-4 h-4" fill="currentColor" />}
+              {action === 'send' && <ArrowUp className="w-4 h-4" />}
+              {action === 'disabled' && <ArrowUp className="w-4 h-4" />}
+              {action === 'queue' && (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M16 5H3" />
+                  <path d="M16 12H3" />
+                  <path d="M9 19H3" />
+                  <path d="m16 16-3 3 3 3" />
+                  <path d="M21 5v12a2 2 0 0 1-2 2h-6" />
+                </svg>
+              )}
+              {action === 'interrupt' && (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 4v16" />
+                  <path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z" />
+                </svg>
+              )}
+              {action === 'steer' && (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
 
