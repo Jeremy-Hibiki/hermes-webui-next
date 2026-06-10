@@ -28,6 +28,8 @@ import {
 interface SessionItemProps {
   session: Session;
   isActive: boolean;
+  isUnread?: boolean;
+  isStreaming?: boolean;
   onSelect: (sessionId: string) => void;
   onRename?: (sessionId: string, newTitle: string) => void;
   onPin?: (sessionId: string) => void;
@@ -39,6 +41,8 @@ interface SessionItemProps {
 export function SessionItem({
   session,
   isActive,
+  isUnread,
+  isStreaming,
   onSelect,
   onRename,
   onPin,
@@ -130,6 +134,8 @@ export function SessionItem({
       {session.parent_session_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
       {session.worktree_path && <GitBranch className="w-3 h-3 shrink-0 text-orange-500" />}
       {sourceIcon}
+      {isStreaming && <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--accent)] animate-pulse" />}
+      {!isStreaming && isUnread && <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--accent)]" />}
     </>
   );
 
