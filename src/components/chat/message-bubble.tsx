@@ -245,19 +245,15 @@ export function MessageBubble({
       )}
 
       <article
-        className={cn(
-          'msg-row group py-3',
-          isUser ? 'self-end max-w-[60%]' : 'w-full',
-          isToolError && 'border rounded-lg p-3',
-        )}
+        className={cn('msg-row group py-2.5', isUser ? 'self-end' : 'w-full', isToolError && 'border rounded-lg p-3')}
         style={isAssistant ? { paddingLeft: 'var(--msg-rail, 0px)' } : undefined}
         data-role={message.role}
         aria-label={`${message.role} message`}
       >
         {/* Assistant role header */}
         {isAssistant && (
-          <div className="msg-role flex items-center gap-2 text-[11px] font-medium mb-1.5 opacity-80 hover:opacity-100 transition-opacity">
-            <div className="role-icon w-5 h-5 rounded-full bg-[var(--accent-bg)] flex items-center justify-center text-[9px] font-bold text-[var(--accent)] shrink-0">
+          <div className="msg-role flex items-center gap-2 text-[12px] font-medium mb-2 opacity-80 hover:opacity-100 transition-opacity">
+            <div className="role-icon w-[22px] h-[22px] rounded-full bg-[var(--accent-bg)] flex items-center justify-center text-[10px] font-bold text-[var(--accent)] shrink-0">
               H
             </div>
             <span className="text-[var(--accent-text)] text-[12px]">Hermes</span>
@@ -279,7 +275,7 @@ export function MessageBubble({
           className={cn(
             'msg-body overflow-wrap-anywhere',
             isUser &&
-              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-[14px] py-[10px] max-w-none text-[var(--user-bubble-text,var(--text))]',
+              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-4 py-3 max-w-none text-[var(--user-bubble-text,var(--text))]',
             isAssistant && 'text-[var(--text)] pt-2',
             isToolError && 'bg-[rgba(239,83,80,.06)] border-[rgba(239,83,80,.3)] text-[var(--error)]',
           )}

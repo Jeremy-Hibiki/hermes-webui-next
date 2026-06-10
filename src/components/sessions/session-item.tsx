@@ -168,7 +168,9 @@ export function SessionItem({
       {session.parent_session_id && <GitBranch className="w-3 h-3 shrink-0 text-[var(--muted)]" />}
       {session.worktree_path && <GitBranch className="w-3 h-3 shrink-0 text-orange-500" />}
       {sourceIcon}
-      {isStreaming && <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--accent)] animate-pulse" />}
+      {isStreaming && (
+        <span className="session-streaming-dot w-2 h-2 rounded-full shrink-0 border-[1.5px] border-[var(--accent)] border-t-transparent" />
+      )}
       {!isStreaming && isUnread && <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--accent)]" />}
     </>
   );

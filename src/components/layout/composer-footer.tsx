@@ -332,7 +332,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             <button
               aria-label="Attach file"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover-bg)] transition-colors"
+              className="w-[34px] h-[34px] flex items-center justify-center rounded-lg opacity-75 text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover-bg)] hover:opacity-100 transition-colors"
             >
               <Paperclip className="w-4 h-4" />
             </button>
@@ -358,9 +358,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             )}
 
             {/* Profile chip */}
-            <button className="inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer text-[var(--muted)] hover:bg-[var(--hover-bg)] transition-colors text-xs">
+            <button
+              onClick={() => {
+                // Navigate to profiles panel for switching
+                window.location.href = '/profiles';
+              }}
+              className="inline-flex items-center gap-2 max-w-[180px] px-2.5 py-2 rounded-full border border-transparent bg-transparent font-medium cursor-pointer text-[var(--muted)] hover:bg-[var(--hover-bg)] transition-colors text-xs"
+            >
               <User className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate capitalize">{profile || 'default'}</span>
+              <ChevronDown className="w-3 h-3 shrink-0 opacity-50" />
             </button>
 
             {/* Workspace chip */}
@@ -432,7 +439,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
               <button
                 onClick={handleSend}
                 disabled={!hasContent}
-                className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all"
+                className="send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all"
                 style={{
                   background: hasContent ? 'var(--accent)' : 'var(--accent)',
                   color: '#fff',
@@ -458,6 +465,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
         .composer-box:focus-within {
           border-color: var(--accent) !important;
           box-shadow: 0 0 0 3px var(--accent-bg);
+        }
+        .send-btn:active {
+          transform: scale(0.95) !important;
         }
       `}</style>
     </div>

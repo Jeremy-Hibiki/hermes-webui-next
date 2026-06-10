@@ -274,7 +274,8 @@ export function Sidebar() {
           <Plus className="w-4 h-4" />
         </Button>
         {searchOpen ? (
-          <div className="flex-1 flex items-center gap-1">
+          <div className="flex-1 flex items-center gap-1 border border-[var(--border)] rounded-lg px-2.5 py-1.5">
+            <Search className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
             <input
               ref={inputRef}
               type="text"
