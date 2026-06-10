@@ -20,6 +20,7 @@ interface MessageBubbleProps {
   onDelete?: (messageId: string) => void;
   isLastAssistant?: boolean;
   prevMessage?: Message | null;
+  isGroupLeader?: boolean;
 }
 
 function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
@@ -151,6 +152,7 @@ export function MessageBubble({
   onDelete,
   isLastAssistant,
   prevMessage,
+  isGroupLeader = true,
 }: MessageBubbleProps) {
   const { t: t18n } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -250,8 +252,8 @@ export function MessageBubble({
         data-role={message.role}
         aria-label={`${message.role} message`}
       >
-        {/* Assistant role header */}
-        {isAssistant && (
+        {/* Assistant role header - only shown for group leader */}
+        {isAssistant && isGroupLeader && (
           <div className="msg-role flex items-center gap-2 text-[12px] font-medium mb-2 opacity-80 hover:opacity-100 transition-opacity">
             <div className="role-icon w-[22px] h-[22px] rounded-full bg-[var(--accent-bg)] flex items-center justify-center text-[10px] font-bold text-[var(--accent)] shrink-0">
               H

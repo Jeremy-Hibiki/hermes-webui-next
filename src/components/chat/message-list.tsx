@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useAtom } from 'jotai';
 import { messagesAtom } from '@/atoms/chat';
 import { MessageBubble } from './message-bubble';
@@ -25,6 +25,23 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
     .filter((i) => i >= 0)
     .pop();
 
+  // Determine which messages are part of a consecutive assistant/tool group
+  // so only the first one in the group shows the avatar/role header
+  const groupLeaderMap = useMemo(() => {
+    const map = new Set<number>();
+    for (let i = 0; i < messages.length; i++) {
+      const prev = messages[i - 1];
+      const curr = messages[i];
+      const isAssistantLike = curr.role === 'assistant' || curr.role === 'tool';
+      const prevIsAssistantLike = prev && (prev.role === 'assistant' || prev.role === 'tool');
+      // First message in group, or first assistant after non-assistant
+      if (isAssistantLike && !prevIsAssistantLike) {
+        map.add(i);
+      }
+    }
+    return map;
+  }, [messages]);
+
   const handleDelete = (messageId: string) => {
     setMessages((prev) => prev.filter((m) => (m.id ?? '') !== messageId));
   };
@@ -43,6 +60,7 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
             onDelete={handleDelete}
             isLastAssistant={idx === lastAssistantIdx}
             prevMessage={idx > 0 ? messages[idx - 1] : null}
+            isGroupLeader={groupLeaderMap.has(idx)}
           />
         ))}
         <div ref={bottomRef} />

@@ -81,8 +81,28 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [wsDropdownLeft, setWsDropdownLeft] = useState<number>(0);
+  const [modelDropdownRight, setModelDropdownRight] = useState<number>(0);
   const { t: t18n } = useTranslation();
+  const composerWrapRef = useRef<HTMLDivElement>(null);
+  const wsChipRef = useRef<HTMLButtonElement>(null);
+  const modelChipRef = useRef<HTMLButtonElement>(null);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Compute dropdown position relative to trigger chip
+  const computeWsPosition = useCallback(() => {
+    if (!wsChipRef.current || !composerWrapRef.current) return;
+    const chipRect = wsChipRef.current.getBoundingClientRect();
+    const wrapRect = composerWrapRef.current.getBoundingClientRect();
+    setWsDropdownLeft(chipRect.left - wrapRect.left);
+  }, []);
+
+  const computeModelPosition = useCallback(() => {
+    if (!modelChipRef.current || !composerWrapRef.current) return;
+    const chipRect = modelChipRef.current.getBoundingClientRect();
+    const wrapRect = composerWrapRef.current.getBoundingClientRect();
+    setModelDropdownRight(wrapRect.right - chipRect.right);
+  }, []);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -222,6 +242,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
   return (
     <div
+      ref={composerWrapRef}
       className="composer-wrap relative shrink-0 px-5 pt-3 pb-4"
       onDrop={handleDrop}
       onDragOver={(e) => {
@@ -386,7 +407,11 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
             {/* Workspace chip - trigger only, dropdown is at footer level */}
             <button
-              onClick={() => setWsDropdown(!wsDropdown)}
+              ref={wsChipRef}
+              onClick={() => {
+                computeWsPosition();
+                setWsDropdown(!wsDropdown);
+              }}
               className="inline-flex items-center gap-2 max-w-[284px] rounded-full border border-[var(--border2,var(--border))] bg-transparent hover:bg-[var(--hover-bg)] transition-colors overflow-hidden shrink-0"
             >
               <span className="inline-flex items-center justify-center px-3 py-2 text-[var(--muted)]">
@@ -399,11 +424,16 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             </button>
 
             {/* Model chip - trigger only, dropdown is at footer level */}
-            <ModelSelectorTrigger
-              model={_model}
-              open={modelDropdownOpen}
-              onToggle={() => setModelDropdownOpen(!modelDropdownOpen)}
-            />
+            <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}>
+              <ModelSelectorTrigger
+                model={_model}
+                open={modelDropdownOpen}
+                onToggle={() => {
+                  computeModelPosition();
+                  setModelDropdownOpen(!modelDropdownOpen);
+                }}
+              />
+            </div>
           </div>
 
           {/* Right side: send/stop */}
@@ -451,8 +481,8 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
       {wsDropdown && (
         <div
           ref={wsDropdownRef}
-          className="absolute bottom-full left-5 mb-1 w-56 max-h-48 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-[200] flex flex-col"
-          style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
+          className="absolute bottom-full mb-1 w-56 max-h-48 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-[200] flex flex-col"
+          style={{ left: wsDropdownLeft, boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
         >
           <div className="px-2 py-1.5 text-[10px] font-medium text-[var(--muted)] uppercase tracking-wide border-b border-[var(--border)]">
             Workspaces
@@ -494,6 +524,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
             } catch {}
           }}
           onClose={() => setModelDropdownOpen(false)}
+          style={{ right: modelDropdownRight }}
         />
       )}
 

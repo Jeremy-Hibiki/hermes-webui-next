@@ -77,10 +77,12 @@ export function ModelDropdownPopover({
   selectedModel,
   onSelect,
   onClose,
+  style,
 }: {
   selectedModel: string | null;
   onSelect: (id: string) => void;
   onClose: () => void;
+  style?: React.CSSProperties;
 }) {
   const models = useModels();
   const [search, setSearch] = useState('');
@@ -121,8 +123,8 @@ export function ModelDropdownPopover({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full right-5 mb-1 w-64 max-h-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-[200] flex flex-col"
-      style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)' }}
+      className="absolute bottom-full mb-1 w-64 max-h-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg z-[200] flex flex-col"
+      style={{ boxShadow: '0 -4px 24px rgba(0,0,0,.4)', ...style }}
     >
       <div className="p-2 border-b border-[var(--border)]">
         <input

@@ -4,6 +4,42 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Tailwind v4 semantic color mapping ── */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--user-bubble-text, #fff);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--text);
+  --color-border: var(--border);
+  --color-border2: var(--border2);
+  --color-input: var(--input-bg);
+  --color-ring: var(--accent);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-destructive: var(--error);
+  --color-destructive-foreground: #fff;
+  --color-accent: var(--accent-bg);
+  --color-accent-foreground: var(--accent-text);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--text);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--accent);
+  --color-sidebar-accent: var(--accent-bg);
+  --color-sidebar-accent-foreground: var(--accent-text);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--user-bubble-text, #fff);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: 16px;
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-mono);
+}
+
 /* ── Light mode ── */
 :root {
   --bg: #fefcf7;
