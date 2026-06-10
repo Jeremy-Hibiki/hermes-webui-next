@@ -1,6 +1,20 @@
 'use client';
 
-import { Folder, ChevronRight, Image, FileText, FileCode, Zap, Settings, Terminal, Download, X } from 'lucide-react';
+import {
+  Folder,
+  ChevronRight,
+  Image,
+  FileText,
+  FileCode,
+  Zap,
+  Settings,
+  Terminal,
+  Download,
+  X,
+  Pencil,
+  ClipboardCopy,
+} from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { FileEntry } from '@/types';
 
@@ -17,6 +31,20 @@ const HIDDEN_NAMES = new Set([
   '.directory',
   '.AppleDouble',
   '.Spotlight-V100',
+  '.pytest_cache',
+  '.mypy_cache',
+  '.ruff_cache',
+  '.tox',
+  '.venv',
+  'venv',
+  'ehthumbs.db',
+  '$RECYCLE.BIN',
+  '.Trashes',
+  '.fseventsd',
+  '.gitignore',
+  '.env',
+  '.idea',
+  '.vscode',
 ]);
 
 function shouldHide(name: string): boolean {
@@ -50,8 +78,11 @@ interface FileTreeProps {
   onFileSelect: (path: string) => void;
   onDirToggle: (path: string) => void;
   onDelete?: (path: string, name: string, isDir: boolean) => void;
+  onRename?: (path: string, name: string) => void;
+  onDownload?: (path: string, name: string) => void;
   expanded: Set<string>;
   dirCache: Record<string, FileEntry[]>;
+  showHidden?: boolean;
   depth?: number;
 }
 
@@ -63,6 +94,39 @@ function TreeRow({
   const isDir = entry.type === 'dir';
   const isExpanded = props.expanded.has(entry.path);
   const d = depth ?? 0;
+  const [renaming, setRenaming] = useState(false);
+  const [renameVal, setRenameVal] = useState(entry.name);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+  const renameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renaming && renameRef.current) {
+      renameRef.current.focus();
+      const dotIdx = entry.name.lastIndexOf('.');
+      renameRef.current.setSelectionRange(0, dotIdx > 0 ? dotIdx : entry.name.length);
+    }
+  }, [renaming, entry.name]);
+
+  const submitRename = useCallback(() => {
+    const trimmed = renameVal.trim();
+    if (trimmed && trimmed !== entry.name && props.onRename) {
+      props.onRename(entry.path, trimmed);
+    }
+    setRenaming(false);
+  }, [renameVal, entry.name, entry.path, props]);
+
+  const handleCtx = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const close = () => setCtxMenu(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [ctxMenu]);
 
   return (
     <>
@@ -71,12 +135,17 @@ function TreeRow({
         className="group/file flex items-center gap-[6px] rounded-lg cursor-pointer text-[12px] text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)] transition-all min-w-0"
         style={{ padding: '6px 10px 6px 0', marginLeft: `${8 + d * 16}px` }}
         onClick={() => {
+          if (renaming) return;
           if (isDir) {
             props.onDirToggle(entry.path);
           } else {
             props.onFileSelect(entry.path);
           }
         }}
+        onDoubleClick={() => {
+          if (props.onRename) setRenaming(true);
+        }}
+        onContextMenu={handleCtx}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -99,7 +168,22 @@ function TreeRow({
           <span className="inline-block shrink-0 w-[10px]" aria-hidden />
         )}
         {fileIcon(entry.name, isDir)}
-        <span className="flex-1 truncate min-w-0">{entry.name}</span>
+        {renaming ? (
+          <input
+            ref={renameRef}
+            value={renameVal}
+            onChange={(e) => setRenameVal(e.target.value)}
+            onBlur={submitRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitRename();
+              if (e.key === 'Escape') setRenaming(false);
+            }}
+            className="flex-1 min-w-0 bg-[var(--input-bg)] border border-[var(--accent)] rounded px-1 text-[var(--text)] text-[12px] outline-none"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="flex-1 truncate min-w-0">{entry.name}</span>
+        )}
         {!isDir && entry.size != null && entry.size > 0 && (
           <span className="text-[10px] text-[var(--muted)] opacity-60 shrink-0">{(entry.size / 1024).toFixed(1)}k</span>
         )}
@@ -117,11 +201,62 @@ function TreeRow({
         )}
       </button>
 
+      {/* Context menu */}
+      {ctxMenu && (
+        <div
+          className="fixed z-50 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg py-1 min-w-[160px] text-[12px]"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+        >
+          {props.onRename && (
+            <button
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[var(--text)] hover:bg-[var(--hover-bg)]"
+              onClick={() => {
+                setCtxMenu(null);
+                setRenaming(true);
+              }}
+            >
+              <Pencil className="w-3 h-3" /> Rename
+            </button>
+          )}
+          {!isDir && props.onDownload && (
+            <button
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[var(--text)] hover:bg-[var(--hover-bg)]"
+              onClick={() => {
+                setCtxMenu(null);
+                props.onDownload!(entry.path, entry.name);
+              }}
+            >
+              <Download className="w-3 h-3" /> Download
+            </button>
+          )}
+          <button
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-[var(--text)] hover:bg-[var(--hover-bg)]"
+            onClick={() => {
+              setCtxMenu(null);
+              navigator.clipboard.writeText(entry.path);
+            }}
+          >
+            <ClipboardCopy className="w-3 h-3" /> Copy path
+          </button>
+          {props.onDelete && (
+            <button
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[var(--error)] hover:bg-[var(--hover-bg)]"
+              onClick={() => {
+                setCtxMenu(null);
+                props.onDelete!(entry.path, entry.name, isDir);
+              }}
+            >
+              <X className="w-3 h-3" /> Delete
+            </button>
+          )}
+        </div>
+      )}
+
       {isDir &&
         isExpanded &&
         (() => {
           const children = props.dirCache[entry.path] || [];
-          const visible = children.filter((c) => !shouldHide(c.name));
+          const visible = props.showHidden ? children : children.filter((c) => !shouldHide(c.name));
           if (visible.length === 0) {
             return (
               <div
@@ -138,26 +273,25 @@ function TreeRow({
   );
 }
 
-function FileTreeItems({ entries, depth = 0, ...props }: FileTreeProps) {
+function FileTreeItems({ entries, depth = 0, showHidden, ...props }: FileTreeProps) {
+  const visible = showHidden ? entries : entries.filter((e) => !shouldHide(e.name));
   return (
     <>
-      {entries
-        .filter((e) => !shouldHide(e.name))
-        .map((entry) => (
-          <TreeRow key={entry.path} entry={entry} depth={depth} {...props} />
-        ))}
+      {visible.map((entry) => (
+        <TreeRow key={entry.path} entry={entry} depth={depth} showHidden={showHidden} {...props} />
+      ))}
     </>
   );
 }
 
-export function FileTree({ entries, depth = 0, ...rest }: FileTreeProps) {
-  const visible = entries.filter((e) => !shouldHide(e.name));
+export function FileTree({ entries, depth = 0, showHidden, ...rest }: FileTreeProps) {
+  const visible = showHidden ? entries : entries.filter((e) => !shouldHide(e.name));
   if (visible.length === 0 && depth === 0) {
     return <div className="p-4 text-sm text-[var(--muted)] text-center">Empty directory</div>;
   }
   return (
     <div className="p-2">
-      <FileTreeItems entries={visible} depth={depth} {...rest} />
+      <FileTreeItems entries={visible} depth={depth} showHidden={showHidden} {...rest} />
     </div>
   );
 }

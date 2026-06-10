@@ -4,13 +4,27 @@ import { useAtom } from 'jotai';
 import { activeSessionAtom } from '@/atoms/session';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, RefreshCw, Plus, Trash2, Home, GitBranch, FileText } from 'lucide-react';
+import {
+  FolderOpen,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Home,
+  GitBranch,
+  FileText,
+  Upload,
+  Download,
+  Eye,
+  EyeOff,
+  FilePlus,
+  FolderPlus,
+} from 'lucide-react';
 import { FileTree } from '@/components/workspace/file-tree';
 import { FilePreview } from '@/components/workspace/file-preview';
 import { GitBadge } from '@/components/workspace/git-badge';
 import { GitOperations } from '@/components/workspace/git-operations';
 import { ArtifactList } from '@/components/workspace/artifact-list';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
 import { API_BASE } from '@/lib/constants';
@@ -36,6 +50,16 @@ export function WorkspacePanel() {
   const [manageMode, setManageMode] = useState(false);
   const [addPath, setAddPath] = useState('');
   const [activeTab, setActiveTab] = useState<'files' | 'artifacts' | 'git'>('files');
+  const [showHidden, setShowHidden] = useState(() => {
+    try {
+      return localStorage.getItem('hermes-workspace-show-hidden-files') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [creating, setCreating] = useState<'file' | 'dir' | null>(null);
+  const [newName, setNewName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sessionId = activeSession?.session_id ?? '';
   const workspace = activeSession?.workspace ?? '';
@@ -198,6 +222,87 @@ export function WorkspacePanel() {
     [mutateWorkspaces],
   );
 
+  const refreshCurrentDir = useCallback(async () => {
+    if (!workspace) return;
+    const dir = currentPath || workspace;
+    const entries = await fetchDir(dir);
+    if (dir === workspace) {
+      setRootEntries(entries);
+    }
+    setDirCache((prev) => ({ ...prev, [dir]: entries }));
+  }, [workspace, currentPath, fetchDir]);
+
+  const handleCreate = useCallback(async () => {
+    if (!newName.trim() || !creating) return;
+    try {
+      await apiPost('/file/create', {
+        session_id: sessionId,
+        path: `${currentPath || workspace}/${newName.trim()}`,
+        type: creating,
+      });
+      setNewName('');
+      setCreating(null);
+      await refreshCurrentDir();
+    } catch (err) {
+      console.error('Create failed:', err);
+    }
+  }, [newName, creating, sessionId, currentPath, workspace, refreshCurrentDir]);
+
+  const handleUpload = useCallback(
+    async (files: FileList | null) => {
+      if (!files || !sessionId) return;
+      for (const file of Array.from(files)) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('session_id', sessionId);
+          formData.append('target_dir', currentPath || workspace);
+          await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
+        } catch (err) {
+          console.error('Upload failed:', file.name, err);
+        }
+      }
+      await refreshCurrentDir();
+    },
+    [sessionId, currentPath, workspace, refreshCurrentDir],
+  );
+
+  const handleDownload = useCallback(
+    async (path: string, name: string) => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/file/raw?session_id=${encodeURIComponent(sessionId)}&path=${encodeURIComponent(path)}`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Download failed:', err);
+      }
+    },
+    [sessionId],
+  );
+
+  const toggleHidden = useCallback(() => {
+    setShowHidden((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('hermes-workspace-show-hidden-files', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
   const segments = currentPath.split('/').filter(Boolean);
   const breadcrumbParts = segments.map((seg, i) => ({
     label: seg,
@@ -209,9 +314,64 @@ export function WorkspacePanel() {
       {/* Header */}
       <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
         <FolderOpen className="w-4 h-4 text-[var(--muted)]" />
-        <span className="text-sm font-medium text-[var(--text)] truncate">Workspace</span>
+        <span
+          className="text-sm font-medium text-[var(--text)] truncate cursor-pointer hover:text-[var(--accent)]"
+          onClick={() => handleBreadcrumb(workspace)}
+        >
+          Workspace
+        </span>
         <GitBadge status={gitData?.git ?? null} />
         <span className="flex-1" />
+        {activeTab === 'files' && !selectedFile && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="absolute left-[-9999px] w-px h-px opacity-0"
+              onChange={(e) => {
+                void handleUpload(e.target.files);
+                e.target.value = '';
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[var(--muted)]"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Upload"
+            >
+              <Upload className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[var(--muted)]"
+              onClick={() => setCreating('file')}
+              aria-label="New file"
+            >
+              <FilePlus className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[var(--muted)]"
+              onClick={() => setCreating('dir')}
+              aria-label="New folder"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('text-[var(--muted)]', showHidden && 'text-[var(--accent)]')}
+              onClick={toggleHidden}
+              aria-label="Toggle hidden files"
+            >
+              {showHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </Button>
+          </>
+        )}
         <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
           {(
             [
@@ -247,7 +407,7 @@ export function WorkspacePanel() {
           variant="ghost"
           size="icon"
           className="text-[var(--muted)]"
-          onClick={() => handleBreadcrumb(currentPath)}
+          onClick={() => void refreshCurrentDir()}
           aria-label="Refresh"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -343,10 +503,50 @@ export function WorkspacePanel() {
 
           {selectedFile ? (
             <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)]">
+                <span className="text-xs text-[var(--muted)] truncate flex-1">{selectedFile.split('/').pop()}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-[var(--muted)] h-6 w-6"
+                  onClick={() => void handleDownload(selectedFile, selectedFile.split('/').pop() || 'file')}
+                  aria-label="Download"
+                >
+                  <Download className="w-3 h-3" />
+                </Button>
+              </div>
               <FilePreview path={selectedFile} content={fileContent ?? ''} onClose={() => setSelectedFile(null)} />
             </div>
           ) : (
             <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+              {/* New file/folder input */}
+              {creating && (
+                <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[11px] text-[var(--muted)]">
+                    {creating === 'file' ? 'New file:' : 'New folder:'}
+                  </span>
+                  <input
+                    autoFocus
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void handleCreate();
+                      if (e.key === 'Escape') {
+                        setCreating(null);
+                        setNewName('');
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!newName.trim()) {
+                        setCreating(null);
+                        setNewName('');
+                      }
+                    }}
+                    placeholder={creating === 'file' ? 'filename.txt' : 'folder-name'}
+                    className="flex-1 bg-transparent text-[12px] text-[var(--text)] outline-none border-b border-[var(--accent)]"
+                  />
+                </div>
+              )}
               {loading ? (
                 <div className="p-4 text-sm text-[var(--muted)] text-center">Loading...</div>
               ) : (
@@ -355,8 +555,18 @@ export function WorkspacePanel() {
                   onFileSelect={handleFileSelect}
                   onDirToggle={handleDirToggle}
                   onDelete={handleDelete}
+                  onRename={async (path, newName) => {
+                    try {
+                      await apiPost('/file/rename', { session_id: sessionId, path, new_name: newName });
+                      await refreshCurrentDir();
+                    } catch (err) {
+                      console.error('Rename failed:', err);
+                    }
+                  }}
+                  onDownload={handleDownload}
                   expanded={expanded}
                   dirCache={dirCache}
+                  showHidden={showHidden}
                 />
               )}
             </ScrollArea>
