@@ -890,3 +890,117 @@ body {
     display: none !important;
   }
 }
+
+/* ── Light mode composer overrides ── */
+:root:not(.dark) .composer-wrap {
+  background: var(--sidebar);
+  border-top: 1px solid var(--border);
+}
+:root:not(.dark) .composer-wrap::before {
+  background: linear-gradient(to bottom, transparent, var(--sidebar));
+}
+:root:not(.dark) .composer-box {
+  background: var(--bg);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+:root:not(.dark) .composer-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* ── Provider quota chip breakpoint (match original) ── */
+@media (max-width: 1399.98px) {
+  .provider-quota-chip {
+    display: none !important;
+  }
+}
+
+/* ── Skin: Graphite ── */
+:root[data-skin='graphite'] .composer-wrap {
+  background: var(--sidebar) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+:root[data-skin='graphite'] .composer-box {
+  background: var(--surface) !important;
+  border-color: var(--border2) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}
+:root.dark[data-skin='graphite'] .composer-box {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+:root[data-skin='graphite'] .composer-box:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--focus-ring) !important;
+}
+
+/* ── Skin: Geist Contrast ── */
+:root[data-skin='geist-contrast'] .composer-wrap {
+  background: var(--sidebar) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  backdrop-filter: saturate(180%) blur(12px);
+}
+:root[data-skin='geist-contrast'] .composer-box {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+:root[data-skin='geist-contrast'] .composer-box:focus-within {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+  outline: none !important;
+}
+
+/* ── Skin: Zeus (dark) ── */
+:root.dark[data-skin='zeus'] .composer-box {
+  background: #141414;
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+/* ── Skin: Sienna ── */
+:root[data-skin='sienna'] .composer-box {
+  border-radius: 18px;
+}
+
+/* ── Mobile composer responsive ── */
+@media (max-width: 640px) {
+  .composer-wrap {
+    padding: 8px 10px 12px !important;
+  }
+  .composer-box {
+    border-radius: 12px;
+  }
+  .composer-box textarea {
+    min-height: 40px;
+  }
+  .composer-footer {
+    padding: 6px 8px 8px !important;
+    gap: 6px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .composer-left {
+    flex: 1 1 auto;
+    width: auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    row-gap: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .composer-left > * {
+    flex-shrink: 0;
+  }
+  .composer-right {
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+  }
+}

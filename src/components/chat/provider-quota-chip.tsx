@@ -128,7 +128,7 @@ export function ProviderQuotaChip() {
       onClick={() => {
         window.location.href = '/settings?section=providers';
       }}
-      className="provider-quota-chip hidden xl:inline-flex items-center gap-1.5 h-[34px] max-w-[150px] px-2.5 rounded-full text-[11px] font-semibold leading-none whitespace-nowrap cursor-pointer transition-colors"
+      className="provider-quota-chip inline-flex items-center gap-1.5 h-[34px] max-w-[150px] px-2.5 rounded-full text-[11px] font-semibold leading-none whitespace-nowrap cursor-pointer transition-colors"
       style={{
         background: 'rgba(34,197,94,.10)',
         color: 'var(--text)',
