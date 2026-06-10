@@ -31,6 +31,7 @@ import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom } from '@/atom
 import { ModelSelectorTrigger, ModelDropdownPopover } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
+import { ReasoningChip } from '@/components/chat/reasoning-chip';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -426,6 +427,9 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
                 className={cn('w-3 h-3 text-[var(--muted)] mr-2 transition-transform', wsDropdown && 'rotate-180')}
               />
             </button>
+
+            {/* Reasoning effort chip */}
+            <ReasoningChip />
 
             {/* Model chip - trigger only, dropdown is at footer level */}
             <div ref={modelChipRef as unknown as React.RefObject<HTMLDivElement>}>
