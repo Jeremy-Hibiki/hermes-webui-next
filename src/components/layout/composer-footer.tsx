@@ -324,10 +324,7 @@ export function ComposerFooter({ onSend, busy, onCancel, sendKey = 'enter', sess
 
         {/* Composer footer: chips row */}
         <div className="flex items-center justify-between gap-2.5 px-2.5 pt-1.5 pb-2.5">
-          <div
-            className="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-            style={{ scrollbarWidth: 'none' }}
-          >
+          <div className="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {/* Attach button */}
             <button
               aria-label="Attach file"
