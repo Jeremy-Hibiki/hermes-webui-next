@@ -144,14 +144,17 @@ export function Sidebar() {
 
   const handleNewChat = async () => {
     try {
-      const res = await apiPost<{ session: Session }>('/session/new', {});
-      const session = res.session ?? res;
-      setActive(session as Session);
+      const res = await apiPost<Record<string, unknown>>('/session/new', {});
+      const session = (res.session ?? res) as Record<string, unknown>;
+      const sid = session.session_id as string;
+      if (!sid) throw new Error('No session_id returned');
+      setActive(session as unknown as Session);
       setMessages([]);
-      router.push(`/chat?sid=${(session as Session).session_id}`);
-      await mutate();
+      router.push(`/chat?sid=${sid}`);
+      void mutate();
     } catch (err) {
       console.error('Failed to create session:', err);
+      alert(`Failed to create session: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
