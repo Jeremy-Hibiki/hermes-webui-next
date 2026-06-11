@@ -19,6 +19,8 @@ import {
   Copy,
   RefreshCw,
   Files,
+  EyeOff,
+  Square,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,6 +43,8 @@ interface SessionItemProps {
   onDelete?: (sessionId: string) => void;
   onDuplicate?: (sessionId: string) => void;
   onRegenerateTitle?: (sessionId: string) => void;
+  onHide?: (sessionId: string) => void;
+  onStop?: (sessionId: string) => void;
   highlightQuery?: string;
   projectColor?: string;
   matchType?: 'title' | 'content' | 'id';
@@ -60,6 +64,8 @@ export function SessionItem({
   onDelete,
   onDuplicate,
   onRegenerateTitle,
+  onHide,
+  onStop,
   highlightQuery,
   projectColor,
   matchType,
@@ -101,6 +107,8 @@ export function SessionItem({
   };
   const handleDuplicate = () => onDuplicate?.(session.session_id);
   const handleRegenerateTitle = () => onRegenerateTitle?.(session.session_id);
+  const handleHide = () => onHide?.(session.session_id);
+  const handleStop = () => onStop?.(session.session_id);
   const handleCopyLink = () => {
     const url = `${window.location.origin}/chat?sid=${session.session_id}`;
     navigator.clipboard.writeText(url).catch(() => {});
@@ -139,17 +147,16 @@ export function SessionItem({
       className="flex-1 bg-[var(--surface)] border border-[var(--accent)] rounded-md text-[13px] text-[var(--text)] px-2 py-0.5 outline-none min-w-0 shadow-[0_0_0_2px_var(--accent-bg-strong)]"
     />
   ) : (
-    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--text)] select-none">
+    <span className={cn('flex-1 overflow-hidden text-ellipsis whitespace-nowrap select-none', isStreaming ? 'text-[var(--accent)]' : 'text-[var(--text)]')}>
       {highlightedTitle}
     </span>
   );
 
   const metaLine =
-    (session.message_count > 0 || relativeTime || matchType === 'id') && !renaming ? (
+    (session.message_count > 0 || matchType === 'id') && !renaming ? (
       <div className="text-[11px] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-2">
         {matchType === 'id' && <span className="text-[var(--accent)] font-medium">ID match</span>}
         {session.message_count > 0 && <span>{session.message_count} messages</span>}
-        {relativeTime && <span>{relativeTime}</span>}
       </div>
     ) : null;
 
@@ -186,9 +193,23 @@ export function SessionItem({
     const src = session.raw_source || session.session_source;
     const tag = session.source_tag;
     if (src === 'cli' || session.is_cli_session || tag === 'claude-code' || tag === 'codex')
-      return <TerminalIcon className="w-3 h-3 shrink-0 text-orange-400" />;
-    if (src === 'cron' || tag === 'cron') return <Zap className="w-3 h-3 shrink-0 text-blue-400" />;
-    if (src === 'api' || tag === 'api') return <Globe className="w-3 h-3 shrink-0 text-purple-400" />;
+      return (
+        <span className="shrink-0 text-[9px] leading-none font-semibold uppercase px-1.5 py-[1px] rounded bg-orange-500/15 text-orange-500">
+          CLI
+        </span>
+      );
+    if (src === 'cron' || tag === 'cron')
+      return (
+        <span className="shrink-0 text-[9px] leading-none font-semibold uppercase px-1.5 py-[1px] rounded bg-blue-500/15 text-blue-500">
+          CRON
+        </span>
+      );
+    if (src === 'api' || tag === 'api')
+      return (
+        <span className="shrink-0 text-[9px] leading-none font-semibold uppercase px-1.5 py-[1px] rounded bg-purple-500/15 text-purple-500">
+          API
+        </span>
+      );
     return null;
   })();
 
@@ -239,13 +260,24 @@ export function SessionItem({
       : isUnread || needsAttention
         ? 'text-[var(--text)] font-medium hover:bg-[var(--hover-bg)]'
         : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
+    session.archived && 'opacity-50 italic',
+    needsAttention && !isActive && attentionKind === 'approval' && 'shadow-[inset_3px_0_0_var(--error)]',
+    needsAttention && !isActive && attentionKind === 'clarify' && 'shadow-[inset_3px_0_0_var(--warning)]',
   );
+
+  // Hide timestamp when indicators are showing (streaming/unread/attention)
+  const hideTime = isStreaming || isUnread || needsAttention;
 
   const innerContent = (
     <div className="flex-1 min-w-0 flex flex-col gap-0.5 overflow-hidden">
       <div className="flex items-center gap-1.5 min-w-0">
         {pinIcon}
         {titleRow}
+        {!renaming && !hideTime && relativeTime && (
+          <span className="session-time text-[10px] text-[var(--muted)] shrink-0 ml-auto group-hover:opacity-0 transition-opacity">
+            {relativeTime}
+          </span>
+        )}
         {indicators}
       </div>
       {metaLine}
@@ -261,11 +293,18 @@ export function SessionItem({
     );
   }
 
+  const isExternalSession = session.is_cli_session || session.session_source === 'cli' || session.source_tag === 'claude-code' || session.source_tag === 'codex';
+  const isSessionStreaming = !!session.active_stream_id || !!session.is_streaming;
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={() => !renaming && onSelect(session.session_id)}
+      onDoubleClick={() => !renaming && startRename()}
+      onContextMenu={(e) => {
+        // Right-click opens dropdown at cursor (handled by DropdownMenu)
+      }}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !renaming) {
           e.preventDefault();
@@ -286,6 +325,12 @@ export function SessionItem({
           <MoreVertical className="w-4 h-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="right" sideOffset={4}>
+          {isSessionStreaming && onStop && (
+            <DropdownMenuItem onClick={handleStop}>
+              <Square className="size-4" />
+              Stop Response
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={startRename}>
             <Pencil className="size-4" />
             Rename
@@ -316,6 +361,12 @@ export function SessionItem({
               </>
             )}
           </DropdownMenuItem>
+          {isExternalSession && onHide && (
+            <DropdownMenuItem onClick={handleHide}>
+              <EyeOff className="size-4" />
+              Hide from sidebar
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleDuplicate}>
             <Files className="size-4" />

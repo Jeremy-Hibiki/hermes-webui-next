@@ -166,8 +166,35 @@ export function Sidebar() {
     } catch {}
   }, []);
 
+  // Check for a restorable draft session (empty, matching profile, with composer draft)
+  const findDraftSession = useCallback((): Session | null => {
+    const activeProfile = profile || 'default';
+    for (const s of sessions) {
+      if (!s.session_id || s.archived || s.pinned) continue;
+      if (Number(s.message_count || 0) !== 0) continue;
+      if (s.active_stream_id || s.pending_user_message || s.worktree_path) continue;
+      const title = s.title || 'Untitled';
+      if (title !== 'Untitled' && title !== 'New Chat') continue;
+      const sProfile = s.profile || 'default';
+      if (sProfile !== activeProfile) continue;
+      const draft = s.composer_draft as Record<string, unknown> | undefined;
+      const text = draft && typeof draft.text === 'string' ? draft.text : '';
+      const files = Array.isArray(draft?.files) ? draft.files : [];
+      if (text || files.length) return s;
+    }
+    return null;
+  }, [sessions, profile]);
+
   const handleNewChat = async () => {
     try {
+      // Reuse existing empty draft session if available
+      const draft = findDraftSession();
+      if (draft) {
+        setActive(draft);
+        setMessages([]);
+        router.push(`/chat?sid=${draft.session_id}`);
+        return;
+      }
       const body: Record<string, unknown> = {
         profile: profile || 'default',
       };
@@ -246,6 +273,24 @@ export function Sidebar() {
     }
   };
 
+  const handleHide = async (sessionId: string) => {
+    try {
+      await apiPost('/session/archive', { session_id: sessionId });
+      await mutate();
+    } catch (err) {
+      console.error('Failed to hide session:', err);
+    }
+  };
+
+  const handleStop = async (sessionId: string) => {
+    try {
+      await apiPost('/stream/cancel', { session_id: sessionId });
+      await mutate();
+    } catch (err) {
+      console.error('Failed to stop session:', err);
+    }
+  };
+
   const handleOpenSearch = useCallback(() => {
     setSearchOpen(true);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -282,6 +327,8 @@ export function Sidebar() {
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onRegenerateTitle={handleRegenerateTitle}
+        onHide={handleHide}
+        onStop={handleStop}
         highlightQuery={opts?.highlight}
         matchType={meta?.matchType}
         preview={meta?.preview}
