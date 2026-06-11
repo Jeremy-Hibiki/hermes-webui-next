@@ -440,7 +440,7 @@ export function MessageBubble({
           {isAssistant && questionJumpIdx != null && onJumpToQuestion && !message._isStreaming && (
             <button
               onClick={() => onJumpToQuestion(questionJumpIdx)}
-              className="msg-question-jump-btn ml-auto inline-flex items-center gap-1 px-2 py-[1px] rounded-full border border-[var(--border)] text-[var(--muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] hover:border-[var(--accent-bg-strong,var(--accent-bg))] transition-colors text-[10px]"
+              className="msg-question-jump-btn ml-auto inline-flex items-center gap-1 px-2 py-[3px] rounded-full bg-[var(--surface-subtle,var(--surface))] border border-[var(--border-subtle,var(--border))] text-[var(--muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] hover:border-[var(--accent-bg-strong,var(--accent-bg))] transition-colors text-[11px]"
               title="Jump to the question for this response"
             >
               <span aria-hidden="true">↑</span>

@@ -509,6 +509,7 @@ export function useChatStream(sessionId: string) {
               setStartedAt(null);
               setLiveTps(null);
               setLiveRunTokenCount(0);
+              setComposerStatus('');
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
@@ -522,6 +523,7 @@ export function useChatStream(sessionId: string) {
                 duration?: number;
                 tps?: number;
                 effective_model?: string;
+                effective_model_provider?: string;
                 gateway_routing?: string;
               };
               // Merge usage with session fallback for context indicator
@@ -557,7 +559,17 @@ export function useChatStream(sessionId: string) {
                 );
               });
               playNotificationSound();
-              sendBrowserNotification('Response complete', activeSession?.title || 'Hermes');
+              sendBrowserNotification('Response complete', assistantContent ? assistantContent.slice(0, 100) : 'Task finished');
+              // Update session model if effective_model returned
+              if (d.effective_model) {
+                setActiveSession((prev) => {
+                  if (!prev) return prev;
+                  const updated = { ...prev };
+                  updated.model = d.effective_model!;
+                  if (d.effective_model_provider) updated.model_provider = d.effective_model_provider;
+                  return updated;
+                });
+              }
               setBusy(false);
               setStreamId(null);
               client.close();
@@ -565,6 +577,7 @@ export function useChatStream(sessionId: string) {
               setStartedAt(null);
               setLiveTps(null);
               setLiveRunTokenCount(0);
+              setComposerStatus('');
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
@@ -586,6 +599,7 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setComposerStatus('');
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
                 next.delete(sessionId);
@@ -606,6 +620,7 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setComposerStatus('');
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
                 next.delete(sessionId);
@@ -619,6 +634,7 @@ export function useChatStream(sessionId: string) {
               setCompression(null);
               setStartedAt(null);
               setLiveTps(null);
+              setComposerStatus('');
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
                 next.delete(sessionId);

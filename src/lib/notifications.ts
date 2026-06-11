@@ -2,10 +2,9 @@
 
 let _soundEnabled = false;
 let _notificationsEnabled = false;
-let _lastAttentionKey = '';
-let _lastAttentionTime = 0;
+const _attentionSoundSeenKeys = new Map<string, number>();
 
-const ATTENTION_COOLDOWN = 900;
+const _ATTENTION_COOLDOWN = 900;
 const ATTENTION_DEDUP_MS = 5 * 60 * 1000;
 
 export function setSoundEnabled(enabled: boolean) {
@@ -40,19 +39,23 @@ export function isNotificationsEnabled(): boolean {
   return _notificationsEnabled;
 }
 
-function playTone(startFreq: number, endFreq: number, duration: number, volume = 0.15) {
+function playTone(startFreq: number, endFreq: number, duration: number, volume = 0.3) {
   try {
-    const ctx = new AudioContext();
+    const ACtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!ACtor) return;
+    const ctx = new ACtor();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    osc.type = 'sine';
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + duration);
+    osc.frequency.setValueAtTime(endFreq, ctx.currentTime + 0.1);
     gain.gain.setValueAtTime(volume, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + duration);
+    osc.onended = () => ctx.close();
   } catch {}
 }
 
@@ -66,17 +69,20 @@ export function playNotificationSound() {
 export function playAttentionSound(key: string) {
   if (!isSoundEnabled()) return;
   const now = Date.now();
-  // Global cooldown
-  if (now - _lastAttentionTime < ATTENTION_COOLDOWN) return;
+  // Prune old entries
+  for (const [k, t] of _attentionSoundSeenKeys) {
+    if (now - t > 300000) _attentionSoundSeenKeys.delete(k);
+  }
   // Per-key dedup
-  if (key === _lastAttentionKey && now - _lastAttentionTime < ATTENTION_DEDUP_MS) return;
-  _lastAttentionKey = key;
-  _lastAttentionTime = now;
+  const lastTime = _attentionSoundSeenKeys.get(key);
+  if (lastTime && now - lastTime < ATTENTION_DEDUP_MS) return;
+  _attentionSoundSeenKeys.set(key, now);
   playTone(880, 660, 0.24);
 }
 
 export async function sendBrowserNotification(title: string, body: string) {
   if (!isNotificationsEnabled()) return;
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (!document.hidden) return;
   try {
     if (Notification.permission === 'default') {

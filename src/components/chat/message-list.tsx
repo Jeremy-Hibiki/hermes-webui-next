@@ -5,6 +5,7 @@ import { useAtom } from 'jotai';
 import { messagesAtom, busyAtom, composerAppendAtom } from '@/atoms/chat';
 import { MessageBubble } from './message-bubble';
 import { Reply } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 
 interface MessageListProps {
   onEdit?: (messageId: string, newContent: string) => void;
@@ -77,7 +78,7 @@ export function MessageList({
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
       // Brief highlight pulse
       el.classList.add('msg-question-highlight');
-      setTimeout(() => el.classList.remove('msg-question-highlight'), 1500);
+      setTimeout(() => el.classList.remove('msg-question-highlight'), 1800);
     }
   }, []);
 
@@ -124,6 +125,7 @@ export function MessageList({
     setComposerAppend(quoted + '\n');
     setSelectionBtn(null);
     window.getSelection()?.removeAllRanges();
+    toast('Selected text added to composer');
   }, [selectionBtn, setComposerAppend]);
 
   return (
@@ -162,7 +164,7 @@ export function MessageList({
       {selectionBtn && (
         <button
           onClick={handleReplyWithSelection}
-          className="selected-text-reply-btn fixed z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[11px] text-[var(--text)] shadow-lg hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-all pointer-events-auto"
+          className="selected-text-reply-btn fixed z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface)] border-2 border-[var(--accent)] text-[12px] font-bold text-[var(--text)] shadow-[0_8px_24px_rgba(0,0,0,.26),0_0_0_1px_var(--surface)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-all pointer-events-auto select-none"
           style={{
             left: `${selectionBtn.x}px`,
             top: `${selectionBtn.y}px`,

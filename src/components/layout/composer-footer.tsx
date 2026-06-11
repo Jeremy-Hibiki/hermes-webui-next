@@ -26,7 +26,7 @@ import {
 } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
-import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom, composerAppendAtom } from '@/atoms/chat';
+import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom, composerAppendAtom, composerStatusAtom } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
@@ -155,6 +155,7 @@ export function ComposerFooter({
   const wsDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [composerAppend, setComposerAppend] = useAtom(composerAppendAtom);
+  const [composerStatus] = useAtom(composerStatusAtom);
 
   // Consume text appended from external sources (e.g. "Reply with selection")
   useEffect(() => {
@@ -1048,9 +1049,9 @@ export function ComposerFooter({
           {/* Right side: status, context, bg badge, send/stop */}
           <div className="composer-right flex items-center gap-2 shrink-0">
             {/* Composer status text */}
-            {busy && (
+            {(busy || composerStatus) && (
               <span id="composerStatus" className="hidden sm:inline text-[11px] text-[var(--muted)] mr-1">
-                {t18n('composer.status_sending')}
+                {composerStatus || t18n('composer.status_sending')}
               </span>
             )}
 
