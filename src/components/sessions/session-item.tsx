@@ -42,6 +42,8 @@ interface SessionItemProps {
   onRegenerateTitle?: (sessionId: string) => void;
   highlightQuery?: string;
   projectColor?: string;
+  matchType?: 'title' | 'content' | 'id';
+  preview?: string;
 }
 
 export function SessionItem({
@@ -58,6 +60,8 @@ export function SessionItem({
   onRegenerateTitle,
   highlightQuery,
   projectColor,
+  matchType,
+  preview,
 }: SessionItemProps) {
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(session.title || '');
@@ -139,10 +143,34 @@ export function SessionItem({
   );
 
   const metaLine =
-    (session.message_count > 0 || relativeTime) && !renaming ? (
+    (session.message_count > 0 || relativeTime || matchType === 'id') && !renaming ? (
       <div className="text-[11px] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-2">
+        {matchType === 'id' && <span className="text-[var(--accent)] font-medium">ID match</span>}
         {session.message_count > 0 && <span>{session.message_count} messages</span>}
         {relativeTime && <span>{relativeTime}</span>}
+      </div>
+    ) : null;
+
+  const previewLine =
+    matchType === 'content' && preview && !renaming ? (
+      <div className="text-[11px] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap">
+        {highlightQuery && preview.toLowerCase().includes(highlightQuery.toLowerCase())
+          ? (() => {
+              const text = preview;
+              const ql = highlightQuery.toLowerCase();
+              const idx = text.toLowerCase().indexOf(ql);
+              if (idx === -1) return text;
+              return (
+                <>
+                  {text.slice(0, idx)}
+                  <mark className="bg-[var(--accent-bg-strong,var(--accent-bg))] text-[var(--accent-text)] rounded-[3px] px-[1px]">
+                    {text.slice(idx, idx + highlightQuery.length)}
+                  </mark>
+                  {text.slice(idx + highlightQuery.length)}
+                </>
+              );
+            })()
+          : preview}
       </div>
     ) : null;
 
@@ -192,6 +220,7 @@ export function SessionItem({
         {indicators}
       </div>
       {metaLine}
+      {previewLine}
     </div>
   );
 

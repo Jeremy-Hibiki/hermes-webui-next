@@ -21,7 +21,7 @@ import { useMobileSwipe } from '@/hooks/use-mobile-swipe';
 import { apiPost, fetcher } from '@/lib/api-client';
 import { API_BASE } from '@/lib/constants';
 import type { Message } from '@/types';
-import { extractTextContent } from '@/types/message';
+import { normalizeSessionMessages } from '@/lib/session-messages';
 
 type AuthState = 'loading' | 'unauthenticated' | 'authenticated' | 'no_auth';
 
@@ -101,11 +101,16 @@ export function AppShell({ panel }: AppShellProps) {
     let cancelled = false;
     (async () => {
       try {
-        const resp = await fetcher<Record<string, unknown>>(`/session?session_id=${sid}&messages=1`);
+        const INITIAL_MSG_LIMIT = 30;
+        const resp = await fetcher<Record<string, unknown>>(
+          `/session?session_id=${sid}&messages=1&msg_limit=${INITIAL_MSG_LIMIT}`,
+        );
         if (cancelled) return;
 
         // Backend wraps session data in {"session": {...}}
         const data = (resp.session ?? resp) as Record<string, unknown>;
+        const _messagesTruncated = !!data._messages_truncated;
+        const _messagesOffset = (data._messages_offset as number) || 0;
 
         setActiveSession({
           session_id: data.session_id as string,
@@ -128,6 +133,8 @@ export function AppShell({ panel }: AppShellProps) {
           context_length: (data.context_length as number) || undefined,
           threshold_tokens: (data.threshold_tokens as number) || undefined,
           last_prompt_tokens: (data.last_prompt_tokens as number) ?? undefined,
+          _messagesTruncated,
+          _messagesOffset,
         } as any);
 
         setComposerContext({
@@ -145,57 +152,7 @@ export function AppShell({ panel }: AppShellProps) {
         const raw = Array.isArray(data.messages) ? (data.messages as Message[]) : [];
         const sessionToolCalls = Array.isArray(data.tool_calls) ? (data.tool_calls as any[]) : [];
 
-        const visible = raw
-          .filter((m) => {
-            if (!m || typeof m !== 'object') return false;
-            const role = m.role;
-            if (role === 'tool' || role === 'system') return false;
-            const text = extractTextContent(m.content);
-            return (
-              text.length > 0 ||
-              (Array.isArray(m.content) && m.content.length > 0) ||
-              (m.tool_calls && m.tool_calls.length > 0)
-            );
-          })
-          .map((m, i) => {
-            const msg = { ...m, id: m.id || `msg-${i}` };
-
-            // Normalize OpenAI-format tool_calls: {id, function:{name,arguments}}
-            if (Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0 && (msg.tool_calls as any[])[0]?.function) {
-              msg.tool_calls = (msg.tool_calls as any[]).map((tc: any) => ({
-                id: tc.id,
-                name: tc.function?.name || tc.name,
-                arguments:
-                  typeof tc.function?.arguments === 'string'
-                    ? tc.function.arguments
-                    : JSON.stringify(tc.function?.arguments ?? {}),
-              }));
-            }
-
-            // Inject session-level tool_calls onto matching assistant messages
-            if (
-              msg.role === 'assistant' &&
-              (!msg.tool_calls || msg.tool_calls.length === 0) &&
-              sessionToolCalls.length > 0
-            ) {
-              const matching = sessionToolCalls.filter((tc: any) => tc.assistant_msg_idx === i);
-              if (matching.length > 0) {
-                msg.tool_calls = matching.map((tc: any) => ({
-                  tid: tc.tid,
-                  id: tc.tid || tc.id,
-                  name: tc.name,
-                  args: tc.args,
-                  snippet: tc.snippet,
-                  preview: tc.preview,
-                  done: tc.done,
-                  is_error: tc.is_error,
-                  duration: tc.duration,
-                }));
-              }
-            }
-
-            return msg;
-          });
+        const visible = normalizeSessionMessages(raw, sessionToolCalls);
         setMessages(visible);
       } catch (err) {
         console.error('Failed to load session from URL:', err);

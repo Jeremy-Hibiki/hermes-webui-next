@@ -2,9 +2,11 @@
 
 import { useMemo, useEffect, useRef } from 'react';
 import useSWR from 'swr';
+import { useAtom } from 'jotai';
 import { fetcher } from '@/lib/api-client';
 import { bucketSessionsByDate, type DateBucket } from '@/lib/date-buckets';
 import { API_BASE } from '@/lib/constants';
+import { optimisticSessionsAtom } from '@/atoms/session';
 import type { Session, SessionsResponse } from '@/types';
 
 interface SessionGroup {
@@ -18,18 +20,27 @@ export function useSessions() {
   const { data, error, isLoading, mutate } = useSWR<SessionsResponse>('/sessions', fetcher, {
     revalidateOnFocus: false,
   });
+  const [optimisticMap] = useAtom(optimisticSessionsAtom);
 
-  // Normalize: ensure every session has both session_id and id
+  // Normalize: ensure every session has both session_id and id,
+  // and merge optimistic first-turn rows so the sidebar reflects
+  // sends immediately before the server list refreshes.
   const normalizedData = useMemo(() => {
     if (!data) return data;
-    return {
-      ...data,
-      sessions: data.sessions.map((s) => ({
-        ...s,
-        id: s.session_id,
-      })),
-    };
-  }, [data]);
+    const sessions = data.sessions.map((s) => ({
+      ...s,
+      id: s.session_id,
+    }));
+    for (const [sid, optimistic] of optimisticMap) {
+      const idx = sessions.findIndex((s) => s.session_id === sid);
+      if (idx >= 0) {
+        sessions[idx] = { ...sessions[idx], ...optimistic, id: sid };
+      } else {
+        sessions.unshift({ ...optimistic, session_id: sid, id: sid });
+      }
+    }
+    return { ...data, sessions };
+  }, [data, optimisticMap]);
 
   const activeSessions = useMemo(() => (normalizedData?.sessions ?? []).filter((s) => !s.archived), [normalizedData]);
 

@@ -58,6 +58,9 @@ export interface Session {
   gateway_routing_history?: unknown[];
   // Attention info (from /sessions list)
   attention?: Record<string, unknown>;
+  // Pagination state (from /session?messages=1 with msg_limit)
+  _messagesTruncated?: boolean;
+  _messagesOffset?: number;
 }
 
 export interface Project {

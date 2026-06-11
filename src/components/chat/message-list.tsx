@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAtom } from 'jotai';
 import { messagesAtom, busyAtom } from '@/atoms/chat';
 import { MessageBubble } from './message-bubble';
@@ -10,16 +10,22 @@ interface MessageListProps {
   onRegenerate?: (messageId: string) => void;
   onFork?: (messageId: string) => void;
   onUndoExchange?: () => void;
+  hasOlderMessages?: boolean;
+  onLoadOlder?: () => void;
+  isLoadingOlder?: boolean;
 }
 
-export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: MessageListProps) {
+export function MessageList({
+  onEdit,
+  onRegenerate,
+  onFork,
+  onUndoExchange,
+  hasOlderMessages,
+  onLoadOlder,
+  isLoadingOlder,
+}: MessageListProps) {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const lastAssistantIdx = [...messages]
     .map((m, i) => (m.role === 'assistant' ? i : -1))
@@ -50,6 +56,15 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
   return (
     <div className="flex flex-col">
       <div className="messages-inner mx-auto w-full px-6 pt-5 pb-8 flex flex-col">
+        {hasOlderMessages && (
+          <button
+            onClick={onLoadOlder}
+            disabled={isLoadingOlder}
+            className="self-center text-[11px] text-[var(--muted)] hover:text-[var(--text)] px-3 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--hover-bg)] transition-colors mb-3 disabled:opacity-50"
+          >
+            {isLoadingOlder ? 'Loading…' : 'Load earlier messages'}
+          </button>
+        )}
         {messages.map((msg, idx) => (
           <MessageBubble
             key={msg.id ?? idx}
@@ -65,7 +80,6 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
             busy={busy}
           />
         ))}
-        <div ref={bottomRef} />
       </div>
     </div>
   );

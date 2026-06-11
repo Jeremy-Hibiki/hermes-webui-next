@@ -30,7 +30,7 @@ export function Sidebar() {
   const { t: t18n } = useTranslation();
   const router = useRouter();
   const { sessions, projects, isLoading, mutate } = useSessions();
-  const { query, setQuery, results: searchResults, isSearching, clearSearch } = useSessionSearch(sessions);
+  const { query, setQuery, results: searchResults, resultMeta, isSearching, clearSearch } = useSessionSearch(sessions);
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isSearchingActive = query.trim().length > 0;
@@ -244,23 +244,28 @@ export function Sidebar() {
   );
 
   const hasProjects = projects.length > 0 || filteredSessions.some((s) => !s.project_id);
-  const renderSessionItem = (session: Session, opts?: { highlight?: string }) => (
-    <SessionItem
-      key={session.session_id}
-      session={session}
-      isActive={active?.session_id === session.session_id}
-      isStreaming={!!session.is_streaming || (active?.session_id === session.session_id && busy)}
-      onSelect={handleSelect}
-      onRename={handleRename}
-      onPin={handlePin}
-      onArchive={handleArchive}
-      onDelete={handleDelete}
-      onDuplicate={handleDuplicate}
-      onRegenerateTitle={handleRegenerateTitle}
-      highlightQuery={opts?.highlight}
-      projectColor={session.project_id ? projects.find((p) => p.project_id === session.project_id)?.color : undefined}
-    />
-  );
+  const renderSessionItem = (session: Session, opts?: { highlight?: string }) => {
+    const meta = opts?.highlight ? resultMeta.get(session.session_id) : undefined;
+    return (
+      <SessionItem
+        key={session.session_id}
+        session={session}
+        isActive={active?.session_id === session.session_id}
+        isStreaming={!!session.is_streaming || (active?.session_id === session.session_id && busy)}
+        onSelect={handleSelect}
+        onRename={handleRename}
+        onPin={handlePin}
+        onArchive={handleArchive}
+        onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
+        onRegenerateTitle={handleRegenerateTitle}
+        highlightQuery={opts?.highlight}
+        matchType={meta?.matchType}
+        preview={meta?.preview}
+        projectColor={session.project_id ? projects.find((p) => p.project_id === session.project_id)?.color : undefined}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col h-full">

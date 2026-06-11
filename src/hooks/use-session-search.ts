@@ -15,6 +15,11 @@ interface SearchResponse {
   sessions: SearchHit[];
 }
 
+export interface SearchResultMeta {
+  matchType: 'title' | 'content' | 'id';
+  preview?: string;
+}
+
 export function useSessionSearch(allSessions: Session[]) {
   const [query, setQueryImmediate] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,31 +49,51 @@ export function useSessionSearch(allSessions: Session[]) {
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  const results = useMemo(() => {
+  const { results, resultMeta } = useMemo(() => {
     const q = query.trim();
-    if (!q) return allSessions;
+    if (!q) return { results: allSessions, resultMeta: new Map<string, SearchResultMeta>() };
 
     const ql = q.toLowerCase();
+    const meta = new Map<string, SearchResultMeta>();
     const titleMatches = allSessions.filter((s) => s.title && s.title.toLowerCase().includes(ql));
     const titleMatchIds = new Set(titleMatches.map((s) => s.session_id));
+    for (const s of titleMatches) {
+      meta.set(s.session_id, { matchType: 'title' });
+    }
 
-    if (!searchData?.sessions?.length) return titleMatches;
+    // Direct session-id match (exact or prefix)
+    const idMatch = allSessions.find((s) => s.session_id === q || s.session_id.startsWith(q));
+    if (idMatch && !titleMatchIds.has(idMatch.session_id)) {
+      meta.set(idMatch.session_id, { matchType: 'id' });
+    }
+
+    if (!searchData?.sessions?.length) {
+      const out = idMatch && !titleMatchIds.has(idMatch.session_id) ? [idMatch, ...titleMatches] : titleMatches;
+      return { results: out, resultMeta: meta };
+    }
 
     const sessionMap = new Map(allSessions.map((s) => [s.session_id, s]));
     const contentOnly: Session[] = [];
     for (const hit of searchData.sessions) {
       if (hit.match_type !== 'content' || titleMatchIds.has(hit.session_id)) continue;
       const session = sessionMap.get(hit.session_id);
-      if (session) contentOnly.push(session);
+      if (!session) continue;
+      contentOnly.push(session);
+      meta.set(hit.session_id, { matchType: 'content', preview: hit.match_preview });
     }
 
-    return [...titleMatches, ...contentOnly];
+    const out =
+      idMatch && !titleMatchIds.has(idMatch.session_id)
+        ? [idMatch, ...titleMatches, ...contentOnly]
+        : [...titleMatches, ...contentOnly];
+    return { results: out, resultMeta: meta };
   }, [query, allSessions, searchData]);
 
   return {
     query,
     setQuery,
     results,
+    resultMeta,
     isSearching: isSearching && !!debouncedQuery,
     clearSearch,
   };

@@ -125,6 +125,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const voiceControlsRef = useRef<VoiceControlsHandle>(null);
   const micPendingSendRef = useRef(false);
   const micActiveRef = useRef(false);
+  const primaryActionInProgressRef = useRef(false);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -318,139 +319,162 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (busy) return;
     onSend(trimmed, _uploadedPaths.length > 0 ? _uploadedPaths : undefined);
     setText('');
     setPendingFiles([]);
     setUploadedPaths([]);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
-  }, [text, busy, onSend, setPendingFiles, _uploadedPaths]);
+  }, [text, onSend, setPendingFiles, _uploadedPaths]);
 
   const handlePrimaryAction = useCallback(async () => {
-    const trimmed = text.trim();
+    if (primaryActionInProgressRef.current) return;
+    primaryActionInProgressRef.current = true;
+    try {
+      const trimmed = text.trim();
 
-    // Mic pending-send guard: if dictating, stop mic and defer send until it ends
-    if (micActiveRef.current) {
-      micPendingSendRef.current = true;
-      voiceControlsRef.current?.stopDictation();
-      return;
-    }
-
-    // Slash-command interception (both busy and non-busy)
-    const cmd = parseCommand(trimmed);
-    if (cmd && (cmd.name === 'terminal' || cmd.name === 'goal')) {
-      setText('');
-      setPendingFiles([]);
-      setUploadedPaths([]);
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
-      if (cmd.name === 'terminal') {
-        toast('Terminal — use the workspace panel toggle', 'info');
-      } else if (cmd.name === 'goal' && sessionId) {
-        try {
-          const res = await apiPost<{ goal_text?: string; goal_status?: string; error?: string }>('/api/goal', {
-            session_id: sessionId,
-            command: cmd.args[0] || 'status',
-            text: cmd.args.slice(1).join(' ') || undefined,
-          });
-          if (res.error) {
-            toast(res.error, 'error');
-          } else {
-            if (res.goal_text) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: `goal-${Date.now()}`,
-                  role: 'assistant',
-                  content: `**Goal:** ${res.goal_text}`,
-                  timestamp: new Date().toISOString(),
-                },
-              ]);
-            }
-            if (res.goal_status) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: `goal-status-${Date.now()}`,
-                  role: 'assistant',
-                  content: `**Goal status:** ${res.goal_status}`,
-                  timestamp: new Date().toISOString(),
-                },
-              ]);
-            }
-          }
-        } catch (err) {
-          toast(err instanceof Error ? err.message : 'Goal request failed', 'error');
-        }
+      // Mic pending-send guard: if dictating, stop mic and defer send until it ends
+      if (micActiveRef.current) {
+        micPendingSendRef.current = true;
+        voiceControlsRef.current?.stopDictation();
+        return;
       }
-      return;
-    }
 
-    if (action === 'disabled') return;
-    if (action === 'stop') {
-      onCancel?.();
-      return;
-    }
-    if (action === 'send') {
-      handleSend();
-      return;
-    }
-    if (!sessionId) return;
-    if (action === 'steer') {
-      if (onSteer) {
-        const accepted = await onSteer(trimmed);
-        if (accepted) {
-          setText('');
-          setPendingFiles([]);
-          if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      // Slash-command interception (both busy and non-busy)
+      const cmd = parseCommand(trimmed);
+      if (cmd && (cmd.name === 'terminal' || cmd.name === 'goal')) {
+        setText('');
+        setPendingFiles([]);
+        setUploadedPaths([]);
+        if (textareaRef.current) textareaRef.current.style.height = 'auto';
+        if (cmd.name === 'terminal') {
+          toast('Terminal — use the workspace panel toggle', 'info');
+        } else if (cmd.name === 'goal' && sessionId) {
+          try {
+            const res = await apiPost<{ goal_text?: string; goal_status?: string; error?: string }>('/api/goal', {
+              session_id: sessionId,
+              command: cmd.args[0] || 'status',
+              text: cmd.args.slice(1).join(' ') || undefined,
+            });
+            if (res.error) {
+              toast(res.error, 'error');
+            } else {
+              if (res.goal_text) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `goal-${Date.now()}`,
+                    role: 'assistant',
+                    content: `**Goal:** ${res.goal_text}`,
+                    timestamp: new Date().toISOString(),
+                  },
+                ]);
+              }
+              if (res.goal_status) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `goal-status-${Date.now()}`,
+                    role: 'assistant',
+                    content: `**Goal status:** ${res.goal_status}`,
+                    timestamp: new Date().toISOString(),
+                  },
+                ]);
+              }
+            }
+          } catch (err) {
+            toast(err instanceof Error ? err.message : 'Goal request failed', 'error');
+          }
+        }
+        return;
+      }
+
+      if (action === 'disabled') return;
+      if (action === 'stop') {
+        onCancel?.();
+        return;
+      }
+      if (action === 'send') {
+        // Guard against race where busy flipped after action was computed
+        if (busy) {
+          if (sessionId) {
+            queueSessionMessage(sessionId, {
+              text: trimmed,
+              files: pendingFiles,
+              attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+              profile: profile || 'default',
+            });
+            setText('');
+            setPendingFiles([]);
+            setUploadedPaths([]);
+            setQueueCount(getSessionQueue(sessionId).length);
+            if (textareaRef.current) textareaRef.current.style.height = 'auto';
+          }
           return;
         }
+        handleSend();
+        return;
       }
-      // Fall back to interrupt+queue
-      queueSessionMessage(sessionId, {
-        text: trimmed,
-        files: pendingFiles,
-        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
-        profile: profile || 'default',
-      });
-      setText('');
-      setPendingFiles([]);
-      setUploadedPaths([]);
-      setQueueCount(getSessionQueue(sessionId).length);
-      onCancel?.();
-      return;
-    }
-    if (action === 'interrupt') {
-      queueSessionMessage(sessionId, {
-        text: trimmed,
-        files: pendingFiles,
-        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
-        profile: profile || 'default',
-      });
-      setText('');
-      setPendingFiles([]);
-      setUploadedPaths([]);
-      setQueueCount(getSessionQueue(sessionId).length);
-      onCancel?.();
-      return;
-    }
-    if (action === 'queue') {
-      queueSessionMessage(sessionId, {
-        text: trimmed,
-        files: pendingFiles,
-        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
-        profile: profile || 'default',
-      });
-      setText('');
-      setPendingFiles([]);
-      setUploadedPaths([]);
-      setQueueCount(getSessionQueue(sessionId).length);
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
-      return;
+      if (!sessionId) return;
+      if (action === 'steer') {
+        if (onSteer) {
+          const accepted = await onSteer(trimmed);
+          if (accepted) {
+            setText('');
+            setPendingFiles([]);
+            if (textareaRef.current) textareaRef.current.style.height = 'auto';
+            return;
+          }
+        }
+        // Fall back to interrupt+queue
+        queueSessionMessage(sessionId, {
+          text: trimmed,
+          files: pendingFiles,
+          attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+          profile: profile || 'default',
+        });
+        setText('');
+        setPendingFiles([]);
+        setUploadedPaths([]);
+        setQueueCount(getSessionQueue(sessionId).length);
+        onCancel?.();
+        return;
+      }
+      if (action === 'interrupt') {
+        queueSessionMessage(sessionId, {
+          text: trimmed,
+          files: pendingFiles,
+          attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+          profile: profile || 'default',
+        });
+        setText('');
+        setPendingFiles([]);
+        setUploadedPaths([]);
+        setQueueCount(getSessionQueue(sessionId).length);
+        onCancel?.();
+        return;
+      }
+      if (action === 'queue') {
+        queueSessionMessage(sessionId, {
+          text: trimmed,
+          files: pendingFiles,
+          attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+          profile: profile || 'default',
+        });
+        setText('');
+        setPendingFiles([]);
+        setUploadedPaths([]);
+        setQueueCount(getSessionQueue(sessionId).length);
+        if (textareaRef.current) textareaRef.current.style.height = 'auto';
+        return;
+      }
+    } finally {
+      primaryActionInProgressRef.current = false;
     }
   }, [
     action,
     text,
     sessionId,
+    busy,
     onCancel,
     onSteer,
     handleSend,

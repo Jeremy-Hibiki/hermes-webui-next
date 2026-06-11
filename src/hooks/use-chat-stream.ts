@@ -14,7 +14,7 @@ import {
   bgTasksAtom,
   compressionAtom,
 } from '@/atoms/chat';
-import { activeSessionAtom } from '@/atoms/session';
+import { activeSessionAtom, optimisticSessionsAtom } from '@/atoms/session';
 import { queueSessionMessage, shiftQueuedSessionMessage } from '@/atoms/streaming';
 import { SSEClient } from '@/lib/sse-client';
 import { apiPost, fetcher } from '@/lib/api-client';
@@ -55,6 +55,7 @@ export function useChatStream(sessionId: string) {
   const [, setComposerContext] = useAtom(composerContextAtom);
   const [, setBgTasks] = useAtom(bgTasksAtom);
   const [, setCompression] = useAtom(compressionAtom);
+  const [, setOptimisticMap] = useAtom(optimisticSessionsAtom);
   const clientRef = useRef<SSEClient | null>(null);
   const bgTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const renderer = useStreamingRenderer();
@@ -184,6 +185,25 @@ export function useChatStream(sessionId: string) {
         setMessages((prev) => [...prev, userMsg]);
         setBusy(true);
 
+        // Optimistic first-turn sidebar row: make the session visible
+        // with a title and streaming state before the server list refreshes.
+        if (activeSession) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          setOptimisticMap((prev) => {
+            const next = new Map(prev);
+            next.set(sessionId, {
+              ...activeSession,
+              session_id: sessionId,
+              title: activeSession.title || text.slice(0, 64) || 'New chat',
+              message_count: Math.max(activeSession.message_count || 0, messages.length + 1, 1),
+              last_message_at: nowSec,
+              updated_at: nowSec,
+              is_streaming: true,
+            });
+            return next;
+          });
+        }
+
         try {
           // Build payload matching backend _handle_chat_start expectations
           const payload: Record<string, unknown> = {
@@ -208,6 +228,28 @@ export function useChatStream(sessionId: string) {
           setStreamId(res.stream_id);
           setStartedAt(res.pending_started_at ?? null);
           setLiveRunTokenCount(0);
+
+          // Second optimistic pass: stream id is now known
+          if (activeSession) {
+            const nowSec = Math.floor(Date.now() / 1000);
+            setOptimisticMap((prev) => {
+              const next = new Map(prev);
+              const existing = next.get(sessionId) || {};
+              next.set(sessionId, {
+                ...activeSession,
+                ...existing,
+                session_id: sessionId,
+                title: activeSession.title || text.slice(0, 64) || 'New chat',
+                message_count: Math.max(activeSession.message_count || 0, messages.length + 1, 1),
+                last_message_at: nowSec,
+                updated_at: nowSec,
+                active_stream_id: res.stream_id,
+                pending_started_at: res.pending_started_at ?? undefined,
+                is_streaming: true,
+              });
+              return next;
+            });
+          }
 
           // Open SSE stream
           const client = new SSEClient();
@@ -433,6 +475,11 @@ export function useChatStream(sessionId: string) {
               setStartedAt(null);
               setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
+              setOptimisticMap((prev) => {
+                const next = new Map(prev);
+                next.delete(sessionId);
+                return next;
+              });
             },
             done: (data: unknown) => {
               const d = data as {
@@ -481,6 +528,11 @@ export function useChatStream(sessionId: string) {
               setStartedAt(null);
               setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
+              setOptimisticMap((prev) => {
+                const next = new Map(prev);
+                next.delete(sessionId);
+                return next;
+              });
             },
             error: (data: unknown) => {
               const d = data as { message?: string; error?: string };
@@ -496,6 +548,11 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setOptimisticMap((prev) => {
+                const next = new Map(prev);
+                next.delete(sessionId);
+                return next;
+              });
             },
             apperror: (data: unknown) => {
               const d = data as { message?: string; error?: string; label?: string };
@@ -511,6 +568,11 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setOptimisticMap((prev) => {
+                const next = new Map(prev);
+                next.delete(sessionId);
+                return next;
+              });
             },
             cancel: () => {
               setBusy(false);
@@ -518,6 +580,11 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setOptimisticMap((prev) => {
+                const next = new Map(prev);
+                next.delete(sessionId);
+                return next;
+              });
             },
           });
         } catch (err) {
@@ -533,6 +600,11 @@ export function useChatStream(sessionId: string) {
           ]);
           setBusy(false);
           setStartedAt(null);
+          setOptimisticMap((prev) => {
+            const next = new Map(prev);
+            next.delete(sessionId);
+            return next;
+          });
         }
       } finally {
         sendInProgressRef.current = false;
@@ -552,6 +624,7 @@ export function useChatStream(sessionId: string) {
       setTodoMeta,
       setComposerContext,
       setCompression,
+      setOptimisticMap,
       renderer,
     ],
   );

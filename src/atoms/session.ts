@@ -9,3 +9,6 @@ export const pinnedSessionIdsAtom = atom((get) =>
     .filter((s) => s.pinned)
     .map((s) => s.session_id),
 );
+
+// Optimistic session rows for first-turn sidebar visibility
+export const optimisticSessionsAtom = atom<Map<string, Session>>(new Map());

@@ -10,7 +10,9 @@ import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { MessageList } from '@/components/chat/message-list';
 import { SelectionReply } from '@/components/chat/selection-reply';
 import { useChatStream } from '@/hooks/use-chat-stream';
-import { apiPost } from '@/lib/api-client';
+import { apiPost, fetcher } from '@/lib/api-client';
+import { normalizeSessionMessages } from '@/lib/session-messages';
+import type { Message } from '@/types';
 import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
 import { ReconnectBanner, UpdateBanner, AgentHealthBanner } from '@/components/shared/system-banners';
@@ -44,7 +46,7 @@ function JumpToStartBtn({ onClick }: { onClick: () => void }) {
 export function MainPanel() {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
-  const [activeSession] = useAtom(activeSessionAtom);
+  const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
   const [approval, setApproval] = useAtom(approvalAtom);
   const [clarify, setClarify] = useAtom(clarifyAtom);
   const [, setYolo] = useAtom(yoloAtom);
@@ -54,9 +56,65 @@ export function MainPanel() {
   const [showJumpToStart, setShowJumpToStart] = useState(false);
   const [queueVisible, setQueueVisible] = useState(false);
   const [compression] = useAtom(compressionAtom);
+  const isPinnedRef = useRef(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const sessionId = activeSession?.session_id ?? '';
   const { send, cancel, startedAt, liveRunTokenCount } = useChatStream(sessionId);
+
+  const handleLoadOlderMessages = useCallback(async () => {
+    if (loadingOlder || !sessionId || !activeSession?._messagesTruncated) return;
+    const offset = activeSession._messagesOffset ?? 0;
+    if (offset <= 0) return;
+
+    setLoadingOlder(true);
+    const container = scrollContainerRef.current;
+    const prevScrollTop = container?.scrollTop ?? 0;
+    const prevScrollHeight = container?.scrollHeight ?? 0;
+
+    try {
+      const resp = await fetcher<Record<string, unknown>>(
+        `/session?session_id=${sessionId}&messages=1&msg_before=${offset}&msg_limit=30`,
+      );
+      const data = (resp.session ?? resp) as Record<string, unknown>;
+      const raw = Array.isArray(data.messages) ? (data.messages as Message[]) : [];
+      const sessionToolCalls = Array.isArray(data.tool_calls) ? (data.tool_calls as any[]) : [];
+
+      const older = normalizeSessionMessages(raw, sessionToolCalls);
+      if (older.length > 0) {
+        setMessages((prev) => [...older, ...prev]);
+      }
+
+      setActiveSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              _messagesTruncated: !!data._messages_truncated,
+              _messagesOffset: (data._messages_offset as number) || 0,
+            }
+          : prev,
+      );
+
+      // Preserve scroll position after prepend
+      requestAnimationFrame(() => {
+        if (container) {
+          const newScrollHeight = container.scrollHeight;
+          container.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+        }
+      });
+    } catch (err) {
+      console.error('Failed to load older messages:', err);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [
+    loadingOlder,
+    sessionId,
+    activeSession?._messagesTruncated,
+    activeSession?._messagesOffset,
+    setMessages,
+    setActiveSession,
+  ]);
 
   const handleQuote = useCallback((text: string) => {
     const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
@@ -76,6 +134,7 @@ export function MainPanel() {
 
   const handleSend = (message: string, attachments?: string[]) => {
     if (!sessionId) return;
+    isPinnedRef.current = true;
     void send(message, attachments);
   };
 
@@ -212,13 +271,14 @@ export function MainPanel() {
     }
   }, [sessionId, setMessages]);
 
-  // Scroll jump controls
+  // Scroll jump controls + pin detection
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const onScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = el;
       const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      isPinnedRef.current = nearBottom;
       setShowScrollToBottom(!nearBottom && scrollHeight > clientHeight);
       setShowJumpToStart(scrollTop > 200);
     };
@@ -227,10 +287,19 @@ export function MainPanel() {
     return () => el.removeEventListener('scroll', onScroll);
   }, [messages.length]);
 
+  // Auto-scroll only when pinned
+  useEffect(() => {
+    if (isPinnedRef.current) {
+      scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages.length]);
+
   const scrollToBottom = () => {
+    isPinnedRef.current = true;
     scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: 'smooth' });
   };
   const jumpToSessionStart = () => {
+    isPinnedRef.current = false;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -411,6 +480,9 @@ export function MainPanel() {
                 onRegenerate={handleRegenerate}
                 onFork={handleFork}
                 onUndoExchange={handleUndoExchange}
+                hasOlderMessages={!!activeSession?._messagesTruncated}
+                onLoadOlder={handleLoadOlderMessages}
+                isLoadingOlder={loadingOlder}
               />
             </div>
             {compression && compression.phase === 'running' && <CompressionRunningCard />}
