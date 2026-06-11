@@ -319,9 +319,13 @@ export function MessageBubble({
               </div>
             </div>
           ) : isAssistant ? (
-            message._isStreaming && message._streamingHtml ? (
+            message._isStreaming ? (
               <div className="stream-fade-active">
-                <span dangerouslySetInnerHTML={{ __html: message._streamingHtml }} />
+                {message._streamingHtml ? (
+                  <span dangerouslySetInnerHTML={{ __html: message._streamingHtml }} />
+                ) : (
+                  <MarkdownRenderer content={cleanedContent} />
+                )}
                 <span className="hermes-cursor-blink" />
               </div>
             ) : (

@@ -9,7 +9,6 @@ import { ClarifyCard } from '@/components/chat/clarify-card';
 import { LiveRunStatus } from '@/components/chat/live-run-status';
 import { MessageList } from '@/components/chat/message-list';
 import { SelectionReply } from '@/components/chat/selection-reply';
-import { StreamingCursor } from '@/components/chat/streaming-cursor';
 import { useChatStream } from '@/hooks/use-chat-stream';
 import { apiPost } from '@/lib/api-client';
 import { ComposerFooter } from './composer-footer';
@@ -418,7 +417,6 @@ export function MainPanel() {
             {compression && compression.phase === 'done' && <CompressionCard state={compression} />}
             <AgentHealthBanner />
             <LiveRunStatus startedAt={startedAt} tokenCount={liveRunTokenCount} />
-            {busy && <StreamingCursor streaming={true} />}
             <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
           </div>
 
