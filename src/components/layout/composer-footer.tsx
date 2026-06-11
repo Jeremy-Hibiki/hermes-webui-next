@@ -39,7 +39,6 @@ import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
 import { ToolsetsChip } from '@/components/chat/toolsets-chip';
 import { VoiceControls } from '@/components/chat/voice-controls';
-import { QueueCard, QueuePill } from '@/components/chat/queue-card';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -118,7 +117,6 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const [activeStreamId] = useAtom(activeStreamIdAtom);
   const [clarify] = useAtom(clarifyAtom);
   const [_queueCount, setQueueCount] = useState(0);
-  const [queueVisible, setQueueVisible] = useState(false);
   const [sendBtnVisible, setSendBtnVisible] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
@@ -230,6 +228,18 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     if (sessionId) setText(getDraft(sessionId));
   }, [sessionId]);
 
+  // Save server-side draft before locking composer for clarify
+  useEffect(() => {
+    if (!clarify || !sessionId) return;
+    const ta = textareaRef.current;
+    const currentText = ta?.value || text || '';
+    apiPost('/api/session/draft', {
+      session_id: sessionId,
+      text: currentText,
+      files: pendingFiles.map((f) => (typeof f === 'string' ? f : f.name)),
+    }).catch(() => {});
+  }, [clarify, sessionId]);
+
   // Refresh queue count when session changes or periodically
   useEffect(() => {
     if (!sessionId) {
@@ -250,6 +260,26 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // Explicit slash-command override (/steer, /interrupt, /queue)
+  const explicitAction = useMemo<ComposerAction | null>(() => {
+    const trimmed = text.trim();
+    if (!trimmed.startsWith('/')) return null;
+    const body = trimmed.slice(1);
+    const name = (body.split(/\s+/)[0] || '').toLowerCase();
+    const args = body.slice(name.length).trim();
+    if (!args) return null;
+    if (name === 'queue') return 'queue';
+    if (name === 'steer') {
+      if (activeStreamId && onSteer) return 'steer';
+      return 'queue';
+    }
+    if (name === 'interrupt') {
+      if (activeStreamId && onCancel) return 'interrupt';
+      return 'queue';
+    }
+    return null;
+  }, [text, activeStreamId, onSteer, onCancel]);
+
   const action: ComposerAction = useMemo(() => {
     const hasContent = text.trim().length > 0;
     if (clarify) return 'disabled';
@@ -258,6 +288,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       if (activeStreamId && onCancel) return 'stop';
       return 'disabled';
     }
+    if (explicitAction) return explicitAction;
     const mode = busyInputMode || 'queue';
     if (mode === 'steer') {
       if (activeStreamId && onSteer) return 'steer';
@@ -268,7 +299,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       return 'queue';
     }
     return 'queue';
-  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify]);
+  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify, explicitAction]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -435,12 +466,6 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
           background: 'linear-gradient(to bottom, transparent, var(--bg))',
         }}
       />
-
-      {/* Queue card */}
-      {sessionId && <QueueCard sessionId={sessionId} visible={queueVisible} onVisibilityChange={setQueueVisible} />}
-
-      {/* Queue pill */}
-      {sessionId && !queueVisible && <QueuePill sessionId={sessionId} onClick={() => setQueueVisible(true)} />}
 
       <div
         id="composerBox"

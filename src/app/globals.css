@@ -1170,3 +1170,6 @@ body {
   margin-left: auto;
   opacity: 0.5;
 }
+.messages.queue-open {
+  padding-bottom: var(--queue-card-height, 280px);
+}

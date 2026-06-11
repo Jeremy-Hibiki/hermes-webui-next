@@ -427,6 +427,18 @@ export function useChatStream(sessionId: string) {
       const next = shiftQueuedSessionMessage(sessionId);
       if (next?.text) {
         setTimeout(() => {
+          // Restore model / provider from queued turn before sending
+          if (next.model || next.model_provider) {
+            setActiveSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    model: next.model ?? prev.model,
+                    model_provider: next.model_provider ?? prev.model_provider,
+                  }
+                : prev,
+            );
+          }
           void sendRef.current(next.text, next.attachments);
         }, 200);
       }

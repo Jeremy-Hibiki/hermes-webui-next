@@ -15,6 +15,7 @@ import { apiPost } from '@/lib/api-client';
 import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
 import { ReconnectBanner, UpdateBanner, AgentHealthBanner } from '@/components/shared/system-banners';
+import { QueueCard, QueuePill } from '@/components/chat/queue-card';
 
 function ScrollToBottomBtn({ onClick }: { onClick: () => void }) {
   return (
@@ -50,6 +51,7 @@ export function MainPanel() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [showJumpToStart, setShowJumpToStart] = useState(false);
+  const [queueVisible, setQueueVisible] = useState(false);
 
   const sessionId = activeSession?.session_id ?? '';
   const { send, cancel } = useChatStream(sessionId);
@@ -361,7 +363,10 @@ export function MainPanel() {
         <div className="flex-1 min-h-0 relative">
           <UpdateBanner />
           <ReconnectBanner />
-          <div ref={scrollContainerRef} className="absolute inset-0 overflow-y-auto p-4">
+          <div
+            ref={scrollContainerRef}
+            className={`messages absolute inset-0 overflow-y-auto p-4${queueVisible ? ' queue-open' : ''}`}
+          >
             <div ref={messagesRef}>
               <MessageList
                 onEdit={handleEdit}
@@ -399,6 +404,13 @@ export function MainPanel() {
             </div>
           )}
         </div>
+        {/* Queue card / pill */}
+        {sessionId && (
+          <>
+            <QueueCard sessionId={sessionId} visible={queueVisible} onVisibilityChange={setQueueVisible} />
+            {!queueVisible && <QueuePill sessionId={sessionId} onClick={() => setQueueVisible(true)} />}
+          </>
+        )}
         <ComposerFooter
           onSend={handleSend}
           busy={busy}

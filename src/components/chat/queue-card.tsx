@@ -12,6 +12,13 @@ interface QueueCardProps {
 
 export function QueueCard({ sessionId, visible, onVisibilityChange }: QueueCardProps) {
   const [entries, setEntries] = useState(getSessionQueue(sessionId));
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return sessionStorage.getItem(`hermes-queue-collapsed-${sessionId}`) === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const refresh = useCallback(() => {
     setEntries(getSessionQueue(sessionId));
@@ -22,6 +29,18 @@ export function QueueCard({ sessionId, visible, onVisibilityChange }: QueueCardP
     const id = setInterval(refresh, 300);
     return () => clearInterval(id);
   }, [refresh]);
+
+  // Clear collapsed state when parent forces visible (user clicked pill)
+  useEffect(() => {
+    if (visible && collapsed) {
+      setCollapsed(false);
+      try {
+        sessionStorage.removeItem(`hermes-queue-collapsed-${sessionId}`);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [visible, collapsed, sessionId]);
 
   const handleDelete = (index: number) => {
     const q = getSessionQueue(sessionId);
@@ -46,6 +65,12 @@ export function QueueCard({ sessionId, visible, onVisibilityChange }: QueueCardP
   };
 
   const handleHide = () => {
+    setCollapsed(true);
+    try {
+      sessionStorage.setItem(`hermes-queue-collapsed-${sessionId}`, '1');
+    } catch {
+      /* ignore */
+    }
     onVisibilityChange?.(false);
   };
 
@@ -54,10 +79,12 @@ export function QueueCard({ sessionId, visible, onVisibilityChange }: QueueCardP
     return null;
   }
 
+  const isVisible = visible && !collapsed;
+
   return (
     <div
       id="queueCard"
-      className={cn('queue-card', visible && 'visible')}
+      className={cn('queue-card', isVisible && 'visible')}
       role="region"
       aria-label="Queued messages"
       aria-live="polite"
