@@ -276,22 +276,40 @@ export function MainPanel() {
                   boxShadow: '0 4px 20px var(--accent-bg)',
                 }}
               >
-                <svg width="40" height="40" viewBox="0 0 80 80" fill="none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 64 64"
+                  width="80"
+                  height="80"
+                  aria-label="Hermes caduceus"
+                >
                   <defs>
-                    <linearGradient id="hermes-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.7" />
+                    <linearGradient id="hermes-gold" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#F5C542" />
+                      <stop offset="100%" stopColor="#D4961C" />
                     </linearGradient>
                   </defs>
-                  <circle cx="40" cy="16" r="6" fill="url(#hermes-grad)" />
-                  <path d="M40 22 L40 56" stroke="url(#hermes-grad)" strokeWidth="2.5" />
-                  <path d="M28 36 Q40 30 52 36" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
-                  <path d="M28 44 Q40 38 52 44" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
-                  <path d="M30 56 L40 62 L50 56" stroke="url(#hermes-grad)" strokeWidth="2" fill="none" />
-                  <path d="M24 14 L34 10" stroke="url(#hermes-grad)" strokeWidth="1.5" />
-                  <path d="M56 14 L46 10" stroke="url(#hermes-grad)" strokeWidth="1.5" />
-                  <circle cx="22" cy="14" r="2.5" fill="url(#hermes-grad)" />
-                  <circle cx="58" cy="14" r="2.5" fill="url(#hermes-grad)" />
+                  <rect x="30" y="10" width="4" height="46" rx="2" fill="url(#hermes-gold)" />
+                  <path d="M30 18 C24 14, 14 14, 10 18 C14 16, 22 16, 28 20" fill="#F5C542" opacity="0.9" />
+                  <path d="M30 22 C26 19, 18 19, 14 22 C18 20, 24 20, 28 24" fill="#D4961C" opacity="0.8" />
+                  <path d="M34 18 C40 14, 50 14, 54 18 C50 16, 42 16, 36 20" fill="#F5C542" opacity="0.9" />
+                  <path d="M34 22 C38 19, 46 19, 50 22 C46 20, 40 20, 36 24" fill="#D4961C" opacity="0.8" />
+                  <path
+                    d="M32 48 C22 44, 20 38, 26 34 C20 36, 18 42, 24 46 C18 40, 22 30, 30 28 C24 32, 22 38, 28 42"
+                    fill="none"
+                    stroke="#F5C542"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M32 48 C42 44, 44 38, 38 34 C44 36, 46 42, 40 46 C46 40, 42 30, 34 28 C40 32, 42 38, 36 42"
+                    fill="none"
+                    stroke="#D4961C"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="32" cy="10" r="4" fill="#F5C542" />
+                  <circle cx="32" cy="10" r="2" fill="#FFF8E1" opacity="0.7" />
                 </svg>
               </div>
             </div>

@@ -1227,6 +1227,40 @@ body.resizing aside {
   padding-bottom: var(--queue-card-height, 280px);
 }
 
+/* ── Code block header + copy button ── */
+.pre-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 8px 16px;
+  background: var(--input-bg);
+  border-radius: 10px 10px 0 0;
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.pre-header + pre {
+  border-radius: 0 0 10px 10px;
+  border-top: none;
+  margin-top: 0;
+}
+.code-copy-btn {
+  background: var(--hover-bg);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: all 0.15s;
+  line-height: 1.3;
+}
+.code-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
 /* ── Custom tooltip system ── */
 .has-tooltip {
   position: relative;
