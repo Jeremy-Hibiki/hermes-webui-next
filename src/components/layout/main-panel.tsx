@@ -232,6 +232,24 @@ export function MainPanel() {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Measure queue card height after transition and set CSS variable on messages container
+  useEffect(() => {
+    if (!queueVisible) return;
+    const timer = setTimeout(() => {
+      const card = document.getElementById('queueCard');
+      const msgs = scrollContainerRef.current;
+      if (!card || !msgs) return;
+      if (!card.classList.contains('visible')) return;
+      const h = card.getBoundingClientRect().height;
+      if (h > 0) msgs.style.setProperty('--queue-card-height', `${h}px`);
+      if (busy) {
+        // If streaming, scroll to bottom to keep content visible
+        scrollToBottom();
+      }
+    }, 360);
+    return () => clearTimeout(timer);
+  }, [queueVisible, busy]);
+
   return (
     <div className="flex flex-col h-full">
       <TopBar />
