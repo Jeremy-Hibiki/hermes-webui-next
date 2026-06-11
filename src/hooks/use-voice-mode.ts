@@ -11,6 +11,34 @@ interface UseVoiceModeOptions {
 }
 
 // Web Speech API types are not in all TypeScript DOM libs
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  readonly isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SRResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SREvent {
+  readonly results: SRResultList;
+  readonly resultIndex: number;
+}
+
+interface SRErrorEvent {
+  readonly error: string;
+  readonly message: string;
+}
+
 interface SpeechRecognitionCtor {
   new (): SpeechRecognitionInstance;
 }
@@ -20,9 +48,9 @@ interface SpeechRecognitionInstance {
   interimResults: boolean;
   lang: string;
   onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onresult: ((event: SREvent) => void) | null;
   onend: (() => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onerror: ((event: SRErrorEvent) => void) | null;
   start(): void;
   abort(): void;
 }
@@ -73,7 +101,7 @@ export function useVoiceMode({ onDictate, onSend, onDictationEnd }: UseVoiceMode
 
     let finalText = '';
 
-    rec.onresult = (event: SpeechRecognitionEvent) => {
+    rec.onresult = (event: SREvent) => {
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
@@ -136,7 +164,7 @@ export function useVoiceMode({ onDictate, onSend, onDictationEnd }: UseVoiceMode
     rec.interimResults = true;
     rec.lang = typeof navigator !== 'undefined' ? navigator.language || 'en-US' : 'en-US';
 
-    rec.onresult = (event: SpeechRecognitionEvent) => {
+    rec.onresult = (event: SREvent) => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -173,7 +201,7 @@ export function useVoiceMode({ onDictate, onSend, onDictationEnd }: UseVoiceMode
       }
     };
 
-    rec.onerror = (event: SpeechRecognitionErrorEvent) => {
+    rec.onerror = (event: SRErrorEvent) => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (event.error === 'no-speech' || event.error === 'aborted') {
         if (modeActive) {
