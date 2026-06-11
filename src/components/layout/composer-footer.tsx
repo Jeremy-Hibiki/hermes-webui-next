@@ -78,9 +78,18 @@ interface ComposerFooterProps {
   onVoice?: () => void;
   sendKey?: 'enter' | 'cmd-enter';
   sessionId?: string;
+  compressionRunning?: boolean;
 }
 
-export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'enter', sessionId }: ComposerFooterProps) {
+export function ComposerFooter({
+  onSend,
+  busy,
+  onCancel,
+  onSteer,
+  sendKey = 'enter',
+  sessionId,
+  compressionRunning,
+}: ComposerFooterProps) {
   const DRAFT_KEY = 'hermes-composer-drafts';
 
   const getDraft = (sid: string): string => {
@@ -283,6 +292,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const action: ComposerAction = useMemo(() => {
     const hasContent = text.trim().length > 0;
     if (clarify) return 'disabled';
+    if (compressionRunning) return hasContent ? 'queue' : 'disabled';
     if (!busy) return hasContent ? 'send' : 'disabled';
     if (!hasContent) {
       if (activeStreamId && onCancel) return 'stop';
@@ -299,7 +309,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       return 'queue';
     }
     return 'queue';
-  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify, explicitAction]);
+  }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify, explicitAction, compressionRunning]);
 
   // Send button visible-class toggle: animate whenever action transitions from disabled -> active
   useEffect(() => {

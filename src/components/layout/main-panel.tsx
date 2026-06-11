@@ -607,6 +607,7 @@ export function MainPanel() {
           onCancel={handleCancel}
           onSteer={handleSteer}
           sessionId={sessionId}
+          compressionRunning={compression?.phase === 'running'}
         />
       </div>
     </div>
