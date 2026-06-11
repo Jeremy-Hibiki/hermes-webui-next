@@ -61,6 +61,8 @@ export function MainPanel() {
   const nearBottomCountRef = useRef(0);
   const programmaticScrollRef = useRef(false);
   const lastScrollTopRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const olderGenRef = useRef(0);
   const [loadingOlder, setLoadingOlder] = useState(false);
 
   const sessionId = activeSession?.session_id ?? '';
@@ -71,6 +73,7 @@ export function MainPanel() {
     const offset = activeSession._messagesOffset ?? 0;
     if (offset <= 0) return;
 
+    const gen = ++olderGenRef.current;
     setLoadingOlder(true);
     const container = scrollContainerRef.current;
     const prevScrollTop = container?.scrollTop ?? 0;
@@ -80,6 +83,8 @@ export function MainPanel() {
       const resp = await fetcher<Record<string, unknown>>(
         `/session?session_id=${sessionId}&messages=1&msg_before=${offset}&msg_limit=30`,
       );
+      if (gen !== olderGenRef.current) return; // superseded by newer request
+
       const data = (resp.session ?? resp) as Record<string, unknown>;
       const raw = Array.isArray(data.messages) ? (data.messages as Message[]) : [];
       const sessionToolCalls = Array.isArray(data.tool_calls) ? (data.tool_calls as any[]) : [];
@@ -288,6 +293,24 @@ export function MainPanel() {
       }
     };
 
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches && e.touches[0]) {
+        touchStartYRef.current = e.touches[0].clientY;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartYRef.current !== null && e.touches && e.touches[0]) {
+        const dy = e.touches[0].clientY - touchStartYRef.current;
+        if (dy > 8) {
+          // Finger dragged down = content scrolled up = unpin
+          userUnpinnedRef.current = true;
+          nearBottomCountRef.current = 0;
+          isPinnedRef.current = false;
+        }
+      }
+    };
+
     const onScroll = () => {
       if (programmaticScrollRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = el;
@@ -326,10 +349,14 @@ export function MainPanel() {
 
     el.addEventListener('wheel', onWheel, { passive: true });
     el.addEventListener('scroll', onScroll, { passive: true });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
     onScroll();
     return () => {
       el.removeEventListener('wheel', onWheel);
       el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
     };
   }, [messages.length]);
 
@@ -368,7 +395,34 @@ export function MainPanel() {
       }, 0);
     });
   };
-  const jumpToSessionStart = () => {
+  const jumpToSessionStart = async () => {
+    // Ensure all older messages are loaded before jumping to top
+    if (activeSession?._messagesTruncated) {
+      try {
+        setLoadingOlder(true);
+        const resp = await fetcher<Record<string, unknown>>(
+          `/session?session_id=${sessionId}&messages=1&msg_limit=9999`,
+        );
+        const data = (resp.session ?? resp) as Record<string, unknown>;
+        const raw = Array.isArray(data.messages) ? (data.messages as Message[]) : [];
+        const sessionToolCalls = Array.isArray(data.tool_calls) ? (data.tool_calls as any[]) : [];
+        const allMessages = normalizeSessionMessages(raw, sessionToolCalls);
+        setMessages(allMessages);
+        setActiveSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                _messagesTruncated: false,
+                _messagesOffset: 0,
+              }
+            : prev,
+        );
+      } catch (err) {
+        console.error('Failed to load full session history:', err);
+      } finally {
+        setLoadingOlder(false);
+      }
+    }
     userUnpinnedRef.current = true;
     isPinnedRef.current = false;
     nearBottomCountRef.current = 0;
