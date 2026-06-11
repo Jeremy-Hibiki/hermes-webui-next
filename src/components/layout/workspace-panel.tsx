@@ -11,7 +11,6 @@ import {
   Trash2,
   Home,
   GitBranch,
-  FileText,
   Upload,
   Download,
   Eye,

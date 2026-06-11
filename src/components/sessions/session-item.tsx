@@ -13,9 +13,6 @@ import {
   ArchiveRestore,
   Trash2,
   GitBranch,
-  Terminal as TerminalIcon,
-  Globe,
-  Zap,
   Copy,
   RefreshCw,
   Files,
@@ -302,7 +299,7 @@ export function SessionItem({
       tabIndex={0}
       onClick={() => !renaming && onSelect(session.session_id)}
       onDoubleClick={() => !renaming && startRename()}
-      onContextMenu={(e) => {
+      onContextMenu={(_e) => {
         // Right-click opens dropdown at cursor (handled by DropdownMenu)
       }}
       onKeyDown={(e) => {

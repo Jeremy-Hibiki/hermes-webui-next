@@ -175,7 +175,8 @@ export function MessageBubble({
   const isAssistant = message.role === 'assistant';
   const isToolError = message.role === 'tool' || (message as { _error?: boolean })._error;
   const reasoning = message.reasoning || message.reasoning_content || message.thinking;
-  const hasUsage = !!(message._turnUsage || message._turnDuration != null || message._gatewayRouting);
+  const _hasUsage = !!(message._turnUsage || message._turnDuration != null || message._gatewayRouting);
+  void _hasUsage;
 
   useEffect(() => {
     if (editing) editRef.current?.focus();
