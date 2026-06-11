@@ -376,7 +376,7 @@ export function WorkspacePanel() {
           {(
             [
               ['files', 'Files'],
-              ['artifacts', FileText],
+              ['artifacts', 'Artifacts'],
               ['git', GitBranch],
             ] as const
           ).map(([tab, label]) => (
@@ -390,7 +390,7 @@ export function WorkspacePanel() {
                   : 'text-[var(--muted)] hover:text-[var(--text)]',
               )}
             >
-              {typeof label === 'string' ? label : <span className="w-3 h-3" aria-hidden="true" />}
+              {typeof label === 'string' ? label : <label className="w-3 h-3" aria-hidden="true" />}
             </button>
           ))}
         </div>

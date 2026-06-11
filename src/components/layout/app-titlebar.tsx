@@ -23,7 +23,8 @@ export function AppTitlebar() {
         paddingTop: 'env(safe-area-inset-top, 0px)',
         paddingLeft: 'max(12px, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
-      }}
+        WebkitAppRegion: 'drag',
+      } as React.CSSProperties}
       role="banner"
     >
       {/* Hamburger — mobile only */}

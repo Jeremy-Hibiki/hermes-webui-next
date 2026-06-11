@@ -49,7 +49,7 @@ export function TopBar() {
   // Sync document.title
   useEffect(() => {
     if (activeSession?.title) {
-      document.title = `${activeSession.title} -- ${displayName}`;
+      document.title = `${activeSession.title} — ${displayName}`;
     } else {
       document.title = displayName;
     }
@@ -86,11 +86,14 @@ export function TopBar() {
     if (!activeSession) return null;
     const src = activeSession.raw_source || activeSession.session_source;
     const tag = activeSession.source_tag;
+    const label = activeSession.source_label;
+    // Suppress "WebUI" source label
+    if (label && /^webui$/i.test(label)) return null;
     if (src === 'cli' || activeSession.is_cli_session || tag === 'claude-code' || tag === 'codex')
       return (
         <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/25">
           <TerminalIcon className="w-2.5 h-2.5" />
-          CLI
+          CLI{activeSession.read_only ? ' · read-only' : ''}
         </span>
       );
     if (src === 'cron' || tag === 'cron')
@@ -105,6 +108,12 @@ export function TopBar() {
         <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25">
           <Globe className="w-2.5 h-2.5" />
           API
+        </span>
+      );
+    if (activeSession.read_only)
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--hover-bg)] text-[var(--muted)] border border-[var(--border)]">
+          read-only
         </span>
       );
     return null;
@@ -185,9 +194,9 @@ export function TopBar() {
                 />
               ) : (
                 <button
-                  onClick={startEditTitle}
+                  onDoubleClick={startEditTitle}
                   className="text-[15px] font-semibold text-[var(--text)] truncate tracking-tight hover:text-[var(--accent)] transition-colors text-left"
-                  title="Click to rename"
+                  title="Double-click to rename"
                 >
                   {activeSession.title || 'Untitled'}
                 </button>
@@ -196,7 +205,14 @@ export function TopBar() {
             </div>
             <div className="text-[11px] text-[var(--muted)] mt-0.5 opacity-75 truncate">
               {activeSession.model || activeSession.profile || displayName}
-              {activeSession.message_count != null && ` · ${activeSession.message_count} messages`}
+              {activeSession.message_count != null && activeSession.message_count > 0 && (
+                <>
+                  {' · '}
+                  {activeSession._messagesTruncated
+                    ? `${activeSession.message_count} messages (truncated)`
+                    : `${activeSession.message_count} messages`}
+                </>
+              )}
             </div>
           </>
         ) : (
