@@ -69,6 +69,30 @@ export function useChatStream(sessionId: string) {
   const send = useCallback(
     async (text: string, attachments?: string[]) => {
       if (!text.trim() || busy) return;
+      if (activeSession?.read_only) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: 'system',
+            content: 'Read-only imported sessions cannot be modified.',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
+      if (!navigator.onLine) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: 'system',
+            content: 'You appear to be offline. Please check your connection and try again.',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
 
       // Handle /bg command
       const cmd = parseCommand(text);
