@@ -68,7 +68,7 @@ function HiddenModelSelect({ value, onChange }: { value: string | null; onChange
 type ComposerAction = 'send' | 'stop' | 'queue' | 'interrupt' | 'steer' | 'disabled';
 
 interface ComposerFooterProps {
-  onSend: (message: string, attachments?: File[]) => void;
+  onSend: (message: string, attachments?: string[]) => void;
   busy: boolean;
   onCancel?: () => void;
   onSteer?: (message: string) => Promise<boolean>;
@@ -305,12 +305,12 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     const trimmed = text.trim();
     if (!trimmed) return;
     if (busy) return;
-    onSend(trimmed);
+    onSend(trimmed, _uploadedPaths.length > 0 ? _uploadedPaths : undefined);
     setText('');
     setPendingFiles([]);
     setUploadedPaths([]);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
-  }, [text, busy, onSend, setPendingFiles]);
+  }, [text, busy, onSend, setPendingFiles, _uploadedPaths]);
 
   const handlePrimaryAction = useCallback(async () => {
     const trimmed = text.trim();
@@ -335,23 +335,40 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
         }
       }
       // Fall back to interrupt+queue
-      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      queueSessionMessage(sessionId, {
+        text: trimmed,
+        files: pendingFiles,
+        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+        profile: profile || 'default',
+      });
       setText('');
       setPendingFiles([]);
+      setUploadedPaths([]);
       setQueueCount(getSessionQueue(sessionId).length);
       onCancel?.();
       return;
     }
     if (action === 'interrupt') {
-      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      queueSessionMessage(sessionId, {
+        text: trimmed,
+        files: pendingFiles,
+        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+        profile: profile || 'default',
+      });
       setText('');
       setPendingFiles([]);
+      setUploadedPaths([]);
       setQueueCount(getSessionQueue(sessionId).length);
       onCancel?.();
       return;
     }
     if (action === 'queue') {
-      queueSessionMessage(sessionId, { text: trimmed, files: pendingFiles });
+      queueSessionMessage(sessionId, {
+        text: trimmed,
+        files: pendingFiles,
+        attachments: _uploadedPaths.length > 0 ? _uploadedPaths : undefined,
+        profile: profile || 'default',
+      });
       setText('');
       setPendingFiles([]);
       setUploadedPaths([]);
@@ -359,7 +376,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       return;
     }
-  }, [action, text, sessionId, onCancel, onSteer, handleSend, pendingFiles, setPendingFiles]);
+  }, [action, text, sessionId, onCancel, onSteer, handleSend, pendingFiles, setPendingFiles, _uploadedPaths, profile]);
 
   const handleFileSelect = useCallback(
     async (fileList: FileList | null) => {

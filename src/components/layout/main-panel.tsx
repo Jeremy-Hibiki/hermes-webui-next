@@ -72,9 +72,9 @@ export function MainPanel() {
     }
   }, []);
 
-  const handleSend = (message: string, _attachments?: File[]) => {
+  const handleSend = (message: string, attachments?: string[]) => {
     if (!sessionId) return;
-    void send(message);
+    void send(message, attachments);
   };
 
   const handleCancel = () => {
