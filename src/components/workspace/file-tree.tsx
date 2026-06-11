@@ -286,11 +286,58 @@ function FileTreeItems({ entries, depth = 0, showHidden, ...props }: FileTreePro
 
 export function FileTree({ entries, depth = 0, showHidden, ...rest }: FileTreeProps) {
   const visible = showHidden ? entries : entries.filter((e) => !shouldHide(e.name));
+  const [isDragOver, setIsDragOver] = useState(false);
+
   if (visible.length === 0 && depth === 0) {
     return <div className="p-4 text-sm text-[var(--muted)] text-center">Empty directory</div>;
   }
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only clear if we're actually leaving the container (not entering a child)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
   return (
-    <div className="p-2">
+    <div
+      className={cn(
+        'p-2 rounded-lg transition-colors',
+        isDragOver && 'bg-[var(--accent-bg)] border-2 border-dashed border-[var(--accent)]',
+      )}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <FileTreeItems entries={visible} depth={depth} showHidden={showHidden} {...rest} />
     </div>
   );

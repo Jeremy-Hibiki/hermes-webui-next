@@ -266,7 +266,7 @@ function KanbanColumnView({
   onQuickArchive: (task: KanbanTask) => void;
 }) {
   return (
-    <div className="flex flex-col min-w-[260px] max-w-[320px] flex-1 bg-[var(--bg)] rounded-[10px] border border-[var(--border)] min-h-[240px]">
+    <div className="flex flex-col min-w-[82vw] md:min-w-[260px] max-w-[320px] flex-1 bg-[var(--bg)] rounded-[10px] border border-[var(--border)] min-h-[240px] snap-start">
       <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)]">
         <h3 className="text-xs font-semibold text-[var(--text)]">
           {getTranslatedColumnLabel(column.id)}
@@ -1661,7 +1661,7 @@ export function KanbanBoard() {
           onQuickArchive={isReadOnly ? () => {} : handleQuickArchive}
         />
       ) : lanesByProfile ? (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 snap-x snap-mandatory">
           <div className="flex gap-4 h-full">
             {Object.entries(tasksByAssignee).map(([assignee, assigneeTasks]) => (
               <SwimlaneColumn
@@ -1679,7 +1679,7 @@ export function KanbanBoard() {
           </div>
         </div>
       ) : isReadOnly ? (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 snap-x snap-mandatory">
           <div className="flex gap-4 h-full">
             {COLUMNS.map((col) => (
               <KanbanColumnView
@@ -1698,7 +1698,7 @@ export function KanbanBoard() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 snap-x snap-mandatory">
           <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
             <div className="flex gap-4 h-full">
               {COLUMNS.map((col) => (

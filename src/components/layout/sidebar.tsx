@@ -269,7 +269,8 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-[var(--muted)]"
+          className="text-[var(--muted)] has-tooltip"
+          data-tooltip={t18n('session.new')}
           onClick={handleNewChat}
           aria-label={t18n('session.new')}
         >
@@ -304,7 +305,8 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--muted)]"
+              className="text-[var(--muted)] has-tooltip"
+              data-tooltip={t18n('session.search')}
               onClick={handleOpenSearch}
               aria-label={t18n('session.search')}
             >

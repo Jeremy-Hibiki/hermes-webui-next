@@ -180,7 +180,7 @@ export function SessionItem({
   const baseClasses = cn(
     'w-full text-left px-2 py-2 mb-0.5 rounded-lg text-[13px] cursor-pointer transition-colors flex items-start gap-2 min-w-0 relative select-none group',
     isActive
-      ? 'active bg-[var(--accent-bg)] text-[var(--accent)]'
+      ? 'active bg-[var(--accent-bg)] text-[var(--accent-text)]'
       : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
   );
 

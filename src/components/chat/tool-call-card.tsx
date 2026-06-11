@@ -74,7 +74,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
         className="w-full flex items-center gap-[7px] px-2 py-[3px] rounded-[7px] hover:bg-[var(--hover-bg)] transition-colors"
       >
         {isRunning ? (
-          <span className="shrink-0 w-[7px] h-[7px] rounded-full bg-[var(--muted)] opacity-45" />
+          <span className="tool-running-dot shrink-0 w-[7px] h-[7px] rounded-full bg-[var(--accent)]" />
         ) : (
           <ChevronRight
             className={cn('w-3 h-3 shrink-0 text-[var(--muted)] opacity-40', expanded && 'rotate-90')}
