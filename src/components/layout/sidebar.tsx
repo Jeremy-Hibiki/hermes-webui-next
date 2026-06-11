@@ -7,6 +7,7 @@ import { activeSessionAtom } from '@/atoms/session';
 import { activeProfileAtom, activeWorkspaceAtom } from '@/atoms/settings';
 import { useSessions } from '@/hooks/use-sessions';
 import { useSessionSearch } from '@/hooks/use-session-search';
+import { useSessionUnread } from '@/hooks/use-session-unread';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, X, Pin, ChevronRight, Terminal as TerminalIcon, Globe } from 'lucide-react';
@@ -17,6 +18,7 @@ import { messagesAtom, busyAtom } from '@/atoms/chat';
 import { SessionItem } from '@/components/sessions/session-item';
 import { bucketSessionsByDate, translateBucketLabel } from '@/lib/date-buckets';
 import { useTranslation } from '@/lib/i18n';
+import { getSessionQueue } from '@/atoms/streaming';
 
 type SourceFilter = 'webui' | 'cli';
 const NO_PROJECT = '__none__';
@@ -31,6 +33,7 @@ export function Sidebar() {
   const router = useRouter();
   const { sessions, projects, isLoading, mutate } = useSessions();
   const { query, setQuery, results: searchResults, resultMeta, isSearching, clearSearch } = useSessionSearch(sessions);
+  const { isSessionUnread } = useSessionUnread();
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isSearchingActive = query.trim().length > 0;
@@ -263,12 +266,15 @@ export function Sidebar() {
   const hasProjects = projects.length > 0 || filteredSessions.some((s) => !s.project_id);
   const renderSessionItem = (session: Session, opts?: { highlight?: string }) => {
     const meta = opts?.highlight ? resultMeta.get(session.session_id) : undefined;
+    const isActive = active?.session_id === session.session_id;
     return (
       <SessionItem
         key={session.session_id}
         session={session}
-        isActive={active?.session_id === session.session_id}
-        isStreaming={!!session.is_streaming || (active?.session_id === session.session_id && busy)}
+        isActive={isActive}
+        isUnread={isSessionUnread(session.session_id, session.message_count || 0, isActive)}
+        isStreaming={!!session.is_streaming || (isActive && busy)}
+        queueCount={getSessionQueue(session.session_id).length}
         onSelect={handleSelect}
         onRename={handleRename}
         onPin={handlePin}

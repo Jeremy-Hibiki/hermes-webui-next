@@ -135,6 +135,7 @@ export function AppShell({ panel }: AppShellProps) {
           last_prompt_tokens: (data.last_prompt_tokens as number) ?? undefined,
           _messagesTruncated,
           _messagesOffset,
+          composer_draft: (data.composer_draft as Record<string, unknown> | undefined) || undefined,
         } as any);
 
         setComposerContext({

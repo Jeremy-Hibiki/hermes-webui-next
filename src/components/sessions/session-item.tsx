@@ -33,6 +33,7 @@ interface SessionItemProps {
   isActive: boolean;
   isUnread?: boolean;
   isStreaming?: boolean;
+  queueCount?: number;
   onSelect: (sessionId: string) => void;
   onRename?: (sessionId: string, newTitle: string) => void;
   onPin?: (sessionId: string) => void;
@@ -51,6 +52,7 @@ export function SessionItem({
   isActive,
   isUnread,
   isStreaming,
+  queueCount,
   onSelect,
   onRename,
   onPin,
@@ -190,6 +192,12 @@ export function SessionItem({
     return null;
   })();
 
+  // Attention state from session data
+  const attention = session.attention as { kind?: string; count?: number; severity?: string } | undefined;
+  const attentionKind = attention?.kind === 'approval' ? 'approval' : attention?.kind === 'clarify' ? 'clarify' : null;
+  const attentionCount = Math.max(1, Number(attention?.count) || 0);
+  const needsAttention = !!attentionKind && attentionCount > 0;
+
   const indicators = (
     <>
       {projectColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />}
@@ -200,6 +208,25 @@ export function SessionItem({
         <span className="session-streaming-dot w-2 h-2 rounded-full shrink-0 border-[1.5px] border-[var(--accent)] border-t-transparent" />
       )}
       {!isStreaming && isUnread && <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--accent)]" />}
+      {needsAttention && !isActive && (
+        <span
+          className={cn(
+            'shrink-0 text-[9px] leading-none font-medium px-1.5 py-[2px] rounded-full',
+            attentionKind === 'approval'
+              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+              : 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+          )}
+          data-tooltip={attentionKind === 'approval' ? 'Waiting for approval' : 'Waiting for answer'}
+        >
+          {attentionCount > 1 ? attentionCount : ''}
+          {attentionKind === 'approval' ? '!' : '?'}
+        </span>
+      )}
+      {queueCount != null && queueCount > 0 && (
+        <span className="shrink-0 text-[9px] leading-none font-medium px-1.5 py-[2px] rounded-full bg-[var(--accent-bg)] text-[var(--accent-text)]">
+          {queueCount}
+        </span>
+      )}
     </>
   );
 
@@ -209,7 +236,9 @@ export function SessionItem({
     'w-full text-left px-2 py-2 mb-0.5 rounded-lg text-[13px] cursor-pointer transition-colors flex items-start gap-2 min-w-0 relative select-none group',
     isActive
       ? 'active bg-[var(--accent-bg)] text-[var(--accent-text)]'
-      : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
+      : isUnread || needsAttention
+        ? 'text-[var(--text)] font-medium hover:bg-[var(--hover-bg)]'
+        : 'text-[var(--muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text)]',
   );
 
   const innerContent = (

@@ -27,6 +27,7 @@ import {
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
 import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom } from '@/atoms/chat';
+import { activeSessionAtom } from '@/atoms/session';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
 import { queueSessionMessage, getSessionQueue } from '@/atoms/streaming';
@@ -128,9 +129,12 @@ export function ComposerFooter({
   const [activeStreamId] = useAtom(activeStreamIdAtom);
   const [clarify] = useAtom(clarifyAtom);
   const [, setMessages] = useAtom(messagesAtom);
+  const [activeSession] = useAtom(activeSessionAtom);
   const [_queueCount, setQueueCount] = useState(0);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
   const prevActionRef = useRef<ComposerAction>('disabled');
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevSessionIdRef = useRef<string | undefined>(sessionId);
   const voiceControlsRef = useRef<VoiceControlsHandle>(null);
   const micPendingSendRef = useRef(false);
   const micActiveRef = useRef(false);
@@ -235,27 +239,77 @@ export function ComposerFooter({
     }
   }, [text]);
 
-  // Save draft when text changes
-  useEffect(() => {
-    if (sessionId) saveDraft(sessionId, text);
-  }, [text, sessionId]);
+  // Debounced server-side draft save
+  const saveServerDraft = useCallback(
+    (sid: string, val: string, files: string[]) => {
+      if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+      draftSaveTimerRef.current = setTimeout(() => {
+        apiPost('/api/session/draft', {
+          session_id: sid,
+          text: val || '',
+          files: files || [],
+        }).catch(() => {});
+      }, 400);
+    },
+    [],
+  );
 
-  // Restore draft when session changes
-  useEffect(() => {
-    if (sessionId) setText(getDraft(sessionId));
-  }, [sessionId]);
+  // Immediate server-side draft save (used before session switch)
+  const saveServerDraftNow = useCallback(async (sid: string, val: string, files: string[]) => {
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    try {
+      await apiPost('/api/session/draft', {
+        session_id: sid,
+        text: val || '',
+        files: files || [],
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
-  // Save server-side draft before locking composer for clarify
+  // Save draft when text changes (localStorage + server debounce)
   useEffect(() => {
-    if (!clarify || !sessionId) return;
-    const ta = textareaRef.current;
-    const currentText = ta?.value || text || '';
-    apiPost('/api/session/draft', {
-      session_id: sessionId,
-      text: currentText,
-      files: pendingFiles.map((f) => (typeof f === 'string' ? f : f.name)),
-    }).catch(() => {});
-  }, [clarify, sessionId]);
+    if (sessionId) {
+      saveDraft(sessionId, text);
+      const fileNames = pendingFiles.map((f) => (typeof f === 'string' ? f : f.name));
+      saveServerDraft(sessionId, text, fileNames);
+    }
+    return () => {
+      if (draftSaveTimerRef.current) {
+        clearTimeout(draftSaveTimerRef.current);
+        draftSaveTimerRef.current = null;
+      }
+    };
+  }, [text, sessionId, pendingFiles, saveServerDraft]);
+
+  // Restore draft when session changes; save old session draft immediately before switch
+  useEffect(() => {
+    const prevSid = prevSessionIdRef.current;
+    const newSid = sessionId;
+    prevSessionIdRef.current = newSid;
+
+    // Save previous session's draft immediately before switching away
+    if (prevSid && prevSid !== newSid) {
+      const oldText = textareaRef.current?.value || text || '';
+      const oldFiles = pendingFiles.map((f) => (typeof f === 'string' ? f : f.name));
+      void saveServerDraftNow(prevSid, oldText, oldFiles);
+    }
+
+    if (!newSid) return;
+
+    // Restore draft for new session: prefer server draft, fall back to localStorage
+    const serverDraft = activeSession?.composer_draft;
+    const serverText =
+      serverDraft && typeof serverDraft.text === 'string' ? serverDraft.text : '';
+    const localText = getDraft(newSid);
+    // If server has a draft and it's different from local, use server (authoritative)
+    // Otherwise use local (may have newer unsaved typing)
+    const restored = serverText || localText;
+    setText(restored);
+    // Also sync to localStorage so it stays cached
+    if (restored) saveDraft(newSid, restored);
+  }, [sessionId, activeSession?.composer_draft, saveServerDraftNow, text, pendingFiles]);
 
   // Refresh queue count when session changes or periodically
   useEffect(() => {
@@ -334,7 +388,11 @@ export function ComposerFooter({
     setPendingFiles([]);
     setUploadedPaths([]);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
-  }, [text, onSend, setPendingFiles, _uploadedPaths]);
+    // Clear server draft immediately so it doesn't linger
+    if (sessionId) {
+      void saveServerDraftNow(sessionId, '', []);
+    }
+  }, [text, onSend, setPendingFiles, _uploadedPaths, sessionId, saveServerDraftNow]);
 
   const handlePrimaryAction = useCallback(async () => {
     if (primaryActionInProgressRef.current) return;
