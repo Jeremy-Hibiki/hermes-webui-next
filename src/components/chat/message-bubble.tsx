@@ -259,7 +259,7 @@ export function MessageBubble({
       )}
 
       <article
-        className={cn('msg-row group py-2.5', isUser ? 'self-end' : 'w-full', isToolError && 'border rounded-lg p-3')}
+        className={cn('msg-row group py-3', isUser ? 'self-end' : 'w-full', isToolError && 'border rounded-lg p-3')}
         style={isAssistant ? { paddingLeft: 'var(--msg-rail, 0px)' } : undefined}
         data-role={message.role}
         data-msg-idx={msgIdx}
@@ -301,7 +301,7 @@ export function MessageBubble({
           className={cn(
             'msg-body overflow-wrap-anywhere',
             isUser &&
-              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-4 py-3 max-w-[78%] text-[var(--user-bubble-text,var(--text))] [&_code]:bg-[rgba(0,0,0,.1)] [&_code]:text-[var(--user-bubble-text)] [&_a]:text-[var(--user-bubble-text)] [&_a]:underline',
+              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-4 py-3 max-w-[90%] sm:max-w-[78%] min-[900px]:max-w-[60%] text-[var(--user-bubble-text,var(--text))] [&_code]:bg-[rgba(0,0,0,.1)] [&_code]:text-[var(--user-bubble-text)] [&_a]:text-[var(--user-bubble-text)] [&_a]:underline',
             isAssistant && 'text-[var(--text)] pt-2',
             isToolError && 'bg-[rgba(239,83,80,.06)] border-[rgba(239,83,80,.3)] text-[var(--error)]',
           )}

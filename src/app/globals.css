@@ -600,6 +600,9 @@ body.resizing aside {
   max-width: var(--msg-max);
   overflow-wrap: anywhere;
 }
+.msg-body:empty {
+  display: none;
+}
 .msg-body p {
   margin-bottom: 10px;
 }

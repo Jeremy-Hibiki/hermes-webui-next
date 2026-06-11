@@ -93,7 +93,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
           <p className="clarify-question text-sm text-[var(--text)] mb-2">{request.question}</p>
 
           {request.choices && request.choices.length > 0 && (
-            <div className="clarify-choices flex flex-wrap gap-2 mb-2">
+            <div className="clarify-choices flex flex-col gap-2 mb-2">
               {request.choices.map((choice, i) => (
                 <button
                   key={i}
