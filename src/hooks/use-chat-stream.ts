@@ -13,6 +13,8 @@ import {
   composerContextAtom,
   bgTasksAtom,
   compressionAtom,
+  composerStatusAtom,
+  liveTpsAtom,
 } from '@/atoms/chat';
 import { activeSessionAtom, optimisticSessionsAtom } from '@/atoms/session';
 import { queueSessionMessage, shiftQueuedSessionMessage } from '@/atoms/streaming';
@@ -20,6 +22,7 @@ import { SSEClient } from '@/lib/sse-client';
 import { apiPost, fetcher } from '@/lib/api-client';
 import { parseCommand } from '@/lib/commands';
 import { useStreamingRenderer } from '@/hooks/use-streaming-renderer';
+import { playAttentionSound, playNotificationSound, sendBrowserNotification } from '@/lib/notifications';
 import { toast } from '@/components/ui/toast';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 import { type TurnUsage } from '@/types/message';
@@ -56,6 +59,8 @@ export function useChatStream(sessionId: string) {
   const [, setComposerContext] = useAtom(composerContextAtom);
   const [, setBgTasks] = useAtom(bgTasksAtom);
   const [, setCompression] = useAtom(compressionAtom);
+  const [, setComposerStatus] = useAtom(composerStatusAtom);
+  const [, setLiveTps] = useAtom(liveTpsAtom);
   const [, setOptimisticMap] = useAtom(optimisticSessionsAtom);
   const clientRef = useRef<SSEClient | null>(null);
   const bgTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -370,6 +375,8 @@ export function useChatStream(sessionId: string) {
                 pattern_keys: d.pattern_keys,
               };
               setApproval(req);
+              playAttentionSound(`${sessionId}:approval:1`);
+              sendBrowserNotification('Approval required', d.description || 'Tool approval needed');
             },
             clarify: (data: unknown) => {
               const d = data as SSEClarifyData;
@@ -385,6 +392,8 @@ export function useChatStream(sessionId: string) {
                 timeout_seconds: d.timeout_seconds,
               };
               setClarify(req);
+              playAttentionSound(`${sessionId}:clarify:1`);
+              sendBrowserNotification('Clarification needed', d.question || 'Tool clarification needed');
             },
             todo_state: (data: unknown) => {
               const d = data as { todos?: TodoItem[]; meta?: Record<string, unknown> };
@@ -459,6 +468,12 @@ export function useChatStream(sessionId: string) {
                 tps?: number;
               };
               if ((d.session_id || sessionId) !== sessionId) return;
+              // Live TPS display
+              if (d.estimated === true || d.tps_available !== true || typeof d.tps !== 'number' || d.tps <= 0) {
+                setLiveTps(null);
+              } else {
+                setLiveTps(d.tps);
+              }
               if (d.usage) {
                 const s = activeSession;
                 const merged: TurnUsage = {
@@ -492,6 +507,7 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setLiveTps(null);
               setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
               setOptimisticMap((prev) => {
@@ -540,11 +556,14 @@ export function useChatStream(sessionId: string) {
                   }),
                 );
               });
+              playNotificationSound();
+              sendBrowserNotification('Response complete', activeSession?.title || 'Hermes');
               setBusy(false);
               setStreamId(null);
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setLiveTps(null);
               setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
               setOptimisticMap((prev) => {
@@ -599,11 +618,91 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setLiveTps(null);
               setOptimisticMap((prev) => {
                 const next = new Map(prev);
                 next.delete(sessionId);
                 return next;
               });
+            },
+            warning: (data: unknown) => {
+              const d = data as { message?: string; type?: string };
+              setComposerStatus(d.message || 'Warning');
+              if (d.type === 'fallback') setTimeout(() => setComposerStatus(''), 4000);
+            },
+            title: (data: unknown) => {
+              const d = data as { session_id?: string; title?: string };
+              const sid = d.session_id || sessionId;
+              if (sid !== sessionId) return;
+              if (d.title) {
+                setActiveSession((prev) => (prev ? { ...prev, title: d.title! } : prev));
+              }
+            },
+            title_status: () => {
+              // Informational only — console-level logging, no visual effect
+            },
+            state_saved: (data: unknown) => {
+              const d = data as { session_id?: string; kind?: string; name?: string; action?: string };
+              const sid = d.session_id || sessionId;
+              if (sid !== sessionId) return;
+              const isCreated = String(d.action || '').toLowerCase() === 'created';
+              const kindLabel = d.kind || 'State';
+              const name = d.name ? ` "${d.name}"` : '';
+              toast(`${kindLabel}${name} ${isCreated ? 'created' : 'saved'}`, 'info');
+            },
+            goal: (data: unknown) => {
+              const d = data as { session_id?: string; state?: string; decision?: string; message?: string };
+              const sid = d.session_id || sessionId;
+              if (sid !== sessionId) return;
+              const goalState = String(d.state || '').trim();
+              if (goalState === 'evaluating') {
+                setComposerStatus('Evaluating goal…');
+                return;
+              }
+              const msg = d.message || (d.decision ? `Goal: ${d.decision}` : '');
+              if (!msg) return;
+              setComposerStatus(msg);
+              toast(msg.split('\n')[0]);
+            },
+            goal_continue: (data: unknown) => {
+              const d = data as { session_id?: string; continuation_prompt?: string; text?: string };
+              const sid = d.session_id || sessionId;
+              const continuation = String(d.continuation_prompt || d.text || '').trim();
+              if (!continuation || sid !== sessionId) return;
+              queueSessionMessage(sid, {
+                text: continuation,
+                attachments: [],
+                model: activeSession?.model ?? null,
+                model_provider: activeSession?.model_provider ?? null,
+                profile: activeSession?.profile || 'default',
+              });
+              toast('Goal continuation queued', 'info');
+            },
+            context_status: (data: unknown) => {
+              const d = data as { session_id?: string; prefill?: { status?: string; label?: string; error?: string } };
+              const sid = d.session_id || sessionId;
+              if (sid !== sessionId) return;
+              const prefill = d.prefill || {};
+              const status = String(prefill.status || 'not_configured');
+              const label = String(prefill.label || 'session recall');
+              if (status === 'loaded') {
+                setComposerStatus(`Context loaded: ${label}`);
+              } else if (status === 'error') {
+                setComposerStatus(`Context unavailable: ${label}`);
+                toast(`Context unavailable: ${String(prefill.error || label)}`, 'error');
+              }
+            },
+            interim_assistant: (data: unknown) => {
+              const d = data as { text?: string; already_streamed?: number };
+              if (!d.text) return;
+              // Append as a new paragraph segment to the assistant message
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id !== assistantMsg.id) return m;
+                  const existing = typeof m.content === 'string' ? m.content : '';
+                  return { ...m, content: existing + '\n\n' + d.text };
+                }),
+              );
             },
           });
         } catch (err) {
@@ -646,6 +745,8 @@ export function useChatStream(sessionId: string) {
       setComposerContext,
       setCompression,
       setOptimisticMap,
+      setComposerStatus,
+      setLiveTps,
       renderer,
     ],
   );

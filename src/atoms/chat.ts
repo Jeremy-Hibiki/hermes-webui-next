@@ -23,3 +23,6 @@ export interface CompressionState {
 }
 
 export const compressionAtom = atom<CompressionState | null>(null);
+export const composerStatusAtom = atom<string>('');
+export const liveTpsAtom = atom<number | null>(null);
+export const composerAppendAtom = atom<string | null>(null);

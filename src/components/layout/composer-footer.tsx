@@ -26,7 +26,7 @@ import {
 } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
-import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom } from '@/atoms/chat';
+import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom, composerAppendAtom } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
@@ -154,6 +154,25 @@ export function ComposerFooter({
   const profileChipRef = useRef<HTMLButtonElement>(null);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const [composerAppend, setComposerAppend] = useAtom(composerAppendAtom);
+
+  // Consume text appended from external sources (e.g. "Reply with selection")
+  useEffect(() => {
+    if (!composerAppend) return;
+    setText((prev) => {
+      const sep = prev && !prev.endsWith('\n') ? '\n' : '';
+      return prev + sep + composerAppend;
+    });
+    setComposerAppend(null);
+    // Focus and scroll textarea
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta) {
+        ta.selectionStart = ta.selectionEnd = ta.value.length;
+        ta.focus();
+      }
+    });
+  }, [composerAppend, setComposerAppend]);
 
   // Compute dropdown position relative to trigger chip
   const computeWsPosition = useCallback(() => {

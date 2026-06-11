@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
-import { messagesAtom, busyAtom } from '@/atoms/chat';
+import { messagesAtom, busyAtom, composerAppendAtom } from '@/atoms/chat';
 import { MessageBubble } from './message-bubble';
+import { Reply } from 'lucide-react';
 
 interface MessageListProps {
   onEdit?: (messageId: string, newContent: string) => void;
@@ -26,6 +27,9 @@ export function MessageList({
 }: MessageListProps) {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy] = useAtom(busyAtom);
+  const [, setComposerAppend] = useAtom(composerAppendAtom);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectionBtn, setSelectionBtn] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const lastAssistantIdx = [...messages]
     .map((m, i) => (m.role === 'assistant' ? i : -1))
@@ -41,9 +45,23 @@ export function MessageList({
       const curr = messages[i];
       const isAssistantLike = curr.role === 'assistant' || curr.role === 'tool';
       const prevIsAssistantLike = prev && (prev.role === 'assistant' || prev.role === 'tool');
-      // First message in group, or first assistant after non-assistant
       if (isAssistantLike && !prevIsAssistantLike) {
         map.add(i);
+      }
+    }
+    return map;
+  }, [messages]);
+
+  // Build a map: assistant message index → corresponding user question index
+  // The "question" is the user message immediately preceding this assistant turn
+  const questionJumpMap = useMemo(() => {
+    const map = new Map<number, number>();
+    let lastUserIdx = -1;
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].role === 'user') {
+        lastUserIdx = i;
+      } else if (messages[i].role === 'assistant' && lastUserIdx >= 0) {
+        map.set(i, lastUserIdx);
       }
     }
     return map;
@@ -53,9 +71,64 @@ export function MessageList({
     setMessages((prev) => prev.filter((m) => (m.id ?? '') !== messageId));
   };
 
+  const handleJumpToQuestion = useCallback((targetIdx: number) => {
+    const el = document.querySelector(`[data-msg-idx="${targetIdx}"]`);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      // Brief highlight pulse
+      el.classList.add('msg-question-highlight');
+      setTimeout(() => el.classList.remove('msg-question-highlight'), 1500);
+    }
+  }, []);
+
+  // Text selection reply button
+  const updateSelectionButton = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) {
+      setSelectionBtn(null);
+      return;
+    }
+    const text = sel.toString().trim();
+    if (!text) {
+      setSelectionBtn(null);
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!containerRef.current?.contains(range.commonAncestorContainer)) {
+      setSelectionBtn(null);
+      return;
+    }
+    const rect = range.getBoundingClientRect();
+    setSelectionBtn({
+      text,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8,
+    });
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', updateSelectionButton);
+    document.addEventListener('mouseup', updateSelectionButton);
+    return () => {
+      document.removeEventListener('selectionchange', updateSelectionButton);
+      document.removeEventListener('mouseup', updateSelectionButton);
+    };
+  }, [updateSelectionButton]);
+
+  const handleReplyWithSelection = useCallback(() => {
+    if (!selectionBtn?.text) return;
+    const quoted = selectionBtn.text
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n');
+    setComposerAppend(quoted + '\n');
+    setSelectionBtn(null);
+    window.getSelection()?.removeAllRanges();
+  }, [selectionBtn, setComposerAppend]);
+
   return (
     <div className="flex flex-col">
-      <div className="messages-inner mx-auto w-full px-6 pt-5 pb-8 flex flex-col">
+      <div ref={containerRef} className="messages-inner mx-auto w-full px-6 pt-5 pb-8 flex flex-col">
         {hasOlderMessages && (
           <button
             onClick={onLoadOlder}
@@ -78,9 +151,28 @@ export function MessageList({
             prevMessage={idx > 0 ? messages[idx - 1] : null}
             isGroupLeader={groupLeaderMap.has(idx)}
             busy={busy}
+            msgIdx={idx}
+            questionJumpIdx={questionJumpMap.get(idx)}
+            onJumpToQuestion={handleJumpToQuestion}
           />
         ))}
       </div>
+
+      {/* Text selection reply button */}
+      {selectionBtn && (
+        <button
+          onClick={handleReplyWithSelection}
+          className="selected-text-reply-btn fixed z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[11px] text-[var(--text)] shadow-lg hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-all pointer-events-auto"
+          style={{
+            left: `${selectionBtn.x}px`,
+            top: `${selectionBtn.y}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <Reply className="w-3 h-3" />
+          Reply with selection
+        </button>
+      )}
     </div>
   );
 }

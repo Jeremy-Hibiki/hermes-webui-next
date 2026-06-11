@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useAtom } from 'jotai';
 import { cn } from '@/lib/utils';
 import { Copy, Check, Pencil, RefreshCw, GitFork, Trash2, FileText, X, Undo2 } from 'lucide-react';
 import NextImage from 'next/image';
@@ -10,6 +11,7 @@ import { extractTextContent, type Attachment } from '@/types/message';
 import { MarkdownRenderer } from './markdown-renderer';
 import { ToolCallCard } from './tool-call-card';
 import { ThinkingCard } from './thinking-card';
+import { liveTpsAtom } from '@/atoms/chat';
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,6 +24,9 @@ interface MessageBubbleProps {
   prevMessage?: Message | null;
   isGroupLeader?: boolean;
   busy?: boolean;
+  msgIdx?: number;
+  questionJumpIdx?: number;
+  onJumpToQuestion?: (idx: number) => void;
 }
 
 function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
@@ -155,10 +160,14 @@ export function MessageBubble({
   prevMessage,
   isGroupLeader = true,
   busy,
+  msgIdx,
+  questionJumpIdx,
+  onJumpToQuestion,
 }: MessageBubbleProps) {
   const { t: t18n } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [liveTps] = useAtom(liveTpsAtom);
   const textContent = extractTextContent(message.content);
   // Strip DeepSeek XML function call blocks and other tool-use XML
   // Rewrite session:// links to navigable URLs
@@ -253,6 +262,7 @@ export function MessageBubble({
         className={cn('msg-row group py-2.5', isUser ? 'self-end' : 'w-full', isToolError && 'border rounded-lg p-3')}
         style={isAssistant ? { paddingLeft: 'var(--msg-rail, 0px)' } : undefined}
         data-role={message.role}
+        data-msg-idx={msgIdx}
         aria-label={`${message.role} message`}
       >
         {/* Assistant role header - only shown for group leader */}
@@ -262,7 +272,18 @@ export function MessageBubble({
               H
             </div>
             <span className="text-[var(--accent-text)] text-[12px]">Hermes</span>
-            {message._turnTps != null && message._turnTps > 0 && (
+            {/* Live TPS during streaming */}
+            {message._isStreaming && liveTps != null && liveTps > 0 && (
+              <span
+                className="msg-tps-live inline-flex items-center ml-0.5 px-1.5 py-[1px] border border-[var(--border)] rounded-full text-[var(--muted)] bg-[var(--surface)] text-[10.5px] font-medium"
+                style={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1.4 }}
+                title="Tokens per second"
+              >
+                {liveTps < 100 ? liveTps.toFixed(1) : Math.round(liveTps)} t/s
+              </span>
+            )}
+            {/* Final TPS after stream complete */}
+            {!message._isStreaming && message._turnTps != null && message._turnTps > 0 && (
               <span
                 className="inline-flex items-center ml-0.5 px-1.5 py-[1px] border border-[var(--border)] rounded-full text-[var(--muted)] bg-[var(--surface)] text-[10.5px] font-medium"
                 style={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1.4 }}
@@ -415,6 +436,17 @@ export function MessageBubble({
               </button>
             )}
           </span>
+          {/* Question jump button for assistant messages */}
+          {isAssistant && questionJumpIdx != null && onJumpToQuestion && !message._isStreaming && (
+            <button
+              onClick={() => onJumpToQuestion(questionJumpIdx)}
+              className="msg-question-jump-btn ml-auto inline-flex items-center gap-1 px-2 py-[1px] rounded-full border border-[var(--border)] text-[var(--muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] hover:border-[var(--accent-bg-strong,var(--accent-bg))] transition-colors text-[10px]"
+              title="Jump to the question for this response"
+            >
+              <span aria-hidden="true">↑</span>
+              <span>Question</span>
+            </button>
+          )}
         </div>
       </article>
 
@@ -427,6 +459,14 @@ export function MessageBubble({
           opacity: 0.7;
           flex: 0 0 auto;
           font-variant-numeric: tabular-nums;
+        }
+        .msg-question-jump-btn {
+          display: none;
+        }
+        @media (min-width: 601px) {
+          .msg-question-jump-btn {
+            display: inline-flex;
+          }
         }
       `}</style>
     </>
