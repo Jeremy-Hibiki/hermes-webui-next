@@ -66,19 +66,34 @@ export function Sidebar() {
   const isCli = (s: Session) =>
     s.is_cli_session || s.source_tag === 'claude-code' || s.source_tag === 'codex' || s.session_source === 'cli';
 
+  // Inject active ephemeral session if missing from server list
+  const augmentedSessions = useMemo(() => {
+    if (!active || sessions.some((s) => s.session_id === active.session_id)) return sessions;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ephemeral: Session = {
+      ...active,
+      last_message_at: active.last_message_at || active.updated_at || nowSec,
+      updated_at: active.updated_at || active.last_message_at || nowSec,
+      message_count: active.message_count || 0,
+      pinned: active.pinned || false,
+      archived: active.archived || false,
+    };
+    return [ephemeral, ...sessions];
+  }, [sessions, active]);
+
   const { webuiCount, cliCount } = useMemo(() => {
     let w = 0,
       c = 0;
-    for (const s of sessions) {
+    for (const s of augmentedSessions) {
       if (isCli(s)) c++;
       else w++;
     }
     return { webuiCount: w, cliCount: c };
-  }, [sessions]);
+  }, [augmentedSessions]);
 
   // --- Filtering pipeline ---
   const filteredSessions = useMemo(() => {
-    let result = sessions;
+    let result = augmentedSessions;
 
     // Source filter
     if (cliCount > 0) {
@@ -103,7 +118,7 @@ export function Sidebar() {
     }
 
     return result;
-  }, [sessions, sourceFilter, activeProject, showAllProfiles, showArchived, cliCount]);
+  }, [augmentedSessions, sourceFilter, activeProject, showAllProfiles, showArchived, cliCount]);
 
   const pinnedSessions = useMemo(() => filteredSessions.filter((s) => s.pinned && !s.archived), [filteredSessions]);
   const nonPinnedSessions = useMemo(() => filteredSessions.filter((s) => !s.pinned && !s.archived), [filteredSessions]);
@@ -113,10 +128,12 @@ export function Sidebar() {
   // Other profile count
   const otherProfileCount = useMemo(() => {
     // Simple heuristic: count sessions with different profile than the active session
-    if (sessions.length === 0) return 0;
-    const profiles = new Set(sessions.map((s) => s.profile).filter(Boolean));
-    return profiles.size > 1 ? sessions.filter((s) => s.profile && s.profile !== sessions[0]?.profile).length : 0;
-  }, [sessions]);
+    if (augmentedSessions.length === 0) return 0;
+    const profiles = new Set(augmentedSessions.map((s) => s.profile).filter(Boolean));
+    return profiles.size > 1
+      ? augmentedSessions.filter((s) => s.profile && s.profile !== augmentedSessions[0]?.profile).length
+      : 0;
+  }, [augmentedSessions]);
 
   // --- Handlers ---
   const toggleGroup = useCallback((label: string) => {
@@ -324,7 +341,7 @@ export function Sidebar() {
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         {isLoading && <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('common.loading')}</div>}
 
-        {!isLoading && sessions.length === 0 && (
+        {!isLoading && augmentedSessions.length === 0 && (
           <div className="p-4 text-sm text-[var(--muted)] text-center">{t18n('session.noSessions')}</div>
         )}
 
@@ -426,7 +443,7 @@ export function Sidebar() {
             )}
 
             {/* Empty state */}
-            {filteredSessions.length === 0 && sessions.length > 0 && (
+            {filteredSessions.length === 0 && augmentedSessions.length > 0 && (
               <div className="p-4 text-sm text-[var(--muted)] text-center">No sessions match filters</div>
             )}
           </>

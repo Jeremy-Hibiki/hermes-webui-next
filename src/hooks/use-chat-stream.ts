@@ -46,8 +46,9 @@ interface SSEClarifyData {
 export function useChatStream(sessionId: string) {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [busy, setBusy] = useAtom(busyAtom);
-  const [, setStreamId] = useAtom(activeStreamIdAtom);
+  const [activeStreamId, setStreamId] = useAtom(activeStreamIdAtom);
   const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
+  const [compression] = useAtom(compressionAtom);
   const [, setApproval] = useAtom(approvalAtom);
   const [, setClarify] = useAtom(clarifyAtom);
   const [, setTodos] = useAtom(todosAtom);
@@ -75,7 +76,25 @@ export function useChatStream(sessionId: string) {
 
   const send = useCallback(
     async (text: string, attachments?: string[]) => {
-      if (!text.trim() || busy || sendInProgressRef.current) return;
+      if (!text.trim() || sendInProgressRef.current) return;
+
+      // Clear stale busy state before rejecting send
+      if (busy) {
+        const compressionRunning = compression?.phase === 'running';
+        const hasRuntimeConfirmation = Boolean(
+          activeStreamId ||
+          activeSession?.active_stream_id ||
+          activeSession?.pending_user_message ||
+          activeSession?.pending_started_at,
+        );
+        if (!compressionRunning && !hasRuntimeConfirmation) {
+          setBusy(false);
+          setStreamId(null);
+        } else {
+          return;
+        }
+      }
+
       if (activeSession?.read_only) {
         setMessages((prev) => [
           ...prev,
@@ -613,6 +632,8 @@ export function useChatStream(sessionId: string) {
     [
       sessionId,
       busy,
+      activeStreamId,
+      compression,
       activeSession,
       setMessages,
       setBusy,
