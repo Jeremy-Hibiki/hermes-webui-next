@@ -5,10 +5,16 @@ import { voiceModeEnabledAtom } from '@/atoms/settings';
 import { useVoiceMode, type VoiceModeState } from '@/hooks/use-voice-mode';
 import { Mic, AudioLines } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { forwardRef, useImperativeHandle } from 'react';
+
+export interface VoiceControlsHandle {
+  stopDictation: () => void;
+}
 
 interface VoiceControlsProps {
   onDictate?: (text: string) => void;
   onSend?: () => void;
+  onDictationEnd?: () => void;
 }
 
 function stateLabel(state: VoiceModeState): string {
@@ -37,9 +43,24 @@ function indicatorClass(state: VoiceModeState): string {
   }
 }
 
-export function VoiceControls({ onDictate, onSend }: VoiceControlsProps) {
+export const VoiceControls = forwardRef<VoiceControlsHandle, VoiceControlsProps>(function VoiceControls(
+  { onDictate, onSend, onDictationEnd },
+  ref,
+) {
   const voiceModeEnabled = useAtomValue(voiceModeEnabledAtom);
-  const { hasSTT, modeActive, modeState, dictating, toggleDictation, toggleMode } = useVoiceMode({ onDictate, onSend });
+  const { hasSTT, modeActive, modeState, dictating, toggleDictation, toggleMode, stopDictation } = useVoiceMode({
+    onDictate,
+    onSend,
+    onDictationEnd,
+  });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      stopDictation,
+    }),
+    [stopDictation],
+  );
 
   if (!hasSTT) return null;
 
@@ -107,4 +128,4 @@ export function VoiceControls({ onDictate, onSend }: VoiceControlsProps) {
       )}
     </>
   );
-}
+});

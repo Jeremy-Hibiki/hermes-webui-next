@@ -7,6 +7,7 @@ export type VoiceModeState = 'idle' | 'listening' | 'thinking' | 'speaking';
 interface UseVoiceModeOptions {
   onDictate?: (text: string) => void;
   onSend?: () => void;
+  onDictationEnd?: () => void;
 }
 
 // Web Speech API types are not in all TypeScript DOM libs
@@ -33,13 +34,15 @@ declare global {
   }
 }
 
-export function useVoiceMode({ onDictate, onSend }: UseVoiceModeOptions = {}) {
+export function useVoiceMode({ onDictate, onSend, onDictationEnd }: UseVoiceModeOptions = {}) {
   const [modeActive, setModeActive] = useState(false);
   const [modeState, setModeState] = useState<VoiceModeState>('idle');
   const [dictating, setDictating] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalTextRef = useRef('');
+  const onDictationEndRef = useRef(onDictationEnd);
+  onDictationEndRef.current = onDictationEnd;
 
   const hasSTT = typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   const hasTTS = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -85,10 +88,12 @@ export function useVoiceMode({ onDictate, onSend }: UseVoiceModeOptions = {}) {
 
     rec.onend = () => {
       setDictating(false);
+      onDictationEndRef.current?.();
     };
 
     rec.onerror = () => {
       setDictating(false);
+      onDictationEndRef.current?.();
     };
 
     recognitionRef.current = rec;
@@ -227,5 +232,6 @@ export function useVoiceMode({ onDictate, onSend }: UseVoiceModeOptions = {}) {
     toggleMode,
     deactivateMode,
     setModeState,
+    stopDictation,
   };
 }

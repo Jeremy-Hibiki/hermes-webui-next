@@ -26,10 +26,12 @@ import {
 } from 'react';
 import useSWR from 'swr';
 import { fetcher, apiPost } from '@/lib/api-client';
-import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom } from '@/atoms/chat';
+import { pendingFilesAtom, yoloAtom, activeStreamIdAtom, clarifyAtom, messagesAtom } from '@/atoms/chat';
 import { workspacePanelOpenAtom } from '@/atoms/ui';
 import { activeProfileAtom, activeWorkspaceAtom, defaultModelAtom, busyInputModeAtom } from '@/atoms/settings';
 import { queueSessionMessage, getSessionQueue } from '@/atoms/streaming';
+import { parseCommand } from '@/lib/commands';
+import { toast } from '@/components/ui/toast';
 import { ModelSelectorTrigger, ModelDropdownPopover, useModels } from '@/components/chat/model-selector';
 import { SlashCommandMenu } from '@/components/chat/slash-command-menu';
 import { ContextIndicator } from '@/components/chat/context-indicator';
@@ -38,7 +40,7 @@ import { ProviderQuotaChip } from '@/components/chat/provider-quota-chip';
 import { BackgroundTasksBadge } from '@/components/chat/background-tasks-badge';
 import { MobileComposerConfigButton } from '@/components/chat/mobile-composer-config';
 import { ToolsetsChip } from '@/components/chat/toolsets-chip';
-import { VoiceControls } from '@/components/chat/voice-controls';
+import { VoiceControls, type VoiceControlsHandle } from '@/components/chat/voice-controls';
 import { apiUpload } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -116,9 +118,13 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const [busyInputMode] = useAtom(busyInputModeAtom);
   const [activeStreamId] = useAtom(activeStreamIdAtom);
   const [clarify] = useAtom(clarifyAtom);
+  const [, setMessages] = useAtom(messagesAtom);
   const [_queueCount, setQueueCount] = useState(0);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
   const prevActionRef = useRef<ComposerAction>('disabled');
+  const voiceControlsRef = useRef<VoiceControlsHandle>(null);
+  const micPendingSendRef = useRef(false);
+  const micActiveRef = useRef(false);
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -322,6 +328,63 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
 
   const handlePrimaryAction = useCallback(async () => {
     const trimmed = text.trim();
+
+    // Mic pending-send guard: if dictating, stop mic and defer send until it ends
+    if (micActiveRef.current) {
+      micPendingSendRef.current = true;
+      voiceControlsRef.current?.stopDictation();
+      return;
+    }
+
+    // Slash-command interception (both busy and non-busy)
+    const cmd = parseCommand(trimmed);
+    if (cmd && (cmd.name === 'terminal' || cmd.name === 'goal')) {
+      setText('');
+      setPendingFiles([]);
+      setUploadedPaths([]);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      if (cmd.name === 'terminal') {
+        toast('Terminal — use the workspace panel toggle', 'info');
+      } else if (cmd.name === 'goal' && sessionId) {
+        try {
+          const res = await apiPost<{ goal_text?: string; goal_status?: string; error?: string }>('/api/goal', {
+            session_id: sessionId,
+            command: cmd.args[0] || 'status',
+            text: cmd.args.slice(1).join(' ') || undefined,
+          });
+          if (res.error) {
+            toast(res.error, 'error');
+          } else {
+            if (res.goal_text) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `goal-${Date.now()}`,
+                  role: 'assistant',
+                  content: `**Goal:** ${res.goal_text}`,
+                  timestamp: new Date().toISOString(),
+                },
+              ]);
+            }
+            if (res.goal_status) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `goal-status-${Date.now()}`,
+                  role: 'assistant',
+                  content: `**Goal status:** ${res.goal_status}`,
+                  timestamp: new Date().toISOString(),
+                },
+              ]);
+            }
+          }
+        } catch (err) {
+          toast(err instanceof Error ? err.message : 'Goal request failed', 'error');
+        }
+      }
+      return;
+    }
+
     if (action === 'disabled') return;
     if (action === 'stop') {
       onCancel?.();
@@ -384,7 +447,19 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       return;
     }
-  }, [action, text, sessionId, onCancel, onSteer, handleSend, pendingFiles, setPendingFiles, _uploadedPaths, profile]);
+  }, [
+    action,
+    text,
+    sessionId,
+    onCancel,
+    onSteer,
+    handleSend,
+    pendingFiles,
+    setPendingFiles,
+    _uploadedPaths,
+    profile,
+    setMessages,
+  ]);
 
   const handleFileSelect = useCallback(
     async (fileList: FileList | null) => {
@@ -618,6 +693,7 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
 
             {/* Mic / Voice mode controls */}
             <VoiceControls
+              ref={voiceControlsRef}
               onDictate={(txt) => {
                 setText(txt);
                 if (textareaRef.current) {
@@ -625,6 +701,13 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
                 }
               }}
               onSend={() => void handlePrimaryAction()}
+              onDictationEnd={() => {
+                micActiveRef.current = false;
+                if (micPendingSendRef.current) {
+                  micPendingSendRef.current = false;
+                  void handlePrimaryAction();
+                }
+              }}
             />
 
             {/* Divider */}
