@@ -117,7 +117,8 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   const [activeStreamId] = useAtom(activeStreamIdAtom);
   const [clarify] = useAtom(clarifyAtom);
   const [_queueCount, setQueueCount] = useState(0);
-  const [sendBtnVisible, setSendBtnVisible] = useState(false);
+  const sendBtnRef = useRef<HTMLButtonElement>(null);
+  const prevActionRef = useRef<ComposerAction>('disabled');
   const [dragOver, setDragOver] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [wsDropdown, setWsDropdown] = useState(false);
@@ -252,14 +253,6 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     return () => clearInterval(id);
   }, [sessionId]);
 
-  // Send button pop-in animation
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      setSendBtnVisible(true);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
   // Explicit slash-command override (/steer, /interrupt, /queue)
   const explicitAction = useMemo<ComposerAction | null>(() => {
     const trimmed = text.trim();
@@ -300,6 +293,21 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     }
     return 'queue';
   }, [text, busy, activeStreamId, busyInputMode, onCancel, onSteer, clarify, explicitAction]);
+
+  // Send button visible-class toggle: animate whenever action transitions from disabled -> active
+  useEffect(() => {
+    const btn = sendBtnRef.current;
+    if (!btn) return;
+    const wasDisabled = prevActionRef.current === 'disabled';
+    const isDisabled = action === 'disabled';
+    prevActionRef.current = action;
+    if (!isDisabled && wasDisabled) {
+      btn.classList.remove('send-btn-pop');
+      requestAnimationFrame(() => btn.classList.add('send-btn-pop'));
+    } else if (isDisabled) {
+      btn.classList.remove('send-btn-pop');
+    }
+  }, [action]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -808,13 +816,13 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
             <BackgroundTasksBadge />
 
             <button
+              ref={sendBtnRef}
               id="btnSend"
               onClick={() => void handlePrimaryAction()}
               disabled={action === 'disabled'}
               data-action={action}
               className={cn(
                 'send-btn w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35 disabled:cursor-not-allowed',
-                sendBtnVisible && 'send-btn-pop',
                 (action === 'send' || action === 'queue') && 'hover:scale-[1.08]',
                 (action === 'stop' || action === 'interrupt') && 'hover:scale-[1.06]',
                 action === 'steer' && 'hover:scale-[1.06]',
