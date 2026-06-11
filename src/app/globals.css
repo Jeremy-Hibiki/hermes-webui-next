@@ -571,6 +571,9 @@ body.resizing aside {
   background: var(--accent);
   animation: tool-pulse 1.3s ease-in-out infinite;
 }
+.tool-card:hover {
+  background: var(--hover-bg);
+}
 
 /* ── Compression card bubble pulse ── */
 @keyframes compressionPulse {

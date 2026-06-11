@@ -30,7 +30,7 @@ function renderArgsAsKeyValue(tc: ToolCall): React.ReactNode {
     <div className="space-y-0.5">
       {Object.entries(args).map(([key, value]) => (
         <div key={key} className="flex gap-2 text-xs">
-          <span className="text-[var(--muted)] font-medium shrink-0">{key}:</span>
+          <span className="text-[var(--blue,#3b82f6)] font-medium font-mono shrink-0">{key}:</span>
           <span className="font-mono text-[var(--code-text)] break-all">
             {typeof value === 'string' ? value : JSON.stringify(value)}
           </span>
@@ -65,7 +65,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
 
   return (
     <div
-      className="text-sm overflow-hidden my-1 border-l border-[var(--border-subtle,var(--border))]"
+      className="tool-card text-sm overflow-hidden my-1 border-l-[2px] border-[var(--border-subtle,var(--border))] bg-[var(--surface-subtle)] rounded-lg"
       style={{ marginLeft: 'var(--msg-rail, 0px)' }}
     >
       <button
@@ -108,7 +108,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
         <div className="pl-[var(--space-3,12px)] pb-1 text-xs">
           {argsDisplay && <div className="py-1">{argsDisplay}</div>}
           {resultDisplay && (
-            <pre className="p-2 rounded bg-[var(--code-bg)] overflow-x-auto text-[var(--code-text)] whitespace-pre-wrap text-xs">
+            <pre className="tool-card-result p-2 rounded bg-[var(--code-bg)] overflow-x-auto text-[var(--code-text)] whitespace-pre-wrap text-xs max-h-[240px] overflow-y-auto">
               {resultDisplay}
             </pre>
           )}
