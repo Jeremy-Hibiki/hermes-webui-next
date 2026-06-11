@@ -57,6 +57,10 @@ export function MainPanel() {
   const [queueVisible, setQueueVisible] = useState(false);
   const [compression] = useAtom(compressionAtom);
   const isPinnedRef = useRef(true);
+  const userUnpinnedRef = useRef(false);
+  const nearBottomCountRef = useRef(0);
+  const programmaticScrollRef = useRef(false);
+  const lastScrollTopRef = useRef<number | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
 
   const sessionId = activeSession?.session_id ?? '';
@@ -271,36 +275,111 @@ export function MainPanel() {
     }
   }, [sessionId, setMessages]);
 
-  // Scroll jump controls + pin detection
+  // Scroll jump controls + sticky-unpin model
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY < 0) {
+        userUnpinnedRef.current = true;
+        nearBottomCountRef.current = 0;
+        isPinnedRef.current = false;
+      }
+    };
+
     const onScroll = () => {
+      if (programmaticScrollRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = el;
       const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      isPinnedRef.current = nearBottom;
-      setShowScrollToBottom(!nearBottom && scrollHeight > clientHeight);
+      const prevTop = lastScrollTopRef.current;
+      const movedUp = prevTop !== null && scrollTop < prevTop;
+      const movedDown = prevTop !== null && scrollTop > prevTop;
+      lastScrollTopRef.current = scrollTop;
+
+      if (movedUp) {
+        nearBottomCountRef.current = 0;
+        isPinnedRef.current = false;
+        userUnpinnedRef.current = true;
+      } else if (movedDown && nearBottom) {
+        nearBottomCountRef.current = nearBottomCountRef.current + 1;
+        if (nearBottomCountRef.current >= 2) {
+          isPinnedRef.current = true;
+          userUnpinnedRef.current = false;
+        }
+      } else if (!userUnpinnedRef.current) {
+        if (nearBottom) {
+          nearBottomCountRef.current = nearBottomCountRef.current + 1;
+          if (nearBottomCountRef.current >= 2) isPinnedRef.current = true;
+        } else {
+          nearBottomCountRef.current = 0;
+          isPinnedRef.current = false;
+        }
+      } else if (!nearBottom) {
+        nearBottomCountRef.current = 0;
+        isPinnedRef.current = false;
+      }
+
+      setShowScrollToBottom(!isPinnedRef.current && scrollHeight > clientHeight);
       setShowJumpToStart(scrollTop > 200);
     };
+
+    el.addEventListener('wheel', onWheel, { passive: true });
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => el.removeEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('scroll', onScroll);
+    };
   }, [messages.length]);
 
-  // Auto-scroll only when pinned
+  // Reset pinning when session changes
   useEffect(() => {
-    if (isPinnedRef.current) {
+    userUnpinnedRef.current = false;
+    isPinnedRef.current = true;
+    nearBottomCountRef.current = 2;
+    lastScrollTopRef.current = null;
+  }, [sessionId]);
+
+  // Auto-scroll only when pinned and user hasn't manually unpinned
+  useEffect(() => {
+    if (isPinnedRef.current && !userUnpinnedRef.current) {
+      programmaticScrollRef.current = true;
       scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: 'smooth' });
+      lastScrollTopRef.current = scrollContainerRef.current?.scrollHeight ?? null;
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          programmaticScrollRef.current = false;
+        }, 0);
+      });
     }
   }, [messages.length]);
 
   const scrollToBottom = () => {
+    userUnpinnedRef.current = false;
     isPinnedRef.current = true;
+    nearBottomCountRef.current = 2;
+    programmaticScrollRef.current = true;
     scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: 'smooth' });
+    lastScrollTopRef.current = scrollContainerRef.current?.scrollHeight ?? null;
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, 0);
+    });
   };
   const jumpToSessionStart = () => {
+    userUnpinnedRef.current = true;
     isPinnedRef.current = false;
+    nearBottomCountRef.current = 0;
+    programmaticScrollRef.current = true;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    lastScrollTopRef.current = 0;
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, 0);
+    });
   };
 
   // Measure queue card height after transition and set CSS variable on messages container
