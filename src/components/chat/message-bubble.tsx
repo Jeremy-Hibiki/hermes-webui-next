@@ -279,7 +279,7 @@ export function MessageBubble({
           className={cn(
             'msg-body overflow-wrap-anywhere',
             isUser &&
-              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-4 py-3 max-w-none text-[var(--user-bubble-text,var(--text))]',
+              'bg-[var(--user-bubble-bg)] border border-[var(--user-bubble-border)] rounded-[14px] px-4 py-3 max-w-[78%] text-[var(--user-bubble-text,var(--text))] [&_code]:bg-[rgba(0,0,0,.1)] [&_code]:text-[var(--user-bubble-text)] [&_a]:text-[var(--user-bubble-text)] [&_a]:underline',
             isAssistant && 'text-[var(--text)] pt-2',
             isToolError && 'bg-[rgba(239,83,80,.06)] border-[rgba(239,83,80,.3)] text-[var(--error)]',
           )}
@@ -351,7 +351,7 @@ export function MessageBubble({
             'msg-foot flex items-center gap-1.5 mt-1 text-[11px] text-[var(--muted)] transition-opacity',
             isUser ? 'justify-end' : 'justify-start',
             isAssistant && 'pl-[var(--msg-rail,0px)]',
-            hasUsage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            'opacity-0 group-hover:opacity-100',
           )}
         >
           <TurnUsageFooter message={message} />

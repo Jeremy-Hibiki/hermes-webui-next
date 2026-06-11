@@ -605,7 +605,7 @@ export function MainPanel() {
           <ReconnectBanner />
           <div
             ref={scrollContainerRef}
-            className={`messages absolute inset-0 overflow-y-auto p-4${queueVisible ? ' queue-open' : ''}`}
+            className={`messages absolute inset-0 overflow-y-auto p-4${queueVisible ? ' queue-open' : ''}${approval ? ' approval-open' : ''}${clarify ? ' clarify-open' : ''}`}
           >
             <div ref={messagesRef}>
               <MessageList

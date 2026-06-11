@@ -653,6 +653,8 @@ export function ComposerFooter({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      // Skip during IME composition (East Asian input)
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       if (sendKey === 'enter') {
         if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
