@@ -1117,6 +1117,37 @@ body {
   align-items: center;
   gap: 2px;
 }
+.queue-card-drag {
+  color: var(--muted);
+  opacity: 0.3;
+  flex-shrink: 0;
+  line-height: 0;
+  cursor: grab;
+}
+.queue-card-drag:active {
+  cursor: grabbing;
+}
+.queue-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  white-space: nowrap;
+}
+.queue-card-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
 
 /* Queue pill */
 .queue-pill-outer {
