@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentPanelAtom, currentMobileViewAtom } from '@/atoms/ui';
 import { activeSessionAtom } from '@/atoms/session';
-import { messagesAtom, composerContextAtom } from '@/atoms/chat';
+import { messagesAtom, composerContextAtom, approvalAtom, clarifyAtom } from '@/atoms/chat';
 import { ThreePanel } from '@/components/layout/three-panel';
 import { RailNav } from '@/components/layout/rail-nav';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
@@ -45,6 +45,8 @@ export function AppShell({ panel }: AppShellProps) {
   const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
   const [, setMessages] = useAtom(messagesAtom);
   const [, setComposerContext] = useAtom(composerContextAtom);
+  const [approval, setApproval] = useAtom(approvalAtom);
+  const [clarify, setClarify] = useAtom(clarifyAtom);
 
   // Sync panel from route
   useEffect(() => {
@@ -268,6 +270,16 @@ export function AppShell({ panel }: AppShellProps) {
       }
     },
     escape: () => {
+      // Close approval card
+      if (approval) {
+        setApproval(null);
+        return;
+      }
+      // Close clarify card
+      if (clarify) {
+        setClarify(null);
+        return;
+      }
       // Cancel any active message edit
       const editArea = document.querySelector('.msg-edit-area');
       if (editArea) {
@@ -282,6 +294,16 @@ export function AppShell({ panel }: AppShellProps) {
       const panel = document.getElementById('composerMobileConfigPanel');
       if (panel?.classList.contains('open')) {
         panel.classList.remove('open');
+        return;
+      }
+      // Clear session search if open
+      const searchInput = document.querySelector<HTMLInputElement>(
+        '.sidebar-search input, input[placeholder*="Search"]',
+      );
+      if (searchInput && document.activeElement === searchInput) {
+        searchInput.blur();
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         return;
       }
     },

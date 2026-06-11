@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 import { useAtom } from 'jotai';
-import { messagesAtom } from '@/atoms/chat';
+import { messagesAtom, busyAtom } from '@/atoms/chat';
 import { MessageBubble } from './message-bubble';
 
 interface MessageListProps {
@@ -14,6 +14,7 @@ interface MessageListProps {
 
 export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: MessageListProps) {
   const [messages, setMessages] = useAtom(messagesAtom);
+  const [busy] = useAtom(busyAtom);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function MessageList({ onEdit, onRegenerate, onFork, onUndoExchange }: Me
             isLastAssistant={idx === lastAssistantIdx}
             prevMessage={idx > 0 ? messages[idx - 1] : null}
             isGroupLeader={groupLeaderMap.has(idx)}
+            busy={busy}
           />
         ))}
         <div ref={bottomRef} />

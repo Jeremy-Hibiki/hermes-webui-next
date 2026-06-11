@@ -21,6 +21,7 @@ interface MessageBubbleProps {
   isLastAssistant?: boolean;
   prevMessage?: Message | null;
   isGroupLeader?: boolean;
+  busy?: boolean;
 }
 
 function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
@@ -153,6 +154,7 @@ export function MessageBubble({
   isLastAssistant,
   prevMessage,
   isGroupLeader = true,
+  busy,
 }: MessageBubbleProps) {
   const { t: t18n } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -355,7 +357,11 @@ export function MessageBubble({
               <button
                 onClick={() => setEditing(true)}
                 aria-label={t18n('chat.edit')}
-                className="msg-action-btn p-[2px_5px] rounded-[5px] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
+                disabled={busy}
+                className={cn(
+                  'msg-action-btn p-[2px_5px] rounded-[5px] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors',
+                  busy && 'opacity-30 cursor-not-allowed pointer-events-none',
+                )}
               >
                 <Pencil className="w-[13px] h-[13px]" />
               </button>

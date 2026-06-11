@@ -6,12 +6,12 @@ import { busyAtom } from '@/atoms/chat';
 
 interface LiveRunStatusProps {
   startedAt?: number | null;
+  tokenCount?: number;
 }
 
-export function LiveRunStatus({ startedAt }: LiveRunStatusProps) {
+export function LiveRunStatus({ startedAt, tokenCount }: LiveRunStatusProps) {
   const busy = useAtomValue(busyAtom);
   const [elapsed, setElapsed] = useState(0);
-  const [tokenCount, _setTokenCount] = useState(0);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function LiveRunStatus({ startedAt }: LiveRunStatusProps) {
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`;
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   };
 
   return (
@@ -52,7 +52,7 @@ export function LiveRunStatus({ startedAt }: LiveRunStatusProps) {
       <span className="w-[7px] h-[7px] rounded-full bg-[var(--accent)] opacity-45 animate-pulse" />
       <span className="text-[var(--text)] whitespace-nowrap">{formatTime(elapsed)}</span>
       <span className="opacity-40">·</span>
-      {tokenCount > 0 && (
+      {(tokenCount ?? 0) > 0 && (
         <>
           <span className="tabular-nums">{tokenCount} tokens</span>
           <span className="opacity-40">·</span>

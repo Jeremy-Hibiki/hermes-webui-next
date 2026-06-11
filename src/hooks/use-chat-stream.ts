@@ -60,6 +60,7 @@ export function useChatStream(sessionId: string) {
   const renderer = useStreamingRenderer();
   const sendInProgressRef = useRef(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [liveRunTokenCount, setLiveRunTokenCount] = useState<number>(0);
 
   // Clean up background task polling on unmount
   useEffect(() => {
@@ -206,6 +207,7 @@ export function useChatStream(sessionId: string) {
 
           setStreamId(res.stream_id);
           setStartedAt(res.pending_started_at ?? null);
+          setLiveRunTokenCount(0);
 
           // Open SSE stream
           const client = new SSEClient();
@@ -410,6 +412,7 @@ export function useChatStream(sessionId: string) {
                   last_prompt_tokens: d.usage.last_prompt_tokens ?? s?.last_prompt_tokens ?? undefined,
                 };
                 setComposerContext(merged);
+                if (d.usage.output_tokens != null) setLiveRunTokenCount(d.usage.output_tokens);
               }
             },
             stream_end: () => {
@@ -428,6 +431,7 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
             },
             done: (data: unknown) => {
@@ -453,6 +457,7 @@ export function useChatStream(sessionId: string) {
                   last_prompt_tokens: d.usage.last_prompt_tokens ?? s?.last_prompt_tokens ?? undefined,
                 };
                 setComposerContext(merged);
+                if (d.usage.output_tokens != null) setLiveRunTokenCount(d.usage.output_tokens);
               }
               // Drain remaining words
               renderer.drain((html) => {
@@ -474,6 +479,7 @@ export function useChatStream(sessionId: string) {
               client.close();
               setCompression(null);
               setStartedAt(null);
+              setLiveRunTokenCount(0);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
             },
             error: (data: unknown) => {
@@ -588,5 +594,5 @@ export function useChatStream(sessionId: string) {
     fetch(`/api/chat/cancel?stream_id=${''}`, { method: 'GET' }).catch(() => {});
   }, [setBusy, setStreamId]);
 
-  return { send, cancel, messages, busy, startedAt };
+  return { send, cancel, messages, busy, startedAt, liveRunTokenCount };
 }

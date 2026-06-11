@@ -57,7 +57,7 @@ export function MainPanel() {
   const [compression] = useAtom(compressionAtom);
 
   const sessionId = activeSession?.session_id ?? '';
-  const { send, cancel, startedAt } = useChatStream(sessionId);
+  const { send, cancel, startedAt, liveRunTokenCount } = useChatStream(sessionId);
 
   const handleQuote = useCallback((text: string) => {
     const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
@@ -417,7 +417,7 @@ export function MainPanel() {
             {compression && compression.phase === 'running' && <CompressionRunningCard />}
             {compression && compression.phase === 'done' && <CompressionCard state={compression} />}
             <AgentHealthBanner />
-            <LiveRunStatus startedAt={startedAt} />
+            <LiveRunStatus startedAt={startedAt} tokenCount={liveRunTokenCount} />
             {busy && <StreamingCursor streaming={true} />}
             <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
           </div>
