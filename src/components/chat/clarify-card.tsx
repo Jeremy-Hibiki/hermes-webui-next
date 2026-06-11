@@ -64,15 +64,16 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
   if (submitted) return null;
 
   return (
-    <div>
+    <div className="clarify-card bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg backdrop-blur-sm">
+      <div className="p-4">
       <div className="clarify-header flex items-center gap-2 mb-2.5 text-xs font-bold text-[var(--blue)] tracking-wide">
         <HelpCircle className="w-4 h-4" />
         <span>Clarification needed</span>
         {remaining !== null && (
           <span
             className={cn(
-              'clarify-countdown ml-auto min-w-[42px] text-right text-[var(--muted)] font-mono font-bold tabular-nums',
-              remaining <= 10 ? 'text-[var(--error)]' : '',
+              'clarify-countdown ml-auto min-w-[42px] text-right font-mono font-bold tabular-nums',
+              remaining <= 10 ? 'text-[var(--error)] shadow-[inset_0_-2px_0_var(--error)]' : 'text-[var(--muted)]',
             )}
           >
             {remaining}s
@@ -97,9 +98,9 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
                 <button
                   key={i}
                   onClick={() => handleChoiceClick(choice)}
-                  className="clarify-choice flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:bg-[var(--hover-bg)] transition-colors"
+                  className="clarify-choice flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-[var(--accent-bg-strong)] bg-[var(--accent-bg)] text-[var(--accent-text)] transition-all hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
-                  <span className="w-5 h-5 rounded-full bg-[var(--accent-bg)] text-[var(--accent)] flex items-center justify-center text-[10px]">
+                  <span className="min-w-[24px] h-[24px] rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                     {i + 1}
                   </span>
                   {choice}
@@ -116,7 +117,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your response…"
-              className="clarify-input flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] outline-none border border-[var(--border)] rounded-lg px-3 py-1.5"
+              className="clarify-input flex-1 bg-[var(--hover-bg)] text-sm text-[var(--text)] placeholder:text-[var(--muted)] outline-none border border-[var(--border)] rounded-lg px-3 py-2 focus:border-[var(--accent-bg)] focus:shadow-[0_0_0_3px_var(--accent-bg)]"
             />
             <button
               onClick={handleSubmit}
@@ -131,6 +132,7 @@ export function ClarifyCard({ request, onRespond }: ClarifyCardProps) {
           <p className="clarify-hint text-xs text-[var(--muted)] mt-1">Pick a choice, or type your own answer below.</p>
         </>
       )}
+      </div>
     </div>
   );
 }

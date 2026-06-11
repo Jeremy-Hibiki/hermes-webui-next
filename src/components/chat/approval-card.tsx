@@ -21,11 +21,13 @@ export function ApprovalCard({ request, onRespond, onYoloToggle, pendingCount }:
 
   return (
     <div
+      className="approval-card bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg backdrop-blur-sm"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !responding) handleRespond('once');
       }}
     >
+      <div className="p-4">
       <div className="approval-header flex items-center gap-2 mb-2.5 text-[13px] font-semibold text-[var(--error)]">
         <Shield className="w-4 h-4" />
         <span>Approval required</span>
@@ -67,7 +69,7 @@ export function ApprovalCard({ request, onRespond, onYoloToggle, pendingCount }:
             <button
               onClick={() => handleRespond('once')}
               disabled={responding}
-              className="approval-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-[var(--border2)] bg-[var(--hover-bg)] text-[var(--text)] cursor-pointer transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] disabled:opacity-50"
+              className="approval-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-text)] cursor-pointer transition-all hover:bg-[var(--accent-bg-strong)] hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] disabled:opacity-50"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               Allow once
@@ -94,7 +96,7 @@ export function ApprovalCard({ request, onRespond, onYoloToggle, pendingCount }:
             <button
               onClick={() => handleRespond('deny')}
               disabled={responding}
-              className="approval-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-[var(--border2)] bg-[var(--hover-bg)] text-[var(--text)] cursor-pointer transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] disabled:opacity-50"
+              className="approval-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-[var(--error)] text-[var(--error)] cursor-pointer transition-all hover:bg-[rgba(239,83,80,0.08)] hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] disabled:opacity-50"
             >
               <ShieldX className="w-3.5 h-3.5" />
               Deny
@@ -111,6 +113,7 @@ export function ApprovalCard({ request, onRespond, onYoloToggle, pendingCount }:
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }
