@@ -4,7 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { busyAtom } from '@/atoms/chat';
 
-export function LiveRunStatus() {
+interface LiveRunStatusProps {
+  startedAt?: number | null;
+}
+
+export function LiveRunStatus({ startedAt }: LiveRunStatusProps) {
   const busy = useAtomValue(busyAtom);
   const [elapsed, setElapsed] = useState(0);
   const [tokenCount, _setTokenCount] = useState(0);
@@ -12,8 +16,11 @@ export function LiveRunStatus() {
 
   useEffect(() => {
     if (busy) {
-      startRef.current = Date.now();
-      setElapsed(0);
+      // Use server-provided pending_started_at (seconds) if available,
+      // otherwise fall back to local Date.now().
+      const serverMs = typeof startedAt === 'number' && startedAt > 0 ? startedAt * 1000 : null;
+      startRef.current = serverMs ?? Date.now();
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
       const interval = setInterval(() => {
         if (startRef.current) {
           setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
@@ -23,7 +30,7 @@ export function LiveRunStatus() {
     } else {
       startRef.current = null;
     }
-  }, [busy]);
+  }, [busy, startedAt]);
 
   if (!busy) return null;
 

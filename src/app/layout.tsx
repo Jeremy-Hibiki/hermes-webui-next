@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Provider } from 'jotai';
 import { ThemeProvider } from '@/components/shared/theme-provider';
 import { Toaster } from '@/components/ui/toast';
+import { ServiceWorkerRegister } from '@/components/shared/service-worker-register';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider>
             {children}
             <Toaster />
+            <ServiceWorkerRegister />
           </ThemeProvider>
         </Provider>
       </body>

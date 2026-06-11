@@ -13,3 +13,13 @@ export const todosAtom = atom<TodoItem[]>([]);
 export const todoMetaAtom = atom<Record<string, unknown>>({});
 export const composerContextAtom = atom<TurnUsage | null>(null);
 export const bgTasksAtom = atom<string[]>([]);
+
+export interface CompressionState {
+  phase: 'running' | 'done';
+  automatic: boolean;
+  message: string;
+  continuationSessionId?: string;
+  startedAt?: number;
+}
+
+export const compressionAtom = atom<CompressionState | null>(null);

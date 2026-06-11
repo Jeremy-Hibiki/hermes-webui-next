@@ -13,7 +13,7 @@ import { Plus, Search, X, Pin, ChevronRight, Terminal as TerminalIcon, Globe } f
 import { apiPost } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import type { Session } from '@/types';
-import { messagesAtom } from '@/atoms/chat';
+import { messagesAtom, busyAtom } from '@/atoms/chat';
 import { SessionItem } from '@/components/sessions/session-item';
 import { bucketSessionsByDate, translateBucketLabel } from '@/lib/date-buckets';
 import { useTranslation } from '@/lib/i18n';
@@ -24,6 +24,7 @@ const NO_PROJECT = '__none__';
 export function Sidebar() {
   const [active, setActive] = useAtom(activeSessionAtom);
   const [, setMessages] = useAtom(messagesAtom);
+  const [busy] = useAtom(busyAtom);
   const [profile] = useAtom(activeProfileAtom);
   const [workspace] = useAtom(activeWorkspaceAtom);
   const { t: t18n } = useTranslation();
@@ -248,6 +249,7 @@ export function Sidebar() {
       key={session.session_id}
       session={session}
       isActive={active?.session_id === session.session_id}
+      isStreaming={!!session.is_streaming || (active?.session_id === session.session_id && busy)}
       onSelect={handleSelect}
       onRename={handleRename}
       onPin={handlePin}

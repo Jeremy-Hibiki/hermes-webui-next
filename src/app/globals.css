@@ -456,6 +456,14 @@ body {
   left: -2px;
 }
 
+body.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+body.resizing aside {
+  transition: none !important;
+}
+
 /* ── Composer gradient mask ── */
 .composer-wrap::before {
   content: '';
@@ -562,6 +570,20 @@ body {
   border-radius: 50%;
   background: var(--accent);
   animation: tool-pulse 1.3s ease-in-out infinite;
+}
+
+/* ── Compression card bubble pulse ── */
+@keyframes compressionPulse {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-1px);
+    opacity: 1;
+  }
 }
 
 /* ── Message row styles (matching original) ── */

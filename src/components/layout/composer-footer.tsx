@@ -462,9 +462,9 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
   ]);
 
   const handleFileSelect = useCallback(
-    async (fileList: FileList | null) => {
-      if (!fileList) return;
-      const newFiles = Array.from(fileList);
+    async (files: File[] | FileList | null) => {
+      if (!files) return;
+      const newFiles = Array.isArray(files) ? files : Array.from(files);
       setPendingFiles((prev) => [...prev, ...newFiles]);
       setUploadProgress(0);
       const total = newFiles.length;
@@ -501,13 +501,62 @@ export function ComposerFooter({ onSend, busy, onCancel, onSteer, sendKey = 'ent
     [setPendingFiles],
   );
 
+  // Recursively read dropped directories using webkitGetAsEntry
+  const collectDroppedFiles = useCallback(async (e: DragEvent): Promise<File[]> => {
+    const items = e.dataTransfer?.items;
+    if (!items || items.length === 0) {
+      return Array.from(e.dataTransfer?.files ?? []);
+    }
+    const files: File[] = [];
+    const readEntry = (entry: FileSystemEntry): Promise<void> =>
+      new Promise((resolve) => {
+        if (entry.isFile) {
+          (entry as FileSystemFileEntry).file(
+            (f) => {
+              files.push(f);
+              resolve();
+            },
+            () => resolve(),
+          );
+        } else if (entry.isDirectory) {
+          const dirReader = (entry as FileSystemDirectoryEntry).createReader();
+          const readBatch = () => {
+            dirReader.readEntries(
+              async (entries) => {
+                if (entries.length === 0) {
+                  resolve();
+                  return;
+                }
+                await Promise.all(entries.map((ent) => readEntry(ent)));
+                readBatch(); // continue reading until empty
+              },
+              () => resolve(),
+            );
+          };
+          readBatch();
+        } else {
+          resolve();
+        }
+      });
+
+    const entries: FileSystemEntry[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const entry = item.webkitGetAsEntry?.();
+      if (entry) entries.push(entry);
+    }
+    await Promise.all(entries.map((e) => readEntry(e)));
+    return files;
+  }, []);
+
   const handleDrop = useCallback(
-    (e: DragEvent) => {
+    async (e: DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      void handleFileSelect(e.dataTransfer.files);
+      const files = await collectDroppedFiles(e);
+      void handleFileSelect(files);
     },
-    [handleFileSelect],
+    [handleFileSelect, collectDroppedFiles],
   );
 
   const handleKeyDown = useCallback(

@@ -515,7 +515,12 @@ export function WorkspacePanel() {
                   <Download className="w-3 h-3" />
                 </Button>
               </div>
-              <FilePreview path={selectedFile} content={fileContent ?? ''} onClose={() => setSelectedFile(null)} />
+              <FilePreview
+                path={selectedFile}
+                content={fileContent ?? ''}
+                sessionId={sessionId}
+                onClose={() => setSelectedFile(null)}
+              />
             </div>
           ) : (
             <ScrollArea className="flex-1 min-h-0 overflow-hidden">

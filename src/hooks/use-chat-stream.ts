@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import {
   messagesAtom,
@@ -12,13 +12,15 @@ import {
   todoMetaAtom,
   composerContextAtom,
   bgTasksAtom,
+  compressionAtom,
 } from '@/atoms/chat';
 import { activeSessionAtom } from '@/atoms/session';
-import { shiftQueuedSessionMessage } from '@/atoms/streaming';
+import { queueSessionMessage, shiftQueuedSessionMessage } from '@/atoms/streaming';
 import { SSEClient } from '@/lib/sse-client';
 import { apiPost, fetcher } from '@/lib/api-client';
 import { parseCommand } from '@/lib/commands';
 import { useStreamingRenderer } from '@/hooks/use-streaming-renderer';
+import { toast } from '@/components/ui/toast';
 import type { Message, ToolCall, ApprovalRequest, ClarifyRequest, TodoItem } from '@/types';
 import { type TurnUsage } from '@/types/message';
 import { t } from '@/lib/i18n';
@@ -52,10 +54,12 @@ export function useChatStream(sessionId: string) {
   const [, setTodoMeta] = useAtom(todoMetaAtom);
   const [, setComposerContext] = useAtom(composerContextAtom);
   const [, setBgTasks] = useAtom(bgTasksAtom);
+  const [, setCompression] = useAtom(compressionAtom);
   const clientRef = useRef<SSEClient | null>(null);
   const bgTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const renderer = useStreamingRenderer();
   const sendInProgressRef = useRef(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
 
   // Clean up background task polling on unmount
   useEffect(() => {
@@ -194,9 +198,14 @@ export function useChatStream(sessionId: string) {
             payload.attachments = attachments;
           }
           // Start chat on backend
-          const res = await apiPost<{ stream_id: string; session_id: string }>('/chat/start', payload);
+          const res = await apiPost<{
+            stream_id: string;
+            session_id: string;
+            pending_started_at?: number;
+          }>('/chat/start', payload);
 
           setStreamId(res.stream_id);
+          setStartedAt(res.pending_started_at ?? null);
 
           // Open SSE stream
           const client = new SSEClient();
@@ -319,6 +328,90 @@ export function useChatStream(sessionId: string) {
               if (d.todos) setTodos(d.todos);
               if (d.meta) setTodoMeta(d.meta);
             },
+            compressing: (data: unknown) => {
+              const d = data as { session_id?: string };
+              if (d.session_id && d.session_id !== sessionId) return;
+              setCompression({
+                phase: 'running',
+                automatic: true,
+                message: 'Compressing context',
+                startedAt: Date.now() / 1000,
+              });
+            },
+            compressed: (data: unknown) => {
+              const d = data as {
+                old_session_id?: string;
+                session_id?: string;
+                new_session_id?: string;
+                continuation_session_id?: string;
+                usage?: TurnUsage;
+              };
+              const eventSid = d.old_session_id || d.session_id || sessionId;
+              const continuationSid = d.new_session_id || d.continuation_session_id || '';
+              const eventMatchesCurrent =
+                sessionId &&
+                (eventSid === sessionId || d.new_session_id === sessionId || d.continuation_session_id === sessionId);
+              if (!eventMatchesCurrent) return;
+              setCompression({
+                phase: 'done',
+                automatic: true,
+                message: 'Context auto-compressed',
+                continuationSessionId: continuationSid,
+              });
+              if (d.usage) {
+                const merged: TurnUsage = {
+                  input_tokens: d.usage.input_tokens ?? activeSession?.input_tokens ?? 0,
+                  output_tokens: d.usage.output_tokens ?? activeSession?.output_tokens ?? 0,
+                  estimated_cost: d.usage.estimated_cost ?? activeSession?.estimated_cost ?? undefined,
+                  cache_read_tokens: d.usage.cache_read_tokens ?? activeSession?.cache_read_tokens ?? undefined,
+                  cache_write_tokens: d.usage.cache_write_tokens ?? activeSession?.cache_write_tokens ?? undefined,
+                  cache_hit_percent: d.usage.cache_hit_percent ?? activeSession?.cache_hit_percent ?? undefined,
+                  context_length: d.usage.context_length || activeSession?.context_length || undefined,
+                  threshold_tokens: d.usage.threshold_tokens || activeSession?.threshold_tokens || undefined,
+                  last_prompt_tokens: d.usage.last_prompt_tokens ?? activeSession?.last_prompt_tokens ?? undefined,
+                };
+                setComposerContext(merged);
+              }
+            },
+            pending_steer_leftover: (data: unknown) => {
+              const d = data as { session_id?: string; text?: string };
+              const sid = d.session_id || sessionId;
+              const txt = String(d.text || '').trim();
+              if (!txt || sid !== sessionId) return;
+              queueSessionMessage(sid, {
+                text: txt,
+                attachments: [],
+                model: activeSession?.model ?? null,
+                model_provider: activeSession?.model_provider ?? null,
+                profile: activeSession?.profile || 'default',
+              });
+              toast('Steer leftover queued for next turn', 'info');
+            },
+            metering: (data: unknown) => {
+              const d = data as {
+                session_id?: string;
+                usage?: TurnUsage;
+                estimated?: boolean;
+                tps_available?: boolean;
+                tps?: number;
+              };
+              if ((d.session_id || sessionId) !== sessionId) return;
+              if (d.usage) {
+                const s = activeSession;
+                const merged: TurnUsage = {
+                  input_tokens: d.usage.input_tokens ?? s?.input_tokens ?? 0,
+                  output_tokens: d.usage.output_tokens ?? s?.output_tokens ?? 0,
+                  estimated_cost: d.usage.estimated_cost ?? s?.estimated_cost ?? undefined,
+                  cache_read_tokens: d.usage.cache_read_tokens ?? s?.cache_read_tokens ?? undefined,
+                  cache_write_tokens: d.usage.cache_write_tokens ?? s?.cache_write_tokens ?? undefined,
+                  cache_hit_percent: d.usage.cache_hit_percent ?? s?.cache_hit_percent ?? undefined,
+                  context_length: d.usage.context_length || s?.context_length || undefined,
+                  threshold_tokens: d.usage.threshold_tokens || s?.threshold_tokens || undefined,
+                  last_prompt_tokens: d.usage.last_prompt_tokens ?? s?.last_prompt_tokens ?? undefined,
+                };
+                setComposerContext(merged);
+              }
+            },
             stream_end: () => {
               // Drain remaining words from streaming renderer
               renderer.drain((html) => {
@@ -333,6 +426,8 @@ export function useChatStream(sessionId: string) {
               setBusy(false);
               setStreamId(null);
               client.close();
+              setCompression(null);
+              setStartedAt(null);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
             },
             done: (data: unknown) => {
@@ -377,6 +472,8 @@ export function useChatStream(sessionId: string) {
               setBusy(false);
               setStreamId(null);
               client.close();
+              setCompression(null);
+              setStartedAt(null);
               setActiveSession((prev) => (prev ? { ...prev, message_count: prev.message_count + 1 } : prev));
             },
             error: (data: unknown) => {
@@ -391,6 +488,8 @@ export function useChatStream(sessionId: string) {
               setBusy(false);
               setStreamId(null);
               client.close();
+              setCompression(null);
+              setStartedAt(null);
             },
             apperror: (data: unknown) => {
               const d = data as { message?: string; error?: string; label?: string };
@@ -404,11 +503,15 @@ export function useChatStream(sessionId: string) {
               setBusy(false);
               setStreamId(null);
               client.close();
+              setCompression(null);
+              setStartedAt(null);
             },
             cancel: () => {
               setBusy(false);
               setStreamId(null);
               client.close();
+              setCompression(null);
+              setStartedAt(null);
             },
           });
         } catch (err) {
@@ -423,6 +526,7 @@ export function useChatStream(sessionId: string) {
             },
           ]);
           setBusy(false);
+          setStartedAt(null);
         }
       } finally {
         sendInProgressRef.current = false;
@@ -441,6 +545,7 @@ export function useChatStream(sessionId: string) {
       setTodos,
       setTodoMeta,
       setComposerContext,
+      setCompression,
       renderer,
     ],
   );
@@ -483,5 +588,5 @@ export function useChatStream(sessionId: string) {
     fetch(`/api/chat/cancel?stream_id=${''}`, { method: 'GET' }).catch(() => {});
   }, [setBusy, setStreamId]);
 
-  return { send, cancel, messages, busy };
+  return { send, cancel, messages, busy, startedAt };
 }

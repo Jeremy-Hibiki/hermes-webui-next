@@ -16,6 +16,8 @@ import { ComposerFooter } from './composer-footer';
 import { TopBar } from './topbar';
 import { ReconnectBanner, UpdateBanner, AgentHealthBanner } from '@/components/shared/system-banners';
 import { QueueCard, QueuePill } from '@/components/chat/queue-card';
+import { CompressionCard, CompressionRunningCard } from '@/components/chat/compression-card';
+import { compressionAtom } from '@/atoms/chat';
 
 function ScrollToBottomBtn({ onClick }: { onClick: () => void }) {
   return (
@@ -52,9 +54,10 @@ export function MainPanel() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [showJumpToStart, setShowJumpToStart] = useState(false);
   const [queueVisible, setQueueVisible] = useState(false);
+  const [compression] = useAtom(compressionAtom);
 
   const sessionId = activeSession?.session_id ?? '';
-  const { send, cancel } = useChatStream(sessionId);
+  const { send, cancel, startedAt } = useChatStream(sessionId);
 
   const handleQuote = useCallback((text: string) => {
     const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
@@ -393,8 +396,10 @@ export function MainPanel() {
                 onUndoExchange={handleUndoExchange}
               />
             </div>
+            {compression && compression.phase === 'running' && <CompressionRunningCard />}
+            {compression && compression.phase === 'done' && <CompressionCard state={compression} />}
             <AgentHealthBanner />
-            <LiveRunStatus />
+            <LiveRunStatus startedAt={startedAt} />
             {busy && <StreamingCursor streaming={true} />}
             <SelectionReply containerRef={messagesRef} onQuote={handleQuote} />
           </div>

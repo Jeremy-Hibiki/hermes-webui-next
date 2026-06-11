@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAtom } from 'jotai';
-import { useSearchParams } from 'next/navigation';
-import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentPanelAtom } from '@/atoms/ui';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { sidebarCollapsedAtom, workspacePanelOpenAtom, currentPanelAtom, currentMobileViewAtom } from '@/atoms/ui';
 import { activeSessionAtom } from '@/atoms/session';
 import { messagesAtom, composerContextAtom } from '@/atoms/chat';
 import { ThreePanel } from '@/components/layout/three-panel';
@@ -17,7 +17,8 @@ import { OfflineBanner } from '@/components/shared/system-banners';
 import { LoginPage } from '@/app/login/login-page';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { fetcher } from '@/lib/api-client';
+import { useMobileSwipe } from '@/hooks/use-mobile-swipe';
+import { apiPost, fetcher } from '@/lib/api-client';
 import { API_BASE } from '@/lib/constants';
 import type { Message } from '@/types';
 import { extractTextContent } from '@/types/message';
@@ -32,11 +33,13 @@ export function AppShell({ panel }: AppShellProps) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
   const [workspaceOpen] = useAtom(workspacePanelOpenAtom);
   const [, setCurrentPanel] = useAtom(currentPanelAtom);
+  const [, setCurrentMobileView] = useAtom(currentMobileViewAtom);
   const [authState, setAuthState] = useState<AuthState>('loading');
   const [loginError, setLoginError] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const sid = searchParams.get('sid');
 
   const [activeSession, setActiveSession] = useAtom(activeSessionAtom);
@@ -69,6 +72,24 @@ export function AppShell({ panel }: AppShellProps) {
     window.addEventListener('hermes:unauthorized', onUnauthorized);
     return () => window.removeEventListener('hermes:unauthorized', onUnauthorized);
   }, []);
+
+  // bfcache restoration: re-sync state when browser restores page from back-forward cache
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      // Re-sync sidebar collapse from localStorage (another tab may have toggled it)
+      try {
+        const wantCollapsed = localStorage.getItem('hermes-webui-sidebar-collapsed') === '1';
+        if (wantCollapsed !== collapsed) setCollapsed(wantCollapsed);
+      } catch {
+        /* ignore */
+      }
+      // Clear any open mobile overlays
+      setCurrentMobileView('chat');
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, [collapsed, setCollapsed]);
 
   // Load session from URL ?sid=
   useEffect(() => {
@@ -217,8 +238,57 @@ export function AppShell({ panel }: AppShellProps) {
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     'mod+b': () => setCollapsed((c) => !c),
-    escape: () => {},
+    'mod+k': async () => {
+      // If the current session has no messages and nothing is in flight,
+      // just focus the composer rather than creating another empty session.
+      const hasMessages = (activeSession?.message_count ?? 0) > 0;
+      if (!hasMessages) {
+        const textarea = document.querySelector<HTMLTextAreaElement>('[aria-label="Message input"]');
+        if (textarea) {
+          textarea.focus();
+          return;
+        }
+      }
+      try {
+        const body: Record<string, unknown> = { profile: activeSession?.profile || 'default' };
+        if (activeSession?.workspace) body.workspace = activeSession.workspace;
+        const res = await apiPost<Record<string, unknown>>('/session/new', body);
+        const session = (res.session ?? res) as Record<string, unknown>;
+        const newSid = session.session_id as string;
+        if (!newSid) return;
+        setActiveSession({
+          ...activeSession,
+          session_id: newSid,
+          title: (session.title as string) ?? activeSession?.title,
+        } as any);
+        setMessages([]);
+        router.push(`/chat?sid=${newSid}`);
+      } catch (err) {
+        console.error('Failed to create session:', err);
+      }
+    },
+    escape: () => {
+      // Cancel any active message edit
+      const editArea = document.querySelector('.msg-edit-area');
+      if (editArea) {
+        const bar = editArea.closest('.msg-row')?.querySelector('.msg-edit-bar');
+        const cancel = bar?.querySelector('.msg-edit-cancel') as HTMLElement | null;
+        if (cancel) {
+          cancel.click();
+          return;
+        }
+      }
+      // Close mobile composer config
+      const panel = document.getElementById('composerMobileConfigPanel');
+      if (panel?.classList.contains('open')) {
+        panel.classList.remove('open');
+        return;
+      }
+    },
   });
+
+  // Mobile sidebar swipe gesture (PWA only)
+  useMobileSwipe(() => setCurrentMobileView('sidebar'));
 
   if (authState === 'loading') {
     return (
